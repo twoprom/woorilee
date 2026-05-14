@@ -17,7 +17,7 @@
 
 ## 설치
 
-- GitHub Releases에서 확인하세요.
+- GitHub Releases에서 확인하세요. macOS 26.0 이상이 필요합니다.
 
 ## 사용법
 
