@@ -167,8 +167,7 @@ private func manualHanjaDocumentOffset(
 
 private func manualHanjaTrailingTokenRange(in text: String) -> Range<String.Index>? {
     guard let lastCharacter = text.last,
-          !lastCharacter.isWhitespace,
-          !isManualHanjaDelimiter(lastCharacter)
+          lastCharacter.isHangul
     else {
         return nil
     }
@@ -177,7 +176,7 @@ private func manualHanjaTrailingTokenRange(in text: String) -> Range<String.Inde
     while start > text.startIndex {
         let previous = text.index(before: start)
         let ch = text[previous]
-        guard !ch.isWhitespace, !isManualHanjaDelimiter(ch) else {
+        guard ch.isHangul else {
             break
         }
         start = previous
@@ -186,14 +185,15 @@ private func manualHanjaTrailingTokenRange(in text: String) -> Range<String.Inde
     return start..<text.endIndex
 }
 
-private func isManualHanjaDelimiter(_ ch: Character) -> Bool {
-    switch ch {
-    case "(", ")", "[", "]", "{", "}",
-         "\"", "'",
-         "\u{201C}", "\u{201D}", "\u{2018}", "\u{2019}",  // "", ''
-         "「", "」", "『", "』", "【", "】", "〔", "〕", "〈", "〉", "《", "》":
-        return true
-    default:
-        return false
+extension Character {
+    var isHangul: Bool {
+        unicodeScalars.allSatisfy { scalar in
+            let v = scalar.value
+            return (0xAC00...0xD7A3).contains(v)   // Hangul Syllables
+                || (0x3131...0x318E).contains(v)    // Hangul Compatibility Jamo
+                || (0x1100...0x11FF).contains(v)    // Hangul Jamo
+                || (0xA960...0xA97C).contains(v)    // Hangul Jamo Extended-A
+                || (0xD7B0...0xD7FB).contains(v)    // Hangul Jamo Extended-B
+        }
     }
 }

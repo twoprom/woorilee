@@ -165,6 +165,49 @@ final class ManualHanjaModelsTests: XCTestCase {
         XCTAssertNil(target)
     }
 
+    func testDocumentTargetStopsAtHanjaCharacter() {
+        let target = manualHanjaTarget(
+            fromLeftContext: "韓國대한민국",
+            actualRange: NSRange(location: 0, length: 6),
+            caretLocation: 6
+        )
+
+        XCTAssertEqual(target?.sourceText, "대한민국")
+        XCTAssertEqual(target?.replacementRange, NSRange(location: 2, length: 4))
+    }
+
+    func testDocumentTargetStopsAtHanjaInMiddle() {
+        let target = manualHanjaTarget(
+            fromLeftContext: "대한韓國민국",
+            actualRange: NSRange(location: 0, length: 6),
+            caretLocation: 6
+        )
+
+        XCTAssertEqual(target?.sourceText, "민국")
+        XCTAssertEqual(target?.replacementRange, NSRange(location: 4, length: 2))
+    }
+
+    func testDocumentTargetReturnsNilWhenCaretIsRightAfterHanja() {
+        let target = manualHanjaTarget(
+            fromLeftContext: "대한민국韓",
+            actualRange: NSRange(location: 0, length: 5),
+            caretLocation: 5
+        )
+
+        XCTAssertNil(target)
+    }
+
+    func testDocumentTargetStopsAtLatinCharacter() {
+        let target = manualHanjaTarget(
+            fromLeftContext: "abc대한민국",
+            actualRange: NSRange(location: 0, length: 7),
+            caretLocation: 7
+        )
+
+        XCTAssertEqual(target?.sourceText, "대한민국")
+        XCTAssertEqual(target?.replacementRange, NSRange(location: 3, length: 4))
+    }
+
     func testCompositionTargetStopsAtParenthesisBeforeMarkedText() {
         let target = manualHanjaTarget(
             fromCommittedLeftText: "(가",
