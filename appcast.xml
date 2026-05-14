@@ -8,7 +8,7 @@
             <sparkle:version>103</sparkle:version>
             <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.3/woorilee.dmg" length="98632704" type="application/octet-stream" sparkle:edSignature="ODzIaPyu37xKB76lKEkLcbTK2FTSh45k5OFPZud2CNTPlEU4r1YOss3TJvyQ7IjlUlxG/8X+mUJvaN8qobxXBA=="/>
+            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.3/woorilee.zip" length="101267150" type="application/octet-stream" sparkle:edSignature="uj6u/N4ulh42WT4b6dkTzg+1tr9Hg1GtUUgxRO2ZsdUzA1s4rCH/Si+8LjDFgnQD9ARF55tbVIVoFMJJ/lLpBg=="/>
         </item>
     </channel>
 </rss>
