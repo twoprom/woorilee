@@ -1,3 +1,6 @@
+// Tests for per-client input session behavior.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import AppKit
 import Kiwi
 import XCTest

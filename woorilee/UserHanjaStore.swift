@@ -1,7 +1,5 @@
-//
-//  UserHanjaStore.swift
-//  woorilee
-//
+// Persists user-defined Hanja dictionary entries.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

@@ -1,3 +1,6 @@
+// Tests for realtime Hanja commit and cancel matrix.
+//     Copyright (C) 2026 Seungjin Lee.
+
 // Locks the realtime Hanja commit/cancel matrix from
 // hanja-implementation-plan.md step 8 and the flush/drop table in
 // hanja-implementation-plan-plus.md section 5.3.

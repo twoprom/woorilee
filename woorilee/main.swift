@@ -1,9 +1,5 @@
-//
-//  main.swift
-//  woorilee
-//
-//  Created by 이승진 on 4/9/26.
-//
+// Entry point for the woorilee macOS Korean input method.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 

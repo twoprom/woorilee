@@ -1,7 +1,5 @@
-//
-//  HanjaCandidatePanelView.swift
-//  woorilee
-//
+// SwiftUI view for the Hanja candidate panel.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import SwiftUI
 

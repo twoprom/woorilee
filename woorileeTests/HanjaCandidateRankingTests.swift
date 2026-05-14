@@ -1,3 +1,6 @@
+// Tests for Hanja candidate ranking logic.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import Foundation
 import LibHangul
 import XCTest

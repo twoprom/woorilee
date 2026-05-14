@@ -1,7 +1,5 @@
-//
-//  HanjaCandidatePanelController.swift
-//  woorilee
-//
+// Non-activating candidate picker panel for manual Hanja conversion.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import SwiftUI

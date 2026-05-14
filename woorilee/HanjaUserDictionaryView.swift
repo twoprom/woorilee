@@ -1,7 +1,5 @@
-//
-//  HanjaUserDictionaryView.swift
-//  woorilee
-//
+// SwiftUI view for user-defined Hanja dictionary management.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import AppKit
 import SwiftUI

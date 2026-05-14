@@ -1,7 +1,5 @@
-//
-//  HanjaConversionModels.swift
-//  woorilee
-//
+// CompositionMode and SegmentLockKey value types for Hanja conversion.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 import Kiwi

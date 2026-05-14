@@ -1,3 +1,6 @@
+// Tests for pending usage events flush and drop.
+//     Copyright (C) 2026 Seungjin Lee.
+
 // Locks the pendingUsageEvents flush/drop table from
 // hanja-implementation-plan-plus.md section 5.3.
 //

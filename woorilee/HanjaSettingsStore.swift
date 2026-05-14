@@ -1,9 +1,5 @@
-//
-//  HanjaSettingsStore.swift
-//  woorilee
-//
-//  Created by Codex on 4/22/26.
-//
+// Menu-backed settings for Hanja conversion preferences.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

@@ -1,3 +1,6 @@
+// Tests for key-event normalization and classification.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import AppKit
 import XCTest
 @testable import woorilee

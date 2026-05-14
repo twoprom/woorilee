@@ -1,3 +1,6 @@
+// Tests for realtime Hanja analysis flow.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import Cocoa
 import Kiwi
 import XCTest

@@ -1,7 +1,5 @@
-//
-//  InputSession.swift
-//  woorilee
-//
+// Per-client input session state and session cache.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import Foundation

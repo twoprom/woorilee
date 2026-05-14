@@ -1,7 +1,5 @@
-//
-//  AboutWindowController.swift
-//  woorilee
-//
+// About window controller for the woorilee input method.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import AppKit
 import Sparkle

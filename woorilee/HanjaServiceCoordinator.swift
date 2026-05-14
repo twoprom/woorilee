@@ -1,7 +1,5 @@
-//
-//  HanjaServiceCoordinator.swift
-//  woorilee
-//
+// Singleton coordinating Hanja menu state, warm-up, and realtime conversion.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import IMKSwift

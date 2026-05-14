@@ -1,9 +1,5 @@
-//
-//  HanjaDictionaryService.swift
-//  woorilee
-//
-//  Created by Codex on 4/22/26.
-//
+// Loads and queries the bundled hanja dictionary.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 import LibHangul

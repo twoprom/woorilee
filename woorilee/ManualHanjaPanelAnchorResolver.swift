@@ -1,7 +1,5 @@
-//
-//  ManualHanjaPanelAnchorResolver.swift
-//  woorilee
-//
+// Anchor-rect probing to place the Hanja panel near the caret.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import IMKSwift

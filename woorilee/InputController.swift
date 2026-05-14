@@ -1,9 +1,5 @@
-//
-//  InputController.swift
-//  woorilee
-//
-//  Created by 이승진 on 4/9/26.
-//
+// IMK-facing orchestration and event dispatch for woorilee.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import IMKSwift

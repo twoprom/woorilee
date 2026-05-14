@@ -1,9 +1,5 @@
-//
-//  KiwiAnalysisService.swift
-//  woorilee
-//
-//  Created by Codex on 4/22/26.
-//
+// Background warm-up of Kiwi morphological analyzer.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 import Kiwi

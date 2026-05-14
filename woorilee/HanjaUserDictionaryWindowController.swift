@@ -1,7 +1,5 @@
-//
-//  HanjaUserDictionaryWindowController.swift
-//  woorilee
-//
+// Window controller for the user Hanja dictionary editor.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import AppKit
 import SwiftUI

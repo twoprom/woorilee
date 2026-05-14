@@ -1,7 +1,5 @@
-//
-//  InputCompositionEngine.swift
-//  woorilee
-//
+// Marked-text and replacement-range bookkeeping for IMKTextInput.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import IMKSwift

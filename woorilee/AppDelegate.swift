@@ -1,9 +1,5 @@
-//
-//  AppDelegate.swift
-//  woorilee
-//
-//  Created by 이승진 on 4/9/26.
-//
+// Application delegate and IMKServer bootstrap for woorilee.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 import IMKSwift

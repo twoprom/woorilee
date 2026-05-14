@@ -1,3 +1,6 @@
+// Tests for user-defined Hanja dictionary persistence.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import Foundation
 import XCTest
 @testable import woorilee

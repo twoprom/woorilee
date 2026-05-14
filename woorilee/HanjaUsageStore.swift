@@ -1,7 +1,5 @@
-//
-//  HanjaUsageStore.swift
-//  woorilee
-//
+// Persists per-candidate usage statistics for ranking.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

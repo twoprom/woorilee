@@ -1,9 +1,5 @@
-//
-//  HanjaWarmUpPanelController.swift
-//  woorilee
-//
-//  Created by Codex on 4/22/26.
-//
+// Non-activating loading panel shown during Hanja/Kiwi warm-up.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 

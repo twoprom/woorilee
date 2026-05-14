@@ -1,7 +1,5 @@
-//
-//  HanjaPersonalizationModels.swift
-//  woorilee
-//
+// Shared Codable types for Hanja candidate key and source.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

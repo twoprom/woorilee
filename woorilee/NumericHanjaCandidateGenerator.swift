@@ -1,7 +1,5 @@
-//
-//  NumericHanjaCandidateGenerator.swift
-//  woorilee
-//
+// Generates Hanja candidates for numeric input.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

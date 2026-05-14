@@ -1,7 +1,5 @@
-//
-//  AppRuntimePaths.swift
-//  woorilee
-//
+// Centralized on-disk paths for Application Support and bundled resources.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

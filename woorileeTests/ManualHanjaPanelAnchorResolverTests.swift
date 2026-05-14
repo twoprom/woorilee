@@ -1,3 +1,6 @@
+// Tests for Hanja panel anchor probing.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import Cocoa
 import XCTest
 @testable import woorilee

@@ -1,3 +1,6 @@
+// Test double implementing IMKTextInput for unit tests.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import AppKit
 import InputMethodKit
 

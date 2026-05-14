@@ -1,7 +1,5 @@
-//
-//  ManualHanjaModels.swift
-//  woorilee
-//
+// Value types for the manual Hanja panel target, notice, and content.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Foundation
 

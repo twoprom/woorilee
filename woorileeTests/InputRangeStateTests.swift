@@ -1,3 +1,6 @@
+// Tests for input range state management.
+//     Copyright (C) 2026 Seungjin Lee.
+
 import Foundation
 import XCTest
 @testable import woorilee

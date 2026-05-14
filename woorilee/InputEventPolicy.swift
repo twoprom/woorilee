@@ -1,7 +1,5 @@
-//
-//  InputEventPolicy.swift
-//  woorilee
-//
+// Pure key-event normalization and classification for two-beolsik input.
+//     Copyright (C) 2026 Seungjin Lee.
 
 import Cocoa
 
