@@ -391,12 +391,17 @@ final class InputController: IMKInputSessionController {
         hanjaServices.makeMenu(
             target: self,
             realtimeAction: #selector(toggleRealtimeHanjaConversion(_:)),
-            manageUserDictionaryAction: #selector(openUserHanjaDictionary(_:))
+            manageUserDictionaryAction: #selector(openUserHanjaDictionary(_:)),
+            aboutAction: #selector(showAbout(_:))
         )
     }
 
     @objc func openUserHanjaDictionary(_ sender: Any?) {
         hanjaServices.showUserDictionaryWindow()
+    }
+
+    @objc func showAbout(_ sender: Any?) {
+        hanjaServices.showAboutWindow()
     }
 
     @objc func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {

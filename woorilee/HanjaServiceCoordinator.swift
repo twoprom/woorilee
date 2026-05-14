@@ -26,6 +26,7 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     private enum MenuTitle {
         static let realtimeConversion = "실시간 변환"
         static let manageUserDictionary = "漢字 사전 편집…"
+        static let about = "우리입력기에 관하여"
     }
 
     private let kiwiService = KiwiAnalysisService.shared
@@ -120,7 +121,8 @@ func hideWarmUpPanelIfNeeded() {
     func makeMenu(
         target: AnyObject,
         realtimeAction: Selector,
-        manageUserDictionaryAction: Selector
+        manageUserDictionaryAction: Selector,
+        aboutAction: Selector
     ) -> NSMenu {
         let menu = NSMenu(title: "우리입력기")
         menu.autoenablesItems = false
@@ -146,6 +148,15 @@ func hideWarmUpPanelIfNeeded() {
         manageItem.isEnabled = isManualHanjaAvailable
         menu.addItem(manageItem)
 
+        menu.addItem(.separator())
+        let aboutItem = NSMenuItem(
+            title: MenuTitle.about,
+            action: aboutAction,
+            keyEquivalent: ""
+        )
+        aboutItem.target = target
+        menu.addItem(aboutItem)
+
         currentMenu = menu
         realtimeMenuItem = realtimeItem
         manageUserDictionaryMenuItem = manageItem
@@ -155,6 +166,10 @@ func hideWarmUpPanelIfNeeded() {
 
     func showUserDictionaryWindow() {
         userDictionaryWindowController.show()
+    }
+
+    func showAboutWindow() {
+        AboutPanelPresenter.show()
     }
 
     func toggleRealtimeHanjaConversion() {
