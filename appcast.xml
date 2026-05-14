@@ -3,12 +3,12 @@
     <channel>
         <title>woorilee</title>
         <item>
-            <title>1.0.2</title>
-            <pubDate>Thu, 14 May 2026 18:18:28 +0900</pubDate>
-            <sparkle:version>101</sparkle:version>
-            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
+            <title>1.0.3</title>
+            <pubDate>Wed, 14 May 2026 23:30:00 +0900</pubDate>
+            <sparkle:version>103</sparkle:version>
+            <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.2/woorilee.dmg" length="98633216" type="application/octet-stream" sparkle:edSignature="yZp6k33ttQgSZk7j+X9wN9uVVBfolBELtRq80CdM+2T+oRuuh1Aa19D7luJk4GtgXI1Cx8oi+aAT8lNPkcVKAQ=="/>
+            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.3/woorilee.dmg" length="98632704" type="application/octet-stream" sparkle:edSignature="ODzIaPyu37xKB76lKEkLcbTK2FTSh45k5OFPZud2CNTPlEU4r1YOss3TJvyQ7IjlUlxG/8X+mUJvaN8qobxXBA=="/>
         </item>
     </channel>
 </rss>
