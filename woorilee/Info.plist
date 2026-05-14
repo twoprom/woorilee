@@ -57,6 +57,10 @@
 	<string>https://raw.githubusercontent.com/twoprom/woorilee/main/appcast.xml</string>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUEnableDownloaderService</key>
+	<true/>
 	<key>SUPublicEDKey</key>
 	<string>Ob4uan3xQfQ9+52MEBSMCyvZIjRnAUBtg0lQGbQxL7Y=</string>
 	<key>TICapsLockLanguageSwitchCapable</key>
