@@ -5,10 +5,10 @@
         <item>
             <title>1.0.3</title>
             <pubDate>Wed, 14 May 2026 23:30:00 +0900</pubDate>
-            <sparkle:version>104</sparkle:version>
+            <sparkle:version>105</sparkle:version>
             <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.3/woorilee.zip" length="100437028" type="application/octet-stream" sparkle:edSignature="Fs1nvZ/hVlHerpCcCPI6odJfCd3whc+RZHj3OrjktX6D03vwleLVBQQdK0Juwc+ju3SqGJAXjCNOjIRgWBj+Dg=="/>
+            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.3/woorilee.zip" length="100437143" type="application/octet-stream" sparkle:edSignature="KD/uCC0jkkLOw5pXErK6yf48LXGps5HfzhiDvjSeG0ZkBllfFePgAi85ZNMRg7CpkzVCRknc2Sl9hOj8QtH/DQ=="/>
         </item>
     </channel>
 </rss>
