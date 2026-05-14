@@ -120,7 +120,7 @@ final class InputController: IMKInputSessionController {
 
     override func inputText(_ string: String, client sender: any IMKTextInput) -> Bool {
         let session = inputSession(for: sender)
-        inputLogger.info("woorilee: inputText text=\(string, privacy: .public)")
+        inputLogger.info("woorilee: inputText text=\(string, privacy: .private)")
         let currentModifierFlags = InputEventPolicy.currentSessionModifierFlags()
 
         if isBareNewlineText(string) {
