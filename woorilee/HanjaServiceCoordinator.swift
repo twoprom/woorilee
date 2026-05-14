@@ -169,7 +169,7 @@ func hideWarmUpPanelIfNeeded() {
     }
 
     func showAboutWindow() {
-        AboutPanelPresenter.show()
+        AboutWindowController.shared.show()
     }
 
     func toggleRealtimeHanjaConversion() {

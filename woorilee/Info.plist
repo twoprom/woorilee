@@ -53,6 +53,12 @@
 	<string>$(PRODUCT_MODULE_NAME).InputController</string>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/twoprom/woorilee/main/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUPublicEDKey</key>
+	<string>Ob4uan3xQfQ9+52MEBSMCyvZIjRnAUBtg0lQGbQxL7Y=</string>
 	<key>TICapsLockLanguageSwitchCapable</key>
 	<true/>
 	<key>TISIconIsTemplate</key>
