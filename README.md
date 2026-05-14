@@ -17,7 +17,7 @@
 
 ## 설치
 
-- GitHub Releases에서 확인하세요. macOS 26.0 이상이 필요합니다.
+- GitHub Releases에서 확인하세요. macOS 26.0 이상이 필요합니다. zip 파일 안의 `.app` 번들을 `/Library/Input Methods/` 또는 `~/Library/Input Methods/`로 복사하세요.
 
 ## 사용법
 
