@@ -1,0 +1,2 @@
+# Kiwi model files are required at runtime and are too large/noisy for normal diffs.
+woorilee/KiwiModels/* filter=lfs diff=lfs merge=lfs -text

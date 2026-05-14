@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+dest="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja"
+/bin/mkdir -p "$dest"
+for name in hanja.txt freq-hanja.txt freq-hanjaeo.txt; do
+  /bin/rm -f "$dest/$name"
+  /bin/cp "${PROJECT_DIR}/woorilee/data/hanja/$name" "$dest/$name"
+done
+

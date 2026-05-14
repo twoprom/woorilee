@@ -1,0 +1,24 @@
+{
+  "originHash" : "18a8316b3c2d172d4f4a0ee27f8c957a79bc4feba7f6eaecb9cec7918b8b2d77",
+  "pins" : [
+    {
+      "identity" : "imkswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vChewing/IMKSwift.git",
+      "state" : {
+        "revision" : "be4e776cc0b93bda31ce3904005bf4d94526de19",
+        "version" : "26.3.7"
+      }
+    },
+    {
+      "identity" : "libhangul-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Meapri/libhangul-swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "d50f34b82deebc3c44a3b0a88ea0849f7230609c"
+      }
+    }
+  ],
+  "version" : 3
+}

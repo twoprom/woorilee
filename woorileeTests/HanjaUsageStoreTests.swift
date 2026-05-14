@@ -1,0 +1,88 @@
+import Foundation
+import XCTest
+@testable import woorilee
+
+final class HanjaUsageStoreTests: XCTestCase {
+    private var temporaryDirectoryURL: URL!
+
+    override func setUpWithError() throws {
+        let baseURL = FileManager.default.temporaryDirectory
+        temporaryDirectoryURL = baseURL.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: temporaryDirectoryURL,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+    }
+
+    override func tearDownWithError() throws {
+        if let temporaryDirectoryURL {
+            try? FileManager.default.removeItem(at: temporaryDirectoryURL)
+        }
+        temporaryDirectoryURL = nil
+    }
+
+    func testRecordSelectionUpdatesCountLastSelectedAtAndReloadsAfterFlush() {
+        let firstDate = Date(timeIntervalSince1970: 1_000)
+        let secondDate = Date(timeIntervalSince1970: 2_000)
+        var dates = [firstDate, secondDate]
+        let storeURL = makeStoreURL()
+        let store = HanjaUsageStore(
+            storageURL: storeURL,
+            debounceInterval: 60,
+            dateProvider: { dates.removeFirst() }
+        )
+        store.loadFromDisk()
+
+        store.recordSelection(lookupKey: "한자", value: "漢字")
+        store.recordSelection(lookupKey: "한자", value: "漢字")
+
+        let key = HanjaCandidateKey(reading: "한자", value: "漢字")
+        XCTAssertEqual(store.usageCount(for: key), 2)
+        XCTAssertEqual(store.usageRecord(for: key)?.lastSelectedAt, secondDate)
+
+        store.flushNow()
+
+        let reloadedStore = HanjaUsageStore(storageURL: storeURL, debounceInterval: 60)
+        reloadedStore.loadFromDisk()
+        XCTAssertEqual(reloadedStore.usageCount(for: key), 2)
+        XCTAssertEqual(reloadedStore.usageRecord(for: key)?.lastSelectedAt, secondDate)
+    }
+
+    func testLoadCreatesParentDirectoryWhenStoreIsMissing() {
+        let storeURL = makeStoreURL()
+        let parentDirectoryURL = storeURL.deletingLastPathComponent()
+        let store = HanjaUsageStore(storageURL: storeURL, debounceInterval: 60)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: parentDirectoryURL.path))
+
+        store.loadFromDisk()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: parentDirectoryURL.path))
+        XCTAssertTrue(store.usageCountsByKey.isEmpty)
+    }
+
+    func testMalformedJSONRecoversAsEmptyStore() throws {
+        let storeURL = makeStoreURL()
+        try FileManager.default.createDirectory(
+            at: storeURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+        try Data("not-json".utf8).write(to: storeURL, options: .atomic)
+
+        let store = HanjaUsageStore(storageURL: storeURL, debounceInterval: 60)
+        store.loadFromDisk()
+
+        XCTAssertTrue(store.usageCountsByKey.isEmpty)
+        XCTAssertNil(store.usageRecord(for: HanjaCandidateKey(reading: "한자", value: "漢字")))
+    }
+
+    private func makeStoreURL() -> URL {
+        temporaryDirectoryURL
+            .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("woorilee", isDirectory: true)
+            .appendingPathComponent("Hanja", isDirectory: true)
+            .appendingPathComponent("usage-counts.json", isDirectory: false)
+    }
+}

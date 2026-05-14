@@ -1,0 +1,651 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		601B87402F97CF6700D354E4 /* Kiwi in Frameworks */ = {isa = PBXBuildFile; productRef = 601B873F2F97CF6700D354E4 /* Kiwi */; };
+		601B87412F97CF6700D354E4 /* Kiwi in Frameworks */ = {isa = PBXBuildFile; productRef = 601B873F2F97CF6700D354E4 /* Kiwi */; };
+		6063077C2F97EA6500498631 /* IMKSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6063077B2F97EA6500498631 /* IMKSwift */; };
+		6063077D2F97EA6500498631 /* IMKSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 6063077B2F97EA6500498631 /* IMKSwift */; };
+		606B21BB2F87DA4400028AA0 /* LibHangul in Frameworks */ = {isa = PBXBuildFile; productRef = 606B21BA2F87DA4400028AA0 /* LibHangul */; };
+		606B21BC2F87DA4400028AA0 /* LibHangul in Frameworks */ = {isa = PBXBuildFile; productRef = 606B21BA2F87DA4400028AA0 /* LibHangul */; };
+		60F100012FA1234500ABC001 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F100032FA1234500ABC001 /* XCTest.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		60F100092FA1234500ABC001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 606B218E2F87D68300028AA0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 606B21952F87D68300028AA0;
+			remoteInfo = woorilee;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		606B21962F87D68300028AA0 /* woorilee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = woorilee.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60F100022FA1234500ABC001 /* woorileeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = woorileeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		60F100032FA1234500ABC001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		606B21B32F87D7B500028AA0 /* Exceptions for "woorilee" folder in "woorilee" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"data/hanja/freq-hanja.txt",
+				"data/hanja/freq-hanjaeo.txt",
+				data/hanja/hanja.txt,
+				Info.plist,
+				KiwiModels/combiningRule.txt,
+				KiwiModels/cong.mdl,
+				KiwiModels/default.dict,
+				KiwiModels/dialect.dict,
+				KiwiModels/extract.mdl,
+				KiwiModels/multi.dict,
+				KiwiModels/nounchr.mdl,
+				KiwiModels/sj.morph,
+				KiwiModels/typo.dict,
+			);
+			target = 606B21952F87D68300028AA0 /* woorilee */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		606B21982F87D68300028AA0 /* woorilee */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				606B21B32F87D7B500028AA0 /* Exceptions for "woorilee" folder in "woorilee" target */,
+			);
+			path = woorilee;
+			sourceTree = "<group>";
+		};
+		60F100042FA1234500ABC001 /* woorileeTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = woorileeTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		606B21932F87D68300028AA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				606B21BB2F87DA4400028AA0 /* LibHangul in Frameworks */,
+				6063077C2F97EA6500498631 /* IMKSwift in Frameworks */,
+				601B87402F97CF6700D354E4 /* Kiwi in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F100052FA1234500ABC001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				606B21BC2F87DA4400028AA0 /* LibHangul in Frameworks */,
+				6063077D2F97EA6500498631 /* IMKSwift in Frameworks */,
+				601B87412F97CF6700D354E4 /* Kiwi in Frameworks */,
+				60F100012FA1234500ABC001 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		606B218D2F87D68300028AA0 = {
+			isa = PBXGroup;
+			children = (
+				606B21982F87D68300028AA0 /* woorilee */,
+				60F100042FA1234500ABC001 /* woorileeTests */,
+				60F1000E2FA1234500ABC001 /* Frameworks */,
+				606B21972F87D68300028AA0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		606B21972F87D68300028AA0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				606B21962F87D68300028AA0 /* woorilee.app */,
+				60F100022FA1234500ABC001 /* woorileeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		60F1000E2FA1234500ABC001 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				60F100032FA1234500ABC001 /* XCTest.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		606B21952F87D68300028AA0 /* woorilee */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 606B21A42F87D68400028AA0 /* Build configuration list for PBXNativeTarget "woorilee" */;
+			buildPhases = (
+				606B21922F87D68300028AA0 /* Sources */,
+				606B21932F87D68300028AA0 /* Frameworks */,
+				606B21942F87D68300028AA0 /* Resources */,
+				60D1C0012FA0000000ABC001 /* Copy Bundled Hanja Dictionary */,
+				60D1C0032FA0000000ABC001 /* Copy Bundled Kiwi Models */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				606B21982F87D68300028AA0 /* woorilee */,
+			);
+			name = woorilee;
+			packageProductDependencies = (
+				606B21BA2F87DA4400028AA0 /* LibHangul */,
+				601B873F2F97CF6700D354E4 /* Kiwi */,
+				6063077B2F97EA6500498631 /* IMKSwift */,
+			);
+			productName = woorilee;
+			productReference = 606B21962F87D68300028AA0 /* woorilee.app */;
+			productType = "com.apple.product-type.application";
+		};
+		60F100062FA1234500ABC001 /* woorileeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60F1000D2FA1234500ABC001 /* Build configuration list for PBXNativeTarget "woorileeTests" */;
+			buildPhases = (
+				60F100082FA1234500ABC001 /* Sources */,
+				60F100052FA1234500ABC001 /* Frameworks */,
+				60F100072FA1234500ABC001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				60F1000A2FA1234500ABC001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				60F100042FA1234500ABC001 /* woorileeTests */,
+			);
+			name = woorileeTests;
+			packageProductDependencies = (
+				606B21BA2F87DA4400028AA0 /* LibHangul */,
+				601B873F2F97CF6700D354E4 /* Kiwi */,
+				6063077B2F97EA6500498631 /* IMKSwift */,
+			);
+			productName = woorileeTests;
+			productReference = 60F100022FA1234500ABC001 /* woorileeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		606B218E2F87D68300028AA0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2640;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					606B21952F87D68300028AA0 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+				};
+			};
+			buildConfigurationList = 606B21912F87D68300028AA0 /* Build configuration list for PBXProject "woorilee" */;
+			developmentRegion = ko;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ko,
+				Base,
+			);
+			mainGroup = 606B218D2F87D68300028AA0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				606B21B92F87DA4400028AA0 /* XCRemoteSwiftPackageReference "libhangul-swift" */,
+				601B873E2F97CF6700D354E4 /* XCLocalSwiftPackageReference "Kiwi/bindings/swift" */,
+				6063077A2F97EA6500498631 /* XCRemoteSwiftPackageReference "IMKSwift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 606B21972F87D68300028AA0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				606B21952F87D68300028AA0 /* woorilee */,
+				60F100062FA1234500ABC001 /* woorileeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		606B21942F87D68300028AA0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F100072FA1234500ABC001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		60D1C0012FA0000000ABC001 /* Copy Bundled Hanja Dictionary */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/woorilee/data/hanja/hanja.txt",
+				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanja.txt",
+				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanjaeo.txt",
+			);
+			name = "Copy Bundled Hanja Dictionary";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja.txt",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanja.txt",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanjaeo.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\ndest=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja\"\n/bin/mkdir -p \"$dest\"\nfor name in hanja.txt freq-hanja.txt freq-hanjaeo.txt; do\n  /bin/rm -f \"$dest/$name\"\n  /bin/cp \"${PROJECT_DIR}/woorilee/data/hanja/$name\" \"$dest/$name\"\ndone\n";
+		};
+		60D1C0032FA0000000ABC001 /* Copy Bundled Kiwi Models */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/woorilee/KiwiModels/combiningRule.txt",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/cong.mdl",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/default.dict",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/dialect.dict",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/extract.mdl",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/multi.dict",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/nounchr.mdl",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/sj.morph",
+				"$(PROJECT_DIR)/woorilee/KiwiModels/typo.dict",
+			);
+			name = "Copy Bundled Kiwi Models";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/combiningRule.txt",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/cong.mdl",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/default.dict",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/dialect.dict",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/extract.mdl",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/multi.dict",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/nounchr.mdl",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/sj.morph",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/KiwiModels/typo.dict",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nsrc_dir=\"${PROJECT_DIR}/woorilee/KiwiModels\"\ndst_dir=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/KiwiModels\"\n/bin/mkdir -p \"${dst_dir}\"\nfor file in combiningRule.txt cong.mdl default.dict dialect.dict extract.mdl multi.dict nounchr.mdl sj.morph typo.dict; do\n  /bin/rm -f \"${dst_dir}/${file}\"\n  /bin/cp \"${src_dir}/${file}\" \"${dst_dir}/${file}\"\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		606B21922F87D68300028AA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60F100082FA1234500ABC001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		60F1000A2FA1234500ABC001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 606B21952F87D68300028AA0 /* woorilee */;
+			targetProxy = 60F100092FA1234500ABC001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		606B21A22F87D68400028AA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		606B21A32F87D68400028AA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		606B21A52F87D68400028AA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = mainicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = woorilee/woorilee.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_DEBUG_DYLIB = YES;
+				ENABLE_DEBUG_DYLIB_SUPPORT = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = woorilee/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "우리입력기";
+				INFOPLIST_KEY_LSBackgroundOnly = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorilee;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		606B21A62F87D68400028AA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = mainicon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = woorilee/woorilee.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_DEBUG_DYLIB_SUPPORT = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = woorilee/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "우리입력기";
+				INFOPLIST_KEY_LSBackgroundOnly = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorilee;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		60F1000B2FA1234500ABC001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = woorileeTests;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorileeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/woorilee.app/Contents/MacOS/woorilee";
+				TEST_TARGET_NAME = woorilee;
+			};
+			name = Debug;
+		};
+		60F1000C2FA1234500ABC001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = woorileeTests;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorileeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/woorilee.app/Contents/MacOS/woorilee";
+				TEST_TARGET_NAME = woorilee;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		606B21912F87D68300028AA0 /* Build configuration list for PBXProject "woorilee" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				606B21A22F87D68400028AA0 /* Debug */,
+				606B21A32F87D68400028AA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		606B21A42F87D68400028AA0 /* Build configuration list for PBXNativeTarget "woorilee" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				606B21A52F87D68400028AA0 /* Debug */,
+				606B21A62F87D68400028AA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60F1000D2FA1234500ABC001 /* Build configuration list for PBXNativeTarget "woorileeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F1000B2FA1234500ABC001 /* Debug */,
+				60F1000C2FA1234500ABC001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		601B873E2F97CF6700D354E4 /* XCLocalSwiftPackageReference "Kiwi/bindings/swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Kiwi/bindings/swift;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6063077A2F97EA6500498631 /* XCRemoteSwiftPackageReference "IMKSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vChewing/IMKSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 26.3.7;
+			};
+		};
+		606B21B92F87DA4400028AA0 /* XCRemoteSwiftPackageReference "libhangul-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Meapri/libhangul-swift.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		601B873F2F97CF6700D354E4 /* Kiwi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 601B873E2F97CF6700D354E4 /* XCLocalSwiftPackageReference "Kiwi/bindings/swift" */;
+			productName = Kiwi;
+		};
+		6063077B2F97EA6500498631 /* IMKSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6063077A2F97EA6500498631 /* XCRemoteSwiftPackageReference "IMKSwift" */;
+			productName = IMKSwift;
+		};
+		606B21BA2F87DA4400028AA0 /* LibHangul */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 606B21B92F87DA4400028AA0 /* XCRemoteSwiftPackageReference "libhangul-swift" */;
+			productName = LibHangul;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 606B218E2F87D68300028AA0 /* Project object */;
+}

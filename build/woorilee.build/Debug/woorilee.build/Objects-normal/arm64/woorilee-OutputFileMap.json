@@ -1,0 +1,249 @@
+{
+  "" : {
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/woorilee-primary.dia",
+    "emit-module-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/woorilee-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/woorilee-primary-emit-module.dia",
+    "pch" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/woorilee-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/woorilee-primary.swiftdeps"
+  },
+  "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/AppDelegate.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppDelegate~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/AppRuntimePaths.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/AppRuntimePaths~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaCandidatePanelController.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelController~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaCandidatePanelView.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaCandidatePanelView~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaConversionModels.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaConversionModels~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaDictionaryService.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaDictionaryService~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaPersonalizationModels.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaPersonalizationModels~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaServiceCoordinator.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaServiceCoordinator~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaSettingsStore.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaSettingsStore~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaUsageStore.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUsageStore~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaUserDictionaryView.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryView~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaUserDictionaryWindowController.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaUserDictionaryWindowController~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/HanjaWarmUpPanelController.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/HanjaWarmUpPanelController~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/InputCompositionEngine.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputCompositionEngine~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/InputController.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputController~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/InputEventPolicy.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputEventPolicy~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/InputSession.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/InputSession~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/KiwiAnalysisService.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/KiwiAnalysisService~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/ManualHanjaModels.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaModels~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/ManualHanjaPanelAnchorResolver.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolver~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/NumericHanjaCandidateGenerator.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/NumericHanjaCandidateGenerator~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/UserHanjaStore.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/UserHanjaStore~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorilee/main.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorilee.build/Objects-normal/arm64/main~partial.swiftmodule"
+  }
+}

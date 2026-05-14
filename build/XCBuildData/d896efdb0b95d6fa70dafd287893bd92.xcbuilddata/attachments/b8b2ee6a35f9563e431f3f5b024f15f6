@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+src_dir="${PROJECT_DIR}/woorilee/KiwiModels"
+dst_dir="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/KiwiModels"
+/bin/mkdir -p "${dst_dir}"
+for file in combiningRule.txt cong.mdl default.dict dialect.dict extract.mdl multi.dict nounchr.mdl sj.morph typo.dict; do
+  /bin/rm -f "${dst_dir}/${file}"
+  /bin/cp "${src_dir}/${file}" "${dst_dir}/${file}"
+done
+

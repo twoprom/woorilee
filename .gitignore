@@ -1,0 +1,22 @@
+.DS_Store
+
+# Xcode local state and build products
+/DerivedData/
+/DerivedDataPlan/
+/.xcode-home/
+/.xcode-swiftpm-modulecache/
+xcuserdata/
+*.xcuserstate
+
+# Local upstream Kiwi downloads/build outputs.
+# SwiftPM consumes Kiwi/bindings/swift/Artifacts/CKiwi.xcframework instead.
+/Kiwi.xcframework/
+/KiwiModels/
+/Kiwi/bindings/swift/build/
+/Kiwi/bindings/swift/xcframework/
+/Kiwi/**/.DS_Store
+/Kiwi/**/.build/
+/Kiwi/**/.swiftpm/
+/Kiwi/**/Package.resolved
+AGENTS.md
+CLAUDE.md

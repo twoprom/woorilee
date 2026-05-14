@@ -1,0 +1,129 @@
+{
+  "" : {
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/woorileeTests-primary.dia",
+    "emit-module-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/woorileeTests-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/woorileeTests-primary-emit-module.dia",
+    "pch" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/woorileeTests-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/woorileeTests-primary.swiftdeps"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/FakeIMKTextInput.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/FakeIMKTextInput~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/HanjaCandidateRankingTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaCandidateRankingTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/HanjaUsageStoreTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/HanjaUsageStoreTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/InputEventPolicyTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputEventPolicyTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/InputRangeStateTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputRangeStateTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/InputSessionTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/InputSessionTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/ManualHanjaModelsTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaModelsTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/ManualHanjaPanelAnchorResolverTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/ManualHanjaPanelAnchorResolverTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/RealtimeHanjaAnalysisTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaAnalysisTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/RealtimeHanjaCommitCancelTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaCommitCancelTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/RealtimeHanjaUsageFlushTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/RealtimeHanjaUsageFlushTests~partial.swiftmodule"
+  },
+  "/Volumes/Workbench/open-woorilee/woorileeTests/UserHanjaStoreTests.swift" : {
+    "const-values" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.swiftconstvalues",
+    "dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.d",
+    "diagnostics" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.dia",
+    "index-unit-output-path" : "/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.o",
+    "llvm-bc" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.bc",
+    "object" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.o",
+    "swift-dependencies" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests.swiftdeps",
+    "swiftmodule" : "/Volumes/Workbench/open-woorilee/build/woorilee.build/Debug/woorileeTests.build/Objects-normal/arm64/UserHanjaStoreTests~partial.swiftmodule"
+  }
+}
