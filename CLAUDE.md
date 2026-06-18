@@ -43,6 +43,14 @@ There is no UI test target. After input-logic changes, manually verify: Hangul c
 
 ## Development workflow
 
+**Always build after code changes.** After any source modification, run a build automatically (do not wait to be asked) so the running input method is refreshed:
+
+```sh
+xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build
+```
+
+The build phase script then overwrites `/Library/Input Methods/woorilee.app` and restarts the process automatically. Never set `WOORILEE_SKIP_INSTALL=1` or `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0` — the auto-install must run on every build.
+
 After code modifications, the standard Xcode build process handles deployment automatically:
 
 1. Build from Xcode or `xcodebuild` command

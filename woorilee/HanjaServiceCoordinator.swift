@@ -238,7 +238,7 @@ func hideWarmUpPanelIfNeeded() {
         }
 
         if anchorResolution.rect == nil {
-            manualHanjaPanelLogger.warning("anchor rect invalid; showing panel with fallback position")
+            manualHanjaPanelLogger.warning("anchor rect unresolved; reusing last known panel position")
         }
         candidatePanelController.show(
             content: content,

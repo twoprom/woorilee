@@ -20,6 +20,10 @@ final class FakeIMKTextInput: NSObject, IMKTextInput {
     private(set) var markCalls: [MarkCall] = []
     var stubbedMarkedRange: NSRange = NSRange(location: NSNotFound, length: 0)
     var stubbedSelectedRange: NSRange = NSRange(location: 0, length: 0)
+    /// Stub for `firstRect(forCharacterRange:actualRange:)`. Returns `.zero` by default.
+    var firstRectHandler: ((NSRange) -> NSRect)?
+    /// Stub for the line-height rectangle out-param of `attributes(forCharacterIndex:)`.
+    var lineHeightRectHandler: ((Int) -> NSRect)?
 
     func insertText(_ string: Any!, replacementRange: NSRange) {
         let text = (string as? String) ?? (string as? NSAttributedString)?.string ?? ""
@@ -58,7 +62,13 @@ final class FakeIMKTextInput: NSObject, IMKTextInput {
     func attributes(
         forCharacterIndex index: Int,
         lineHeightRectangle: UnsafeMutablePointer<NSRect>?
-    ) -> [AnyHashable: Any]? { nil }
+    ) -> [AnyHashable: Any]? {
+        guard let rect = lineHeightRectHandler?(index) else {
+            return nil
+        }
+        lineHeightRectangle?.pointee = rect
+        return [:]
+    }
     func validAttributesForMarkedText() -> [Any]? { nil }
     func overrideKeyboard(withKeyboardNamed name: String?) {}
     func selectMode(_ modeIdentifier: String?) {}
@@ -68,5 +78,8 @@ final class FakeIMKTextInput: NSObject, IMKTextInput {
     func supportsProperty(_ property: TSMDocumentPropertyTag) -> Bool { false }
     func uniqueClientIdentifierString() -> String? { nil }
     func string(from range: NSRange, actualRange: NSRangePointer?) -> String? { nil }
-    func firstRect(forCharacterRange aRange: NSRange, actualRange: NSRangePointer?) -> NSRect { .zero }
+    func firstRect(forCharacterRange aRange: NSRange, actualRange: NSRangePointer?) -> NSRect {
+        actualRange?.pointee = aRange
+        return firstRectHandler?(aRange) ?? .zero
+    }
 }

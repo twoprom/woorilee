@@ -22,7 +22,7 @@ final class HanjaCandidatePanelController {
             + (candidateRowSpacing * (visibleCandidateCount - 1))
             + contentVerticalPadding
         static let candidateFooterHeight: CGFloat = 42
-        static let gapFromText: CGFloat = 2
+        static let gapFromText: CGFloat = 4
         static let cornerRadius: CGFloat = 15
         static let minContentHeight: CGFloat = 1
         static let horizontalInset: CGFloat = 6
@@ -40,6 +40,9 @@ final class HanjaCandidatePanelController {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<HanjaCandidatePanelView>?
     private var selectionHandler: ((HanjaCandidatePanelSelection) -> Void)?
+    /// Last successfully resolved anchor; reused when a later resolution fails so the
+    /// panel stays put instead of jumping. See candidate-window-positioning plan §7.4 (D1).
+    private var lastAnchorRect: NSRect?
 
     private init() {}
 
@@ -180,10 +183,21 @@ final class HanjaCandidatePanelController {
     private func updatePanelFrame(
         _ panel: NSPanel,
         desiredContentSize: NSSize,
-        anchorRect: NSRect?
+        anchorRect resolvedAnchor: NSRect?
     ) {
-        let anchorRect = anchorRect ?? fallbackAnchorRect()
-        let screen = screen(containing: anchorRect) ?? screen(containing: NSEvent.mouseLocation) ?? NSScreen.main ?? NSScreen.screens.first
+        if let resolvedAnchor {
+            lastAnchorRect = resolvedAnchor
+        }
+
+        // Anchor failed this time: reuse the last good anchor so the panel stays put.
+        // Only when no anchor was ever resolved do we fall back to centering.
+        guard let anchorRect = resolvedAnchor ?? lastAnchorRect else {
+            panel.setContentSize(desiredContentSize)
+            center(panel)
+            return
+        }
+
+        let screen = screen(containing: anchorRect) ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen else {
             panel.setContentSize(desiredContentSize)
             center(panel)
@@ -202,52 +216,16 @@ final class HanjaCandidatePanelController {
         let fittedHeight = min(desiredContentSize.height, maxHeight)
         panel.setContentSize(NSSize(width: fittedWidth, height: fittedHeight))
 
-        let clampedX = min(
-            max(anchorRect.maxX, visibleFrame.minX + Layout.horizontalInset),
-            max(
-                visibleFrame.minX + Layout.horizontalInset,
-                visibleFrame.maxX - panel.frame.width - Layout.horizontalInset
-            )
-        )
-
-        let bottomSafe = visibleFrame.minY + Layout.verticalInset
-        let topSafe = visibleFrame.maxY - Layout.verticalInset
-        let visualBottomY = anchorRect.minY - anchorRect.height
-        let visualTopY = anchorRect.minY
-        let belowY = visualBottomY - panel.frame.height - Layout.gapFromText
-        let aboveY = visualTopY + Layout.gapFromText
-        let preferredY: CGFloat
-        if belowY >= bottomSafe {
-            preferredY = belowY
-        } else if aboveY + panel.frame.height <= topSafe {
-            preferredY = aboveY
-        } else {
-            let spaceBelow = max(visualBottomY - bottomSafe - Layout.gapFromText, 0)
-            let spaceAbove = max(topSafe - visualTopY - Layout.gapFromText, 0)
-            preferredY = spaceBelow >= spaceAbove ? belowY : aboveY
-        }
-        let clampedY = min(
-            max(preferredY, bottomSafe),
-            max(
-                bottomSafe,
-                topSafe - panel.frame.height
-            )
-        )
-        let origin = CGPoint(
-            x: clampedX,
-            y: clampedY
+        let origin = CandidatePanelOriginCalculator.origin(
+            anchorRect: anchorRect,
+            panelSize: panel.frame.size,
+            visibleFrame: visibleFrame,
+            gap: Layout.gapFromText,
+            horizontalInset: Layout.horizontalInset,
+            verticalInset: Layout.verticalInset
         )
 
         panel.setFrameOrigin(origin)
-    }
-
-    private func fallbackAnchorRect() -> NSRect {
-        NSRect(
-            x: NSEvent.mouseLocation.x,
-            y: NSEvent.mouseLocation.y,
-            width: 0,
-            height: 18
-        )
     }
 
     private func center(_ panel: NSPanel) {
@@ -266,12 +244,6 @@ final class HanjaCandidatePanelController {
     private func screen(containing rect: NSRect) -> NSScreen? {
         NSScreen.screens.first { screen in
             screen.frame.intersects(rect)
-        }
-    }
-
-    private func screen(containing point: NSPoint) -> NSScreen? {
-        NSScreen.screens.first { screen in
-            screen.frame.contains(point)
         }
     }
 }

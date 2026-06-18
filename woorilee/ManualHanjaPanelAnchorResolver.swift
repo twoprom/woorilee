@@ -17,15 +17,21 @@ struct ManualHanjaPanelAnchorResolution {
 }
 
 enum ManualHanjaPanelAnchorResolver {
+    /// A `firstRect` height below this is treated as suspect and augmented via the line-height API.
+    static let minimumLineHeight: CGFloat = 8
+    /// How far back the reverse line-height search walks before giving up.
+    static let maxReverseSearchSteps = 8
+
     @MainActor
     static func resolve(
         content: ManualHanjaPanelContent,
         client: any IMKTextInput
     ) -> ManualHanjaPanelAnchorResolution {
+        let selectedRange = client.selectedRange()
         let ranges = anchorCandidateRanges(
             for: content,
             markedRange: client.markedRange(),
-            selectedRange: client.selectedRange()
+            selectedRange: selectedRange
         )
         let screenFrames = NSScreen.screens.map(\.frame)
         var probes: [ManualHanjaPanelAnchorProbe] = []
@@ -44,11 +50,89 @@ enum ManualHanjaPanelAnchorResolver {
             )
 
             if isValid {
-                return ManualHanjaPanelAnchorResolution(rect: rect, probes: probes)
+                let anchor = augmentedLineHeight(
+                    of: rect,
+                    characterIndex: range.location,
+                    client: client
+                )
+                return ManualHanjaPanelAnchorResolution(rect: anchor, probes: probes)
             }
         }
 
+        // All firstRect candidates failed — fall back to vChewing's reverse line-height search.
+        if let caretIndex = caretCharacterIndex(for: content, selectedRange: selectedRange),
+           let rect = reverseLineHeightRect(
+               caretIndex: caretIndex,
+               client: client,
+               screenFrames: screenFrames
+           ) {
+            return ManualHanjaPanelAnchorResolution(rect: rect, probes: probes)
+        }
+
         return ManualHanjaPanelAnchorResolution(rect: nil, probes: probes)
+    }
+
+    /// When `firstRect` returns a believable position but a too-short height, borrow the line
+    /// height from `attributes(forCharacterIndex:lineHeightRectangle:)` while keeping the original
+    /// horizontal position and line bottom (`minY`).
+    @MainActor
+    static func augmentedLineHeight(
+        of rect: NSRect,
+        characterIndex: Int,
+        client: any IMKTextInput
+    ) -> NSRect {
+        guard rect.height < minimumLineHeight, characterIndex != NSNotFound else {
+            return rect
+        }
+
+        var lineRect = NSRect.zero
+        _ = client.attributes(
+            forCharacterIndex: max(characterIndex, 0),
+            lineHeightRectangle: &lineRect
+        )
+        guard lineRect.height >= minimumLineHeight else {
+            return rect
+        }
+
+        return NSRect(x: rect.minX, y: rect.minY, width: rect.width, height: lineRect.height)
+    }
+
+    /// Walk the caret index backwards, asking for the line-height rectangle at each index until a
+    /// valid one appears (vChewing's `lineHeightRect(u16Cursor:)`).
+    @MainActor
+    static func reverseLineHeightRect(
+        caretIndex: Int,
+        client: any IMKTextInput,
+        screenFrames: [NSRect]
+    ) -> NSRect? {
+        var index = caretIndex
+        let lowerBound = max(caretIndex - maxReverseSearchSteps, 0)
+
+        while index >= lowerBound {
+            var lineRect = NSRect.zero
+            _ = client.attributes(forCharacterIndex: index, lineHeightRectangle: &lineRect)
+            if isValidAnchorRect(lineRect, screenFrames: screenFrames) {
+                return lineRect
+            }
+            index -= 1
+        }
+
+        return nil
+    }
+
+    /// UTF-16 index of the caret: the trailing edge of the content anchor (or selection).
+    static func caretCharacterIndex(
+        for content: ManualHanjaPanelContent,
+        selectedRange: NSRange
+    ) -> Int? {
+        let anchorRange = content.anchorRange
+        if anchorRange.location != NSNotFound {
+            return anchorRange.location + anchorRange.length
+        }
+        if selectedRange.location != NSNotFound {
+            return selectedRange.location + selectedRange.length
+        }
+        return nil
     }
 
     static func anchorCandidateRanges(
