@@ -38,6 +38,7 @@ struct InputCompositionEngine {
     let client: any IMKTextInput
     let session: InputSession
     let analyzeRealtimeClause: (String) -> [HanjaSegment]
+    let analyzeManualClause: (String, [Int]) -> [HanjaSegment]
     let flushRealtimeUsageEvents: ([PendingHanjaUsageEvent]) -> Void
     let updateComposition: () -> Void
     let debugLog: (String) -> Void
@@ -221,12 +222,19 @@ struct InputCompositionEngine {
     }
 
     private func updateRealtimeAnalysis() {
-        let sourceText = session.realtimeClauseState.rawClauseText + session.realtimeClauseState.tailPreedit
+        let state = session.realtimeClauseState
+        let sourceText = state.rawClauseText + state.tailPreedit
         guard !sourceText.isEmpty else {
             return
         }
 
-        let segments = analyzeRealtimeClause(sourceText)
+        // 수동 경계 오버레이가 있으면 재분석이 그것을 존중한다(Kiwi 재분절 중단).
+        let segments: [HanjaSegment]
+        if let boundaries = state.manualBoundaries {
+            segments = analyzeManualClause(sourceText, boundaries)
+        } else {
+            segments = analyzeRealtimeClause(sourceText)
+        }
         session.updateRealtimeAnalysis(segments: segments)
     }
 }

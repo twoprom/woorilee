@@ -202,6 +202,52 @@ final class KiwiAnalysisService {
         }
     }
 
+    /// 사용자가 그은 경계(`boundaries`)로 소스를 빈틈없이 분할해 `[HanjaSegment]`를 만든다. Kiwi 토큰 불필요.
+    /// 각 span은 표면형으로 사전/숫자 후보를 조회해 후보가 있으면 변환 가능으로 본다.
+    /// 의도적으로 POS 태그 필터를 적용하지 않는다 — 사용자가 명시적으로 경계를 그었으므로,
+    /// 평소 자동 변환에서 제외되던 표면형(예: 조사)도 후보가 있으면 변환 가능으로 노출한다(설계 4.1 절충).
+    static func makeManualSegments(
+        boundaries: [Int],
+        in clause: String,
+        candidateLookup: (String) -> [HanjaCandidate]
+    ) -> [HanjaSegment] {
+        guard !clause.isEmpty else {
+            return []
+        }
+
+        let n = inputUTF16Length(of: clause)
+        let internalPoints = Set(boundaries.filter { $0 > 0 && $0 < n })
+        let edges = [0] + internalPoints.sorted() + [n]
+
+        var segments: [HanjaSegment] = []
+        for i in 0..<(edges.count - 1) {
+            let range = NSRange(location: edges[i], length: edges[i + 1] - edges[i])
+            guard range.length > 0, let stringRange = Range(range, in: clause) else {
+                continue
+            }
+
+            let surface = String(clause[stringRange])
+            let normalizedDigits = NumericHanjaCandidateGenerator.normalizedDigits(from: surface)
+            let normalizedLookupKey = normalizedDigits ?? surface
+            let candidates = candidateLookup(normalizedLookupKey)
+            let isNumeric = normalizedDigits != nil
+            // 후보가 있으면 첫 후보를 프리뷰(태그 필터 미적용). 숫자는 기존 UX대로 아라비아 표기 유지.
+            let previewCandidate = (isNumeric || candidates.isEmpty) ? nil : candidates.first
+            segments.append(
+                HanjaSegment(
+                    sourceRange: range,
+                    surface: surface,
+                    normalizedLookupKey: normalizedLookupKey,
+                    tag: isNumeric ? .sn : .nng,
+                    isConvertible: !candidates.isEmpty,
+                    previewCandidate: previewCandidate
+                )
+            )
+        }
+
+        return segments
+    }
+
     static func isRealtimeHanjaEligibleTag(_ tag: POSTag) -> Bool {
         switch tag {
         case .nng, .nnp, .nnb,

@@ -271,12 +271,14 @@ final class RealtimeHanjaCommitCancelTests: XCTestCase {
         client: FakeIMKTextInput,
         session: InputSession,
         analyzeRealtimeClause: @escaping (String) -> [HanjaSegment] = { _ in [] },
+        analyzeManualClause: @escaping (String, [Int]) -> [HanjaSegment] = { _, _ in [] },
         flushRealtimeUsageEvents: @escaping ([PendingHanjaUsageEvent]) -> Void = { _ in }
     ) -> InputCompositionEngine {
         InputCompositionEngine(
             client: client,
             session: session,
             analyzeRealtimeClause: analyzeRealtimeClause,
+            analyzeManualClause: analyzeManualClause,
             flushRealtimeUsageEvents: flushRealtimeUsageEvents,
             updateComposition: {},
             debugLog: { _ in }

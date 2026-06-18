@@ -43,6 +43,11 @@ ones to preserve when extending the code.
   - `CompositionMode` (`hangul` / `manualHanja` / `realtimeHanja`),
     `SegmentLockKey`, and `RealtimeClauseState` — the value types shared
     between the coordinator, session, and tests.
+  - `RealtimeClauseState` also carries the manual segment-boundary overlay
+    (`manualBoundaries` / `focusedSpanStart`) used by Shift+←/→ 신축, with
+    `seedManualBoundariesIfNeeded` / `adjustFocusedBoundary` /
+    `clearManualSegmentation`. When the overlay is active, `updateAnalysis`
+    restores selection by focused-span start rather than `SegmentLockKey`.
 - `woorilee/ManualHanjaModels.swift`
   - Value types for the manual Hanja panel (target / notice / content).
 - `woorilee/ManualHanjaPanelAnchorResolver.swift`
@@ -61,7 +66,9 @@ Each service owns a warm-up `Status` enum
 (`uninitialized` / `loading` / `ready` / `unavailable(reason)`):
 
 - `woorilee/KiwiAnalysisService.swift` — background warm-up of Kiwi
-  morphological analyzer.
+  morphological analyzer. Also hosts `makeManualSegments`, which builds a
+  gap-free `[HanjaSegment]` partition from user-drawn boundaries (no Kiwi
+  tokens, dictionary lookup only) for the Shift+←/→ boundary-adjust path.
 - `woorilee/HanjaDictionaryService.swift` — loads the bundled hanja table.
 - `woorilee/HanjaUsageStore.swift` — usage stats used to rank candidates.
 - `woorilee/UserHanjaStore.swift` — user-defined entries used to rank
@@ -83,6 +90,9 @@ Each service owns a warm-up `Status` enum
   behavior.
 - `woorileeTests/RealtimeHanjaAnalysisTests.swift` — `RealtimeClauseState`
   segment lifecycle, locking, and hangul fallback.
+- `woorileeTests/RealtimeSegmentBoundaryTests.swift` — manual boundary
+  seed/expand/shrink/clamp/merge, numeric splitting, focus retention, and
+  overlay discard for the Shift+←/→ 신축 path.
 - `woorileeTests/HanjaCandidateRankingTests.swift` — candidate ranking
   against usage / user stores.
 - `woorileeTests/HanjaUsageStoreTests.swift`,

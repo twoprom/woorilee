@@ -188,6 +188,23 @@ enum InputEventPolicy {
         return characters.lowercased() == realtimeHanjaToggleKeyEquivalent
     }
 
+    /// 좌/우 화살표 + Shift(다른 수식키 없음)면 실시간 분절 경계 조정 트리거.
+    /// 반환: 오른쪽=+1(확장), 왼쪽=-1(축소), 해당 없음=nil.
+    static func segmentBoundaryAdjustDelta(
+        keyCode: UInt16,
+        modifiers: NSEvent.ModifierFlags
+    ) -> Int? {
+        guard keyCode == KeyCode.leftArrow || keyCode == KeyCode.rightArrow else {
+            return nil
+        }
+
+        guard modifiers.intersection([.command, .control, .option, .shift]) == [.shift] else {
+            return nil
+        }
+
+        return keyCode == KeyCode.rightArrow ? 1 : -1
+    }
+
     static func currentSessionModifierFlags() -> NSEvent.ModifierFlags {
         NSEvent.ModifierFlags(
             rawValue: UInt(CGEventSource.flagsState(.combinedSessionState).rawValue)

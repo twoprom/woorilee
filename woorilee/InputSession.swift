@@ -308,6 +308,44 @@ final class InputSession {
         return realtimeClauseState.moveSelectedSegment(by: delta, wraps: wraps)
     }
 
+    /// 첫 호출이면 현재 분절로 수동 경계 오버레이를 seed 하고, 포커스 span의 오른쪽 경계를
+    /// delta 글자만큼 이동한다(일본어 IME식 문절 신축).
+    @discardableResult
+    func adjustRealtimeSegmentBoundary(byCharacters delta: Int) -> Bool {
+        guard compositionMode == .realtimeHanja else {
+            return false
+        }
+
+        realtimeClauseState.seedManualBoundariesIfNeeded()
+        return realtimeClauseState.adjustFocusedBoundary(byCharacters: delta)
+    }
+
+    /// 조합 중인 한글(tailPreedit)을 clause로 flush 해 신축 대상 소스를 안정 grapheme으로 고정한다
+    /// (Space 경로와 동일한 안정화).
+    func flushPendingHangulIntoRealtimeClause() {
+        guard compositionMode == .realtimeHanja else {
+            return
+        }
+
+        if hasPendingHangulText {
+            let flushed = flushText()
+            if !flushed.isEmpty {
+                appendCommittedTextToRealtimeClause(flushed)
+            }
+        }
+
+        syncRealtimeTailPreedit()
+    }
+
+    /// 소스 편집 시 수동 경계 오버레이를 버리고 Kiwi 자동 분절로 복귀한다.
+    func clearManualSegmentation() {
+        guard compositionMode == .realtimeHanja else {
+            return
+        }
+
+        realtimeClauseState.clearManualSegmentation()
+    }
+
     func setRealtimeCandidateState(_ state: HanjaCandidatePanelState) {
         guard compositionMode == .realtimeHanja else {
             return

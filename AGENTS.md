@@ -15,6 +15,7 @@
 - `woorilee/InputController.swift`: IMK가 클라이언트마다 생성하는 컨트롤러. 조합 상태는 직접 보유하지 않고 `InputSessionCache`를 통해 `InputSession`으로 위임한다.
 - `woorilee/InputEventPolicy.swift`, `woorilee/InputCompositionEngine.swift`, `woorilee/InputSession.swift`: 키 정규화, marked/replacement 범위, 세션/캐시 상태를 각각 담당.
 - `woorilee/HanjaServiceCoordinator.swift`: 한자 메뉴, 웜업 패널, 수동 후보 패널, 실시간 변환 경로를 묶는 `@MainActor` 싱글톤. 자세한 모듈 경계는 `docs/internal-module-map.md`.
+- 실시간 변환 모드에서는 일본어 IME식 문절 신축을 지원한다: `Shift+←/→`로 포커스 분절의 오른쪽 경계를 한 글자씩 줄이거나 늘린다. 경계 오버레이(`RealtimeClauseState.manualBoundaries`)는 재분석이 존중하며(Kiwi 대신 `KiwiAnalysisService.makeManualSegments` 사용), 글자 입력·Backspace·Space 등 소스 편집 시 폐기되어 Kiwi 자동 분절로 복귀한다.
 - `woorilee/Info.plist`: 입력기 등록 정보와 `InputMethodConnectionName`, `InputMethodServerControllerClass` 정의.
 - `woorilee/woorilee.entitlements`: 샌드박스와 Mach 등록 관련 권한.
 - `woorilee/data/hanja/`: 번들된 한자 사전(`hanja.txt`, `freq-hanja.txt`, `freq-hanjaeo.txt`).

@@ -110,6 +110,44 @@ final class InputEventPolicyTests: XCTestCase {
         )
     }
 
+    func testSegmentBoundaryAdjustDeltaMatchesShiftArrows() {
+        XCTAssertEqual(
+            InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: InputEventPolicy.KeyCode.rightArrow,
+                modifiers: .shift
+            ),
+            1
+        )
+        XCTAssertEqual(
+            InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: InputEventPolicy.KeyCode.leftArrow,
+                modifiers: .shift
+            ),
+            -1
+        )
+    }
+
+    func testSegmentBoundaryAdjustDeltaRejectsNonShiftAndExtraModifiers() {
+        XCTAssertNil(
+            InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: InputEventPolicy.KeyCode.rightArrow,
+                modifiers: []
+            )
+        )
+        XCTAssertNil(
+            InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: InputEventPolicy.KeyCode.rightArrow,
+                modifiers: [.shift, .command]
+            )
+        )
+        XCTAssertNil(
+            InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: InputEventPolicy.KeyCode.upArrow,
+                modifiers: .shift
+            )
+        )
+    }
+
     func testNewlineCommandDetectionMatchesInsertNewlineSelectors() {
         XCTAssertTrue(InputEventPolicy.isNewlineCommand(NSSelectorFromString("insertNewline:")))
         XCTAssertTrue(InputEventPolicy.isNewlineCommand(NSSelectorFromString("insertLineBreak:")))

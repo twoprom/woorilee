@@ -68,6 +68,7 @@ final class InputController: IMKInputSessionController {
             client: client,
             session: session,
             analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0) },
+            analyzeManualClause: { self.hanjaServices.manualSegments(for: $0, boundaries: $1) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
             updateComposition: { self.updateComposition() },
             debugLog: { self.debugLog($0) }
@@ -256,6 +257,13 @@ final class InputController: IMKInputSessionController {
                     return false
                 }
 
+                if let boundaryDelta = InputEventPolicy.segmentBoundaryAdjustDelta(
+                    keyCode: keyCode,
+                    modifiers: modifiers
+                ) {
+                    return adjustRealtimeSegmentBoundary(by: boundaryDelta, client: client, session: session)
+                }
+
                 let delta = keyCode == InputEventPolicy.KeyCode.rightArrow ? 1 : -1
                 _ = session.moveRealtimeSegmentSelection(by: delta, wraps: true)
                 composition.updateDisplay()
@@ -281,6 +289,8 @@ final class InputController: IMKInputSessionController {
         let hadPendingComposition = session.hasPendingHangulText
         let hadRealtimeClause = session.hasRealtimeClause
         let composition = compositionEngine(for: client, session: session)
+        // 새 글자 입력은 소스를 바꿔 수동 경계 오프셋을 무효화하므로 오버레이를 버리고 Kiwi 분절로 복귀한다.
+        session.clearManualSegmentation()
         debugLog(
             "textInput selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(client.markedRange())) preedit=\(session.preeditText) raw=\(characters ?? "")"
         )
@@ -471,6 +481,8 @@ final class InputController: IMKInputSessionController {
     private func handleBackspace(_ client: any IMKTextInput, session: InputSession) -> Bool {
         let composition = compositionEngine(for: client, session: session)
         if session.isRealtimeHanjaMode {
+            // 소스 편집이므로 수동 경계 오버레이를 버린다.
+            session.clearManualSegmentation()
             if session.hasPendingHangulText {
                 if session.backspace() {
                     composition.insertCommittedTextIfNeeded()
@@ -607,6 +619,8 @@ final class InputController: IMKInputSessionController {
         let composition = compositionEngine(for: client, session: session)
         if session.isRealtimeHanjaMode {
             dismissRealtimeCandidatePanel(session: session)
+            // 공백 추가도 소스를 바꾸므로 수동 경계 오버레이를 버린다.
+            session.clearManualSegmentation()
             if session.hasPendingHangulText {
                 let flushed = session.flushText()
                 if !flushed.isEmpty {
@@ -689,6 +703,26 @@ final class InputController: IMKInputSessionController {
         return true
     }
 
+    private func adjustRealtimeSegmentBoundary(
+        by delta: Int,
+        client: any IMKTextInput,
+        session: InputSession
+    ) -> Bool {
+        guard session.isRealtimeHanjaMode, session.hasRealtimeClause else {
+            return false
+        }
+
+        // 조합 중인 한글을 먼저 clause로 flush 해 소스를 안정 grapheme으로 고정한다.
+        session.flushPendingHangulIntoRealtimeClause()
+        // 첫 조정이면 현재 분절로 오버레이 seed 후 포커스 경계를 이동한다.
+        _ = session.adjustRealtimeSegmentBoundary(byCharacters: delta)
+
+        // 수동 분절로 재빌드 + 표시/패널 갱신. 연속 신축 시 깜빡임을 막으려 "후보 없음" 토스트는 띄우지 않는다.
+        compositionEngine(for: client, session: session).updateDisplay()
+        _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false)
+        return session.hasRealtimeClause
+    }
+
     private func handleRealtimePanelKeyInput(
         keyCode: UInt16,
         modifiers: NSEvent.ModifierFlags,
@@ -725,6 +759,13 @@ final class InputController: IMKInputSessionController {
         switch keyCode {
         case InputEventPolicy.KeyCode.leftArrow,
              InputEventPolicy.KeyCode.rightArrow:
+            if let boundaryDelta = InputEventPolicy.segmentBoundaryAdjustDelta(
+                keyCode: keyCode,
+                modifiers: modifiers
+            ) {
+                return adjustRealtimeSegmentBoundary(by: boundaryDelta, client: client, session: session)
+            }
+
             let delta = keyCode == InputEventPolicy.KeyCode.rightArrow ? 1 : -1
             _ = session.moveRealtimeSegmentSelection(by: delta, wraps: true)
             compositionEngine(for: client, session: session).updateDisplay()

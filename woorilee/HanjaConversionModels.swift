@@ -292,6 +292,14 @@ struct RealtimeClauseState: Equatable {
     var hangulLockedSegments: Set<SegmentLockKey> = []
     var pendingUsageEvents: [PendingHanjaUsageEvent] = []
 
+    /// 수동 경계 조정(일본어 IME식 문절 신축)이 활성일 때 소스(rawClauseText + tailPreedit)에 대한
+    /// 내부 분할 지점들. UTF-16 오프셋, 오름차순, 0 < bᵢ < N. nil이면 Kiwi 자동 분절.
+    var manualBoundaries: [Int]? = nil
+
+    /// 포커스 중인 span의 왼쪽 경계 오프셋(안정 식별자). 재분석 후 같은 시작 오프셋의 span으로
+    /// 선택을 복원하는 데 쓴다.
+    var focusedSpanStart: Int? = nil
+
     var isEmpty: Bool {
         rawClauseText.isEmpty && tailPreedit.isEmpty
     }
@@ -305,6 +313,8 @@ struct RealtimeClauseState: Equatable {
             lockedCandidates = [:]
             hangulLockedSegments = []
             pendingUsageEvents = []
+            manualBoundaries = nil
+            focusedSpanStart = nil
         }
     }
 
@@ -333,7 +343,13 @@ struct RealtimeClauseState: Equatable {
         pendingUsageEvents.removeAll { !validLockKeys.contains($0.segmentLockKey) }
         segments = refreshedSegments
 
-        if let previousSelectedKey,
+        if isManualSegmentation {
+            // 수동 모드: 포커스 span(시작 오프셋)으로 선택을 복원한다. 그 span이 일시적으로 비변환이어도
+            // 사용자가 계속 신축할 수 있도록 선택을 유지한다(설계 5.3).
+            selectedSegmentIndex = focusedSpanStart
+                .flatMap { start in refreshedSegments.firstIndex { $0.sourceRange.location == start } }
+                ?? Self.defaultSelectedSegmentIndex(in: refreshedSegments)
+        } else if let previousSelectedKey,
            let preservedIndex = refreshedSegments.firstIndex(where: { SegmentLockKey(segment: $0) == previousSelectedKey }),
            Self.isSelectableRealtimeSegment(refreshedSegments[preservedIndex]) {
             selectedSegmentIndex = preservedIndex
@@ -381,6 +397,11 @@ struct RealtimeClauseState: Equatable {
         }
 
         selectedSegmentIndex = nextIndex
+        // 수동 모드에서 평소 ←/→ 이동은 포커스 span도 함께 옮긴다(다음 재분석에서 선택이
+        // 포커스로 되돌아오지 않도록).
+        if manualBoundaries != nil, segments.indices.contains(nextIndex) {
+            focusedSpanStart = segments[nextIndex].sourceRange.location
+        }
         if candidateState?.mode.realtimeSegmentIndex != nextIndex {
             candidateState = nil
         }
@@ -544,6 +565,125 @@ struct RealtimeClauseState: Equatable {
         result += sourceText[cursor..<sourceText.endIndex]
         return result
     }
+}
+
+extension RealtimeClauseState {
+    var isManualSegmentation: Bool { manualBoundaries != nil }
+
+    private var manualSourceText: String { rawClauseText + tailPreedit }
+
+    /// 현재 `segments`(+gap)로부터 소스 전체 `[0, N]`을 빈틈없는 연속 span으로 분할(seed)한다.
+    /// 이미 수동 모드면 아무것도 하지 않는다. seed 후 현재 선택 분절을 포커스로 잡는다.
+    mutating func seedManualBoundariesIfNeeded() {
+        guard manualBoundaries == nil else { return }
+        let source = manualSourceText
+        let n = inputUTF16Length(of: source)
+        guard n > 0 else { return }
+
+        var points = Set<Int>()
+        for segment in segments {
+            let start = segment.sourceRange.location
+            let end = segment.sourceRange.location + segment.sourceRange.length
+            if start > 0, start < n { points.insert(start) }
+            if end > 0, end < n { points.insert(end) }
+        }
+        manualBoundaries = points.sorted()
+        focusedSpanStart = selectedSegment?.sourceRange.location ?? 0
+    }
+
+    /// 포커스 span의 오른쪽 경계를 delta 글자(+1: 확장 / -1: 축소)만큼 이동한다.
+    /// 한 글자는 소스의 1 grapheme이며 UTF-16 오프셋으로 환산한다.
+    /// 클램프: focus span 최소 길이 1, 소스 끝 N 초과 금지, 이웃 경계와 만나면 병합.
+    /// 반환: 경계가 실제로 바뀌었으면 true.
+    @discardableResult
+    mutating func adjustFocusedBoundary(byCharacters delta: Int) -> Bool {
+        guard delta != 0, manualBoundaries != nil else { return false }
+        let source = manualSourceText
+        let n = inputUTF16Length(of: source)
+        guard n > 0 else { return false }
+
+        // 평소 ←/→로 옮긴 선택을 반영해 포커스를 동기화한다(선택이 없으면 기존 포커스 유지).
+        if let selectedStart = selectedSegment?.sourceRange.location {
+            focusedSpanStart = selectedStart
+        }
+        let focusStart = focusedSpanStart ?? 0
+
+        var changed = false
+        for _ in 0..<abs(delta) {
+            guard moveFocusedBoundaryOneStep(expanding: delta > 0, focusStart: focusStart, source: source, n: n) else {
+                break
+            }
+            changed = true
+        }
+        return changed
+    }
+
+    /// 소스 편집(타이핑/Backspace/Space) 시 오버레이를 버리고 Kiwi 자동 분절로 복귀한다.
+    mutating func clearManualSegmentation() {
+        manualBoundaries = nil
+        focusedSpanStart = nil
+    }
+
+    private mutating func moveFocusedBoundaryOneStep(
+        expanding: Bool, focusStart: Int, source: String, n: Int
+    ) -> Bool {
+        var edges = [0] + (manualBoundaries ?? []) + [n]   // 0 < bᵢ < n, 오름차순
+        guard let i = edges.firstIndex(of: focusStart), i + 1 < edges.count else {
+            return false
+        }
+        let leftEdge = edges[i]
+        let rightEdge = edges[i + 1]
+        let isLastSpan = (i + 1 == edges.count - 1)        // rightEdge == n
+
+        if expanding {
+            // 마지막 span은 더 늘릴 글자가 없음.
+            guard !isLastSpan,
+                  let next = realtimeGraphemeOffset(from: rightEdge, in: source, forward: true) else {
+                return false
+            }
+            let limit = edges[i + 2]                        // 이웃(오른쪽) span의 오른쪽 경계
+            let newRight = min(next, limit)
+            guard newRight > rightEdge else { return false }
+            if newRight == limit {
+                edges.remove(at: i + 1)                     // 이웃 span 소멸 → 경계 병합
+            } else {
+                edges[i + 1] = newRight
+            }
+        } else {
+            guard let prev = realtimeGraphemeOffset(from: rightEdge, in: source, forward: false),
+                  prev > leftEdge else {                    // focus span 최소 길이 1
+                return false
+            }
+            if isLastSpan {
+                edges.insert(prev, at: i + 1)               // 마지막 span 축소 → N-1 지점에 새 경계
+            } else {
+                edges[i + 1] = prev
+            }
+        }
+
+        manualBoundaries = Array(edges.dropFirst().dropLast())
+        return true
+    }
+}
+
+/// `offset`(UTF-16) 위치에서 한 grapheme 앞/뒤 경계의 UTF-16 오프셋을 구한다.
+/// 경계가 소스의 끝/시작을 넘으면 nil.
+private func realtimeGraphemeOffset(from offset: Int, in text: String, forward: Bool) -> Int? {
+    let utf16 = text.utf16
+    guard let unit = utf16.index(utf16.startIndex, offsetBy: offset, limitedBy: utf16.endIndex),
+          let charIndex = unit.samePosition(in: text) else {
+        return nil
+    }
+
+    if forward {
+        guard charIndex < text.endIndex else { return nil }
+        let next = text.index(after: charIndex)
+        return next.samePosition(in: utf16).map { utf16.distance(from: utf16.startIndex, to: $0) }
+    }
+
+    guard charIndex > text.startIndex else { return nil }
+    let prev = text.index(before: charIndex)
+    return prev.samePosition(in: utf16).map { utf16.distance(from: utf16.startIndex, to: $0) }
 }
 
 enum RealtimeClauseAutoCommitPolicy {
