@@ -51,14 +51,33 @@ ones to preserve when extending the code.
 - `woorilee/ManualHanjaModels.swift`
   - Value types for the manual Hanja panel (target / notice / content).
 - `woorilee/ManualHanjaPanelAnchorResolver.swift`
-  - Anchor-rect probing logic that places the panel near the caret across
-    host apps.
+  - Anchor-rect probing logic that finds the caret rect across host apps.
+- `woorilee/CandidatePanelOriginCalculator.swift`
+  - Pure placement math: turns the caret anchor rect into the panel origin
+    (hang below the caret, flip above when it won't fit, clamp to the visible
+    frame). Stateless; covered by `CandidatePanelOriginCalculatorTests`.
+- `woorilee/NumericHanjaCandidateGenerator.swift`
+  - Stateless generator of 數字 candidates for all-digit input — digit-by-digit
+    and quantity-unit readings in both Hanja and Hangul.
 - `woorilee/HanjaCandidatePanelController.swift`
-  - Non-activating panel that hosts both manual and realtime candidates.
+  - Non-activating panel that hosts both manual and realtime candidates;
+    positions itself via `CandidatePanelOriginCalculator`.
 - `woorilee/HanjaCandidatePanelView.swift`
   - SwiftUI view backing the candidate panel.
 - `woorilee/HanjaWarmUpPanelController.swift`
   - Non-activating loading panel shown while Kiwi / Hanja warm up.
+
+## App UI Windows
+
+Off the IME hot path; shown from the input-method menu:
+
+- `woorilee/AboutWindowController.swift`
+  - About panel. Also owns the Sparkle `SPUStandardUpdaterController` that
+    drives auto-update.
+- `woorilee/HanjaUserDictionaryWindowController.swift`
+  - Window controller for the user Hanja dictionary editor.
+- `woorilee/HanjaUserDictionaryView.swift`
+  - SwiftUI editor view, backed by `UserHanjaStore`.
 
 ## Supporting Services
 
@@ -93,6 +112,10 @@ Each service owns a warm-up `Status` enum
 - `woorileeTests/RealtimeSegmentBoundaryTests.swift` — manual boundary
   seed/expand/shrink/clamp/merge, numeric splitting, focus retention, and
   overlay discard for the Shift+←/→ 신축 path.
+- `woorileeTests/RealtimeHanjaCommitCancelTests.swift` — realtime commit /
+  cancel transitions.
+- `woorileeTests/RealtimeHanjaUsageFlushTests.swift` — usage-stat flushing on
+  realtime commit.
 - `woorileeTests/HanjaCandidateRankingTests.swift` — candidate ranking
   against usage / user stores.
 - `woorileeTests/HanjaUsageStoreTests.swift`,
@@ -100,3 +123,7 @@ Each service owns a warm-up `Status` enum
 - `woorileeTests/ManualHanjaModelsTests.swift`,
   `woorileeTests/ManualHanjaPanelAnchorResolverTests.swift` — manual
   panel value types and anchor probing.
+- `woorileeTests/CandidatePanelOriginCalculatorTests.swift` — panel origin
+  placement (below / flip-above / clamp).
+- `woorileeTests/FakeIMKTextInput.swift` — shared fake `IMKTextInput` client
+  used by the session / range tests.

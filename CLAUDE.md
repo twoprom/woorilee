@@ -21,8 +21,10 @@ The composition engine is `LibHangul`. Hanja conversion is supported by a bundle
 # Schemes / targets
 xcodebuild -list -project woorilee.xcodeproj
 
-# Debug build (app target)
-xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build
+# Debug build (app target). The WOORILEE_INSTALL_BUILT_INPUT_METHOD=1 prefix opts into
+# the install PostAction so the running input method is refreshed (see below).
+WOORILEE_INSTALL_BUILT_INPUT_METHOD=1 \
+  xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build
 
 # Unit tests (woorileeTests)
 xcodebuild -project woorilee.xcodeproj -scheme woorilee \
@@ -37,29 +39,25 @@ xcodebuild -project woorilee.xcodeproj -scheme woorilee \
   -only-testing:woorileeTests/InputEventPolicyTests/testPrintableASCIICharacterUsesEventCharacters
 ```
 
-`scripts/install-built-input-method.sh` runs as an Xcode build phase: it `killall woorilee`s the running input method and `ditto`s the built `.app` into `/Library/Input Methods/` (escalating via `osascript` if needed). Override with env vars: `WOORILEE_SKIP_INSTALL=1` or `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0`. For manual installs, prefer `ditto` over `cp -R` for app bundles, and `killall woorilee` first — macOS will not pick up a replaced bundle while the old process is alive.
+`scripts/install-built-input-method.sh` runs as the scheme's `Install Built Input Method` **build PostAction** (it fires on every build, including CLI `xcodebuild`). It **skips install by default** and only installs when `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1` is set; with the opt-in it `killall woorilee`s the running input method and `ditto`s the built `.app` into `/Library/Input Methods/` (escalating via `osascript` if needed). `WOORILEE_SKIP_INSTALL=1` or `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0` force-skip even when the opt-in is present. For manual installs, prefer `ditto` over `cp -R` for app bundles, and `killall woorilee` first — macOS will not pick up a replaced bundle while the old process is alive.
 
 There is no UI test target. After input-logic changes, manually verify: Hangul compose/commit, `Backspace`/`Space`/`Return`/`Escape`/`Tab` handling, arrow/movement-induced commits, and that `markedRange` / `replacementRange` stay consistent across clients (Safari, TextEdit, Terminal differ).
 
 ## Development workflow
 
-**Always build after code changes.** After any source modification, run a build automatically (do not wait to be asked) so the running input method is refreshed:
+**Always build with the install opt-in after code changes.** After any source modification, run a build automatically (do not wait to be asked) **with `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1`** so the running input method is refreshed:
 
 ```sh
-xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build
+WOORILEE_INSTALL_BUILT_INPUT_METHOD=1 \
+  xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build
 ```
 
-The build phase script then overwrites `/Library/Input Methods/woorilee.app` and restarts the process automatically. Never set `WOORILEE_SKIP_INSTALL=1` or `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0` — the auto-install must run on every build.
+Install is **opt-in**, not automatic. The scheme's `Install Built Input Method` build PostAction (`scripts/install-built-input-method.sh`) fires on every build but **skips unless `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1`** is set. With the opt-in, the PostAction:
 
-After code modifications, the standard Xcode build process handles deployment automatically:
+1. Executes `killall woorilee` to stop the running input method
+2. Copies the built `.app` bundle into `/Library/Input Methods/` using `ditto` (preserving bundle structure and permissions; escalating via `osascript` if needed)
 
-1. Build from Xcode or `xcodebuild` command
-2. The build phase script `scripts/install-built-input-method.sh` runs automatically:
-   - Executes `killall woorilee` to stop the running input method
-   - Copies the built `.app` bundle to `/Library/Input Methods/` using `ditto` (preserving bundle structure and permissions)
-   - Escalates permissions via `osascript` if needed
-
-The input method is now live — no manual restart required. To disable automatic installation, set `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0` before building.
+The input method is then live — no manual restart required. Never set `WOORILEE_SKIP_INSTALL=1` or `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0` — they force-skip the install. A plain build with no env var compiles but does **not** install; reserve that for `xcodebuild … test`, which should not touch `/Library/Input Methods/`.
 
 ## Architecture
 
@@ -77,7 +75,8 @@ The IME runtime is intentionally split (see `docs/internal-module-map.md`); chan
 - [InputSession.swift](woorilee/InputSession.swift) — per-client `InputSession` plus `InputSessionCache` and `InputRangeState`. `InputController` looks up sessions through the cache; never store composition state on `InputController` itself, since IMK reuses controller instances across clients.
 - [HanjaServiceCoordinator.swift](woorilee/HanjaServiceCoordinator.swift) — singleton coordinating Hanja menu state, warm-up panel, manual candidate panel, and the Kiwi-driven realtime conversion path. The `realtimeConversionPhaseUnlocked` flag (currently `true`) is the kill switch for the realtime path; `isRealtimeAvailable` additionally requires both Kiwi and the Hanja dictionary to be `ready`.
 - [HanjaConversionModels.swift](woorilee/HanjaConversionModels.swift) — `CompositionMode` (`hangul` / `manualHanja` / `realtimeHanja`) and `SegmentLockKey`, the value types shared between the coordinator, session, and tests. `RealtimeClauseState` also holds the manual segment-boundary overlay (`manualBoundaries` / `focusedSpanStart`) that powers Japanese-IME-style 문절 신축 via Shift+←/→ in realtime mode; when active, the analysis pipeline honors the overlay (`KiwiAnalysisService.makeManualSegments`) instead of re-running Kiwi, and the overlay is dropped on any source edit (typing / Backspace / Space).
-- [ManualHanjaModels.swift](woorilee/ManualHanjaModels.swift) / [ManualHanjaPanelAnchorResolver.swift](woorilee/ManualHanjaPanelAnchorResolver.swift) — value types for the manual Hanja panel (target / notice / content) and the anchor-rect probing logic that places the panel near the caret across host apps.
+- [ManualHanjaModels.swift](woorilee/ManualHanjaModels.swift) / [ManualHanjaPanelAnchorResolver.swift](woorilee/ManualHanjaPanelAnchorResolver.swift) — value types for the manual Hanja panel (target / notice / content) and the anchor-rect probing logic that finds the caret rect across host apps. [CandidatePanelOriginCalculator.swift](woorilee/CandidatePanelOriginCalculator.swift) is the pure placement math that turns that caret rect into the panel origin (hang below the caret, flip above when it won't fit, clamp to the visible frame); keep it stateless and unit-tested.
+- [NumericHanjaCandidateGenerator.swift](woorilee/NumericHanjaCandidateGenerator.swift) — stateless generator of 數字 candidates for numeric input (digit-by-digit and quantity-unit readings, in Hanja and Hangul). Used by the candidate path when the source text is all digits.
 
 Supporting services (each owns its own warm-up `Status` enum: `uninitialized` / `loading` / `ready` / `unavailable(reason)`):
 
@@ -85,7 +84,8 @@ Supporting services (each owns its own warm-up `Status` enum: `uninitialized` / 
 - [HanjaDictionaryService.swift](woorilee/HanjaDictionaryService.swift) — loads the bundled hanja table.
 - [HanjaUsageStore.swift](woorilee/HanjaUsageStore.swift) / [UserHanjaStore.swift](woorilee/UserHanjaStore.swift) — usage stats and user-defined entries used to rank candidates. Shared Codable shapes (`HanjaCandidateKey`, `HanjaCandidateSource`, …) live in [HanjaPersonalizationModels.swift](woorilee/HanjaPersonalizationModels.swift); on-disk paths (Application Support layout, bundled-resource names) are centralized in [AppRuntimePaths.swift](woorilee/AppRuntimePaths.swift).
 - [HanjaSettingsStore.swift](woorilee/HanjaSettingsStore.swift) — menu-backed settings (e.g. realtime conversion toggle, auto-advance after numeric selection).
-- [HanjaWarmUpPanelController.swift](woorilee/HanjaWarmUpPanelController.swift) / [HanjaCandidatePanelController.swift](woorilee/HanjaCandidatePanelController.swift) — non-activating panels (a warm-up loading panel and the manual Hanja candidate picker).
+- [HanjaWarmUpPanelController.swift](woorilee/HanjaWarmUpPanelController.swift) / [HanjaCandidatePanelController.swift](woorilee/HanjaCandidatePanelController.swift) — non-activating panels (a warm-up loading panel and the Hanja candidate picker, used for both manual and realtime candidates). [HanjaCandidatePanelView.swift](woorilee/HanjaCandidatePanelView.swift) is the SwiftUI view hosted inside the candidate panel.
+- App UI windows (not on the IME hot path): [AboutWindowController.swift](woorilee/AboutWindowController.swift) — About panel; also owns the Sparkle `SPUStandardUpdaterController` (auto-update). [HanjaUserDictionaryWindowController.swift](woorilee/HanjaUserDictionaryWindowController.swift) / [HanjaUserDictionaryView.swift](woorilee/HanjaUserDictionaryView.swift) — the user Hanja dictionary editor backed by `UserHanjaStore`.
 
 ### Concurrency
 
@@ -93,9 +93,9 @@ Supporting services (each owns its own warm-up `Status` enum: `uninitialized` / 
 
 ### Resources & dependencies
 
-- App-bundle resources live under `woorilee/`: `data/hanja/hanja.txt`, `KiwiModels/*` (`combiningRule.txt`, `cong.mdl`, `default.dict`, `dialect.dict`, `extract.mdl`, `multi.dict`, `nounchr.mdl`, `sj.morph`, `typo.dict`), `main.tiff`, `mainicon.icon`, `*.lproj/InfoPlist.strings`. `docs/refactor-parity-checklist.md` is the canonical list — verify it after any project-file change.
+- App-bundle resources live under `woorilee/`: `data/hanja/{hanja.txt,freq-hanja.txt,freq-hanjaeo.txt}` (the two `freq-*` tables and `hanja.txt` are copied by the `Copy Bundled Hanja Dictionary` build phase), `KiwiModels/*` (`combiningRule.txt`, `cong.mdl`, `default.dict`, `dialect.dict`, `extract.mdl`, `multi.dict`, `nounchr.mdl`, `sj.morph`, `typo.dict`), `main.tiff`, `mainicon.icon` (an Icon Composer bundle that compiles to `mainicon.icns`), `*.lproj/InfoPlist.strings`. `docs/refactor-parity-checklist.md` is the canonical list — verify it after any project-file change.
 - The repo-root `KiwiModels/` and `Kiwi/` are vendored copies; the **bundled** copies are inside `woorilee/`. Don't confuse the two paths. `Kiwi/` and `KiwiModels/` at the root are gitignored.
-- SwiftPM dependencies (resolved via the Xcode project): `IMKSwift` (vChewing), `LibHangul` (Meapri), and a local-path `Kiwi` package at `Kiwi/bindings/swift`. Patching these is a last resort — solve at the app layer first.
+- SwiftPM dependencies (resolved via the Xcode project): `IMKSwift` (vChewing), `LibHangul` (Meapri), `Sparkle` (auto-update, used only by `AboutWindowController`), and a local-path `Kiwi` package at `Kiwi/bindings/swift`. Patching these is a last resort — solve at the app layer first.
 - Generated/cache directories — `DerivedData/`, `DerivedDataPlan/`, `.xcode-home/`, `.xcode-swiftpm-modulecache/` — are gitignored and should not be edited.
 
 ## Working in this repo
