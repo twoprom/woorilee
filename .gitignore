@@ -21,3 +21,6 @@ xcuserdata/
 AGENTS.md
 CLAUDE.md
 /docs/plans
+
+# Local signing config (holds the developer Team ID). See Config/Signing.xcconfig.
+/Config/Signing.local.xcconfig

@@ -31,6 +31,7 @@
 		606B21962F87D68300028AA0 /* woorilee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = woorilee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		60F100022FA1234500ABC001 /* woorileeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = woorileeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		60F100032FA1234500ABC001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		6000C0F16000000000000001 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Signing.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -100,6 +101,7 @@
 		606B218D2F87D68300028AA0 = {
 			isa = PBXGroup;
 			children = (
+				6000C0F16000000000000001 /* Signing.xcconfig */,
 				606B21982F87D68300028AA0 /* woorilee */,
 				60F100042FA1234500ABC001 /* woorileeTests */,
 				60F1000E2FA1234500ABC001 /* Frameworks */,
@@ -455,6 +457,7 @@
 		};
 		606B21A52F87D68400028AA0 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6000C0F16000000000000001 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = mainicon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -464,7 +467,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 105;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = KK62B9XS4M;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_DEBUG_DYLIB = YES;
 				ENABLE_DEBUG_DYLIB_SUPPORT = NO;
@@ -497,6 +499,7 @@
 		};
 		606B21A62F87D68400028AA0 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6000C0F16000000000000001 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = mainicon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -506,7 +509,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 105;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = KK62B9XS4M;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_DEBUG_DYLIB_SUPPORT = NO;

@@ -1,0 +1,9 @@
+// Code-signing configuration (committed).
+//
+// The developer-specific DEVELOPMENT_TEAM is intentionally kept out of version
+// control. Copy Signing.local.xcconfig.example to Signing.local.xcconfig and
+// fill in your Apple Developer Team ID. That local file is gitignored.
+//
+// The "?" makes the include optional: a fresh checkout without the local file
+// still builds (DEVELOPMENT_TEAM just stays empty until you set it).
+#include? "Signing.local.xcconfig"
