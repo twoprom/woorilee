@@ -24,3 +24,4 @@ CLAUDE.md
 
 # Local signing config (holds the developer Team ID). See Config/Signing.xcconfig.
 /Config/Signing.local.xcconfig
+/build
