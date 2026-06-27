@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `AGENTS.md` (Korean), `docs/internal-module-map.md`, and `docs/runtime-resource-inventory.md` are the authoritative companion docs — read them before non-trivial changes. This file captures the parts most useful when starting cold.
 
+For the Sparkle update release workflow (build → sign → upload → appcast), see [`docs/sparkle-release-workflow.md`](docs/sparkle-release-workflow.md). Follow that document when performing a release.
+
 ## Project
 
 `woorilee` is a macOS Korean (두벌식 / two-beolsik) input method built on `InputMethodKit`. It is **not** a normal AppKit app: there is no storyboard/nib, and `woorilee/main.swift` launches `NSManualApplication.shared` directly so that `IMKServer` can be registered programmatically. Do not convert it to a storyboard-based launch.
