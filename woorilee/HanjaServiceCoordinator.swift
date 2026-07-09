@@ -23,7 +23,9 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
 
     private enum MenuTitle {
         static let realtimeConversion = "실시간 변환"
+        static let contextHanjaRanking = "문맥 기반 변환"
         static let manageUserDictionary = "漢字 사전 편집…"
+        static let resetUsageData = "사용자 학습 데이터 초기화…"
         static let about = "우리입력기에 관하여"
     }
 
@@ -35,7 +37,9 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     private let userDictionaryWindowController = HanjaUserDictionaryWindowController.shared
     private weak var currentMenu: NSMenu?
     private weak var realtimeMenuItem: NSMenuItem?
+    private weak var contextHanjaRankingMenuItem: NSMenuItem?
     private weak var manageUserDictionaryMenuItem: NSMenuItem?
+    private weak var resetUsageDataMenuItem: NSMenuItem?
 
     private override init() {
         super.init()
@@ -60,6 +64,10 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
         return false
     }
 
+    var isResetUsageDataAvailable: Bool {
+        hanjaService.usageStore != nil
+    }
+
     var isRealtimeHanjaAvailable: Bool {
         realtimeConversionPhaseUnlocked && kiwiService.isAvailable && hanjaService.isAvailable
     }
@@ -72,6 +80,14 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
         isRealtimeHanjaAvailable
     }
 
+    var isContextHanjaRankingEnabled: Bool {
+        isRealtimeHanjaAvailable ? settingsStore.useContextHanjaRanking : false
+    }
+
+    var canToggleContextHanjaRanking: Bool {
+        isRealtimeHanjaAvailable
+    }
+
     var areServicesLoading: Bool {
         kiwiService.isLoading || hanjaService.isLoading
     }
@@ -80,6 +96,12 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
         kiwiStatusDidResolve: @escaping (KiwiAnalysisService.Status) -> Void,
         hanjaStatusDidResolve: @escaping (HanjaDictionaryService.Status) -> Void
     ) {
+        // Step 5c association table — independent of Kiwi/hanja, so it warms up in parallel with
+        // the chain below rather than blocking it. No status callback: the realtime path already
+        // gates on `HanjaContextAssociationStore.shared.isAvailable` and falls back to step 4b
+        // behavior while it's loading/unavailable.
+        HanjaContextAssociationStore.shared.warmUp()
+
         kiwiService.warmUp { [weak self] in
             guard let self else {
                 return
@@ -119,7 +141,9 @@ func hideWarmUpPanelIfNeeded() {
     func makeMenu(
         target: AnyObject,
         realtimeAction: Selector,
+        contextRankingAction: Selector,
         manageUserDictionaryAction: Selector,
+        resetUsageDataAction: Selector,
         aboutAction: Selector
     ) -> NSMenu {
         let menu = NSMenu(title: "우리입력기")
@@ -135,6 +159,15 @@ func hideWarmUpPanelIfNeeded() {
             keyEquivalentModifierMask: InputEventPolicy.realtimeHanjaToggleModifierMask
         )
         menu.addItem(realtimeItem)
+
+        let contextRankingItem = makeToggleMenuItem(
+            title: MenuTitle.contextHanjaRanking,
+            action: contextRankingAction,
+            isOn: isContextHanjaRankingEnabled,
+            isEnabled: canToggleContextHanjaRanking,
+            target: target
+        )
+        menu.addItem(contextRankingItem)
         menu.addItem(.separator())
 
         let manageItem = NSMenuItem(
@@ -145,6 +178,15 @@ func hideWarmUpPanelIfNeeded() {
         manageItem.target = target
         manageItem.isEnabled = isManualHanjaAvailable
         menu.addItem(manageItem)
+
+        let resetUsageDataItem = NSMenuItem(
+            title: MenuTitle.resetUsageData,
+            action: resetUsageDataAction,
+            keyEquivalent: ""
+        )
+        resetUsageDataItem.target = target
+        resetUsageDataItem.isEnabled = isResetUsageDataAvailable
+        menu.addItem(resetUsageDataItem)
 
         menu.addItem(.separator())
         let aboutItem = NSMenuItem(
@@ -157,7 +199,9 @@ func hideWarmUpPanelIfNeeded() {
 
         currentMenu = menu
         realtimeMenuItem = realtimeItem
+        contextHanjaRankingMenuItem = contextRankingItem
         manageUserDictionaryMenuItem = manageItem
+        resetUsageDataMenuItem = resetUsageDataItem
         refreshMenuState(menu)
         return menu
     }
@@ -179,8 +223,50 @@ func hideWarmUpPanelIfNeeded() {
         refreshMenuState()
     }
 
+    func toggleContextHanjaRanking() {
+        guard canToggleContextHanjaRanking else {
+            return
+        }
+
+        settingsStore.toggleUseContextHanjaRanking()
+        refreshMenuState()
+    }
+
     func flushUsageWrites() {
         hanjaService.flushUsageWrites()
+    }
+
+    func resetHanjaUsageData() {
+        hanjaService.resetUsageData()
+    }
+
+    /// Shows a confirmation alert before clearing learned usage statistics. IMK server processes
+    /// don't have a normal foreground presence, so this promotes to `.accessory` and activates —
+    /// same pattern as `HanjaUserDictionaryWindowController.show()` — so the alert reliably comes
+    /// to the front instead of appearing behind the current app.
+    func confirmAndResetUsageData() {
+        guard isResetUsageDataAvailable else {
+            return
+        }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "사용자 학습 데이터를 초기화하시겠습니까?"
+        alert.informativeText = "한자 후보 선택으로 학습된 사용 빈도(한글 우선 학습 포함)가 모두 삭제되며 되돌릴 수 없습니다. 사용자 사전에 직접 등록한 항목은 삭제되지 않습니다."
+        alert.addButton(withTitle: "초기화")
+        alert.addButton(withTitle: "취소")
+
+        if NSApp.activationPolicy() != .accessory {
+            NSApp.setActivationPolicy(.accessory)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else {
+            return
+        }
+
+        resetHanjaUsageData()
     }
 
     func analyzeRealtimeClause(_ clause: String) -> [HanjaSegment] {
@@ -265,7 +351,28 @@ func hideWarmUpPanelIfNeeded() {
             return numericCandidates
         }
 
-        return hanjaService.exactCandidates(for: segment.normalizedLookupKey)
+        let candidates = hanjaService.exactCandidates(for: segment.normalizedLookupKey)
+        guard settingsStore.useContextHanjaRanking,
+              !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
+        else {
+            return candidates
+        }
+
+        let associationStore = HanjaContextAssociationStore.shared
+        let scores = associationStore.isAvailable
+            ? associationScores(
+                for: candidates,
+                contextFeatures: segment.contextFeatures,
+                lookup: associationStore.features(reading:hanja:)
+            )
+            : [:]
+
+        return rankWithContext(
+            candidates: candidates,
+            contextDominantHanja: segment.contextDominantHanja,
+            associationScores: scores,
+            weights: .default
+        )
     }
 
     func flushRealtimeUsageEvents(_ events: [PendingHanjaUsageEvent]) {
@@ -291,8 +398,15 @@ func hideWarmUpPanelIfNeeded() {
         realtimeItem?.state = isRealtimeHanjaConversionEnabled ? .on : .off
         realtimeItem?.isEnabled = canToggleRealtimeHanjaConversion
 
+        let contextRankingItem = menu?.item(withTitle: MenuTitle.contextHanjaRanking) ?? contextHanjaRankingMenuItem
+        contextRankingItem?.state = isContextHanjaRankingEnabled ? .on : .off
+        contextRankingItem?.isEnabled = canToggleContextHanjaRanking
+
         let manageItem = menu?.item(withTitle: MenuTitle.manageUserDictionary) ?? manageUserDictionaryMenuItem
         manageItem?.isEnabled = isManualHanjaAvailable
+
+        let resetUsageDataItem = menu?.item(withTitle: MenuTitle.resetUsageData) ?? resetUsageDataMenuItem
+        resetUsageDataItem?.isEnabled = isResetUsageDataAvailable
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {

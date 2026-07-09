@@ -170,4 +170,41 @@ final class HanjaCandidateRankingTests: XCTestCase {
     private func readings(in list: HanjaList) -> [String] {
         (0..<list.getSize()).compactMap { list.getNthKey($0) }
     }
+
+    // Regression for the 단계 2 (빈도 디코딩) fix: freq-hanjaeo.txt encodes 분류(1자리) + 하위값(6자리)
+    // into a 7-digit Int, so raw values corrupt within-reading order. Decoding via `% 1_000_000`
+    // must make the common word 水道 outrank the rarer 囚徒/水稻 for reading 수도.
+    // See docs/plans/context-aware-hanja-conversion.md section 3.
+    func testWordFrequencyDecodingFixesWithinReadingOrder() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let freq = HanjaFrequencyTable(
+            characterFrequencyURLs: [root.appendingPathComponent("woorilee/data/hanja/freq-hanja.txt")],
+            wordFrequencyURLs: [root.appendingPathComponent("woorilee/data/hanja/freq-hanjaeo.txt")]
+        )
+
+        XCTAssertEqual(freq.frequency(for: "水道"), 2106, "raw value 4002106 must decode to 하위값 via % 1_000_000")
+        XCTAssertEqual(freq.frequency(for: "囚徒"), 1072)
+        XCTAssertEqual(freq.frequency(for: "水稻"), 84)
+        XCTAssertGreaterThan(freq.frequency(for: "水道"), freq.frequency(for: "囚徒"))
+        XCTAssertGreaterThan(freq.frequency(for: "水道"), freq.frequency(for: "水稻"))
+
+        let dictionaryURL = root.appendingPathComponent("woorilee/data/hanja/hanja.txt")
+        let table = try XCTUnwrap(LibHangul.loadHanjaTable(filename: dictionaryURL.path))
+        let list = try XCTUnwrap(LibHangul.searchHanja(table: table, key: "수도"))
+        let seeds: [HanjaCandidateSeed] = (0..<list.getSize()).compactMap { i in
+            guard let value = list.getNthValue(i) else { return nil }
+            return HanjaCandidateSeed(reading: list.getNthKey(i) ?? "수도", value: value,
+                                      comment: list.getNthComment(i) ?? "", source: .system, baseRank: i)
+        }
+        let merged = mergeHanjaCandidates(userEntries: [], systemCandidates: seeds,
+                                          usageCounts: [:], frequencyLookup: freq.frequency(for:))
+        let values = merged.map(\.value)
+        let waterPipeRank = try XCTUnwrap(values.firstIndex(of: "水道"))
+        let prisonerRank = try XCTUnwrap(values.firstIndex(of: "囚徒"))
+        let riceRank = try XCTUnwrap(values.firstIndex(of: "水稻"))
+        XCTAssertLessThan(waterPipeRank, prisonerRank, "水道 must rank ahead of the rarer 囚徒 after decoding")
+        XCTAssertLessThan(waterPipeRank, riceRank, "水道 must rank ahead of the rarer 水稻 after decoding")
+    }
 }

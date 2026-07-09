@@ -1,0 +1,204 @@
+# verification-tokens.tsv — 단계 5a 형태소 공간 일치 검증 덤프 (offline collector `dump-tokens` output)
+# source: eval/hanja-context-eval-set.tsv (195 rows, file order)
+# kiwi: vendored Kiwi/bindings/swift (engine 0.23.1), model: woorilee/KiwiModels
+# analyze: topN=1 options=[.allWithNormalizing, .joinNounPrefix, .joinNounSuffix] (raw=8847423)
+# content tags: NNG,NNP,VV,VV-I,VA,VA-I,MAG,XR; feature key form/TAG (TAG = POSTag.description);
+#   raw filtered token sequence — no dedupe, no cap. Pinned by
+#   woorileeTests/KiwiOfflinePipelineConsistencyTests.swift against the runtime constants
+#   in woorilee/KiwiAnalysisService.swift (realtimeAnalysisMatchOptions / isContextContentMorphemeTag).
+# format: sentence<TAB>form/TAG,form/TAG,...
+수도관이 낡아서 상하수도 공사를 다시 해야 한다.	수도관/NNG,낡/VA,상하수도/NNG,공사/NNG,다시/MAG,하/VV
+집집마다 수도 계량기를 새로 교체하는 작업이 진행 중이다.	집집/NNG,수도/NNG,계량기/NNG,새로/MAG,교체/NNG,작업/NNG,진행/NNG
+가뭄이 심해지자 수돗물 대신 수도 공급을 제한하기로 했다.	가뭄/NNG,심하/VA,수돗물/NNG,대신/NNG,수도/NNG,공급/NNG,제한/NNG,하/VV
+그는 속세를 떠나 산속 수도 생활에 전념하기로 결심했다.	속세/NNG,떠나/VV,산속/NNG,수도/NNG,생활/NNG,전념/NNG,결심/NNG
+젊은 시절 그녀는 수도원에 들어가 수도 생활을 시작했다.	젊/VA,시절/NNG,수도원/NNG,들어가/VV,수도/NNG,생활/NNG,시작/NNG
+스님은 십 년째 깊은 산중에서 수도에 정진하고 있다.	스님/NNG,깊/VA,산중/NNG,수도/NNG,정진/NNG
+대한민국의 수도는 서울이고 일본의 수도는 도쿄이다.	대한민국/NNP,수도/NNG,서울/NNP,일본/NNP,수도/NNG,도쿄/NNP
+전쟁이 나자 정부는 수도를 임시로 다른 도시로 옮겼다.	전쟁/NNG,나/VV,정부/NNG,수도/NNG,임시/NNG,도시/NNG,옮기/VV
+그 나라는 새 수도를 건설하기 위해 막대한 예산을 투입했다.	나라/NNG,수도/NNG,건설/NNG,위하/VV,막대/XR,예산/NNG,투입/NNG
+마트에서 산 사과가 너무 달고 아삭해서 다시 사러 갔다.	마트/NNG,살/VV,사과/NNG,너무/MAG,달/VA,아삭/MAG,다시/MAG,사/VV,가/VV
+가을이 되면 과수원에서 빨갛게 익은 사과를 딴다.	가을/NNG,되/VV,과수원/NNG,빨갛/VA-I,익/VV,사과/NNG,따/VV
+아이는 사과 한 조각을 집어 들고 맛있게 먹었다.	아이/NNG,사과/NNG,조각/NNG,집/VV,들/VV,맛있/VA,먹/VV
+그는 실수를 인정하고 정중하게 사과의 말을 전했다.	실수/NNG,인정/NNG,정중/XR,사과/NNG,말/NNG,전하/VV
+회사는 소비자들에게 사과 성명을 발표했다.	회사/NNG,소비자들/NNG,사과/NNG,성명/NNG,발표/NNG
+친구에게 상처 준 것에 대해 진심으로 사과했다.	친구/NNG,상처/NNG,주/VV,대하/VV,진심/NNG,사과/NNG
+이 정도 실력이면 대회에 나가도 손색이 없다.	정도/NNG,실력/NNG,대회/NNG,나가/VV,손색/NNG,없/VA
+그 사람의 피해 정도를 정확히 파악해야 한다.	사람/NNG,피해/NNG,정도/NNG,정확히/MAG,파악/NNG
+어느 정도 예상은 했지만 결과가 이렇게 나쁠 줄은 몰랐다.	정도/NNG,예상/NNG,하/VV,결과/NNG,이렇/VA-I,나쁘/VA,모르/VV
+그는 원칙을 지키며 정도를 걷는 정치인으로 평가받는다.	원칙/NNG,지키/VV,정도/NNG,걷/VV-I,정치인/NNG,평가/NNG,받/VV
+사업을 하더라도 정도를 벗어나서는 안 된다.	사업/NNG,하/VV,정도/NNG,벗어나/VV,안/MAG,되/VV
+편법 대신 정도를 택하는 것이 결국 오래간다.	편법/NNG,대신/NNG,정도/NNG,택하/VV,결국/NNG,오래가/VV
+굴뚝에서 검은 연기가 피어올라 마을 사람들이 놀랐다.	굴뚝/NNG,검/VA,연기/NNG,피어오르/VV,마을/NNG,사람들/NNG,놀라/VV
+화재 현장에서 연기가 자욱하게 퍼졌다.	화재/NNG,현장/NNG,연기/NNG,자욱/XR,퍼지/VV
+캠프파이어 주변에 매캐한 연기가 감돌았다.	캠프파이어/NNG,주변/NNG,매캐/XR,연기/NNG,감돌/VV
+그 배우는 이번 영화에서 뛰어난 연기를 선보였다.	배우/NNG,이번/NNG,영화/NNG,뛰어나/VA,연기/NNG,선보이/VV
+신인 배우의 연기가 어색하다는 평가를 받았다.	신인/NNG,배우/NNG,연기/NNG,어색/XR,평가/NNG,받/VV
+그녀는 섬세한 감정 연기로 관객을 울렸다.	섬세/XR,감정/NNG,연기/NNG,관객/NNG,울리/VV
+태풍 때문에 행사 일정이 다음 주로 연기되었다.	태풍/NNG,행사/NNG,일정/NNG,다음/NNG,주/NNG,연기/NNG
+회의가 갑작스러운 사정으로 연기되었다.	회의/NNG,갑작스럽/VA-I,사정/NNG,연기/NNG
+시험 날짜가 일주일 연기되었다는 공지가 떴다.	시험/NNG,날짜/NNG,일주일/NNG,연기/NNG,공지/NNG,뜨/VV
+아파트 단지 재건축 공사가 내년 봄에 시작된다.	아파트/NNG,단지/NNG,재건축/NNG,공사/NNG,내년/NNG,봄/NNG,시작/NNG
+도로 공사 때문에 출퇴근길이 많이 막힌다.	도로/NNG,공사/NNG,출퇴근/NNG,길/NNG,많이/MAG,막히/VV
+건설 회사가 터널 공사를 맡아 진행하고 있다.	건설/NNG,회사/NNG,터널/NNG,공사/NNG,맡/VV,행하/VV
+그는 정년퇴직 후 공사에서 운영하는 병원에 취직했다.	정년퇴직/NNG,후/NNG,공사/NNG,운영/NNG,병원/NNG,취직/NNG
+공사는 공공성과 수익성을 동시에 추구하는 조직이다.	공사/NNG,공공성/NNG,수익성/NNG,동시/NNG,추구/NNG,조직/NNG
+한국전력공사 같은 공사는 정부가 지분을 보유한다.	한국전력공사/NNP,같/VA,공사/NNG,정부/NNG,지분/NNG,보유/NNG
+새로 부임한 주한 공사가 대사관에서 환영 행사를 열었다.	새로/MAG,부임/NNG,주한/NNG,공사/NNG,대사관/NNG,환영/NNG,행사/NNG,열/VV
+그는 외교관으로서 공사 직급을 거쳐 대사가 되었다.	외교관/NNG,공사/NNG,직급/NNG,거치/VV,대사/NNG,되/VV
+공사는 본국 정부의 지시를 받아 협상에 나섰다.	공사/NNG,본국/NNG,정부/NNG,지시/NNG,받/VV,협상/NNG,나서/VV
+동네 의사 선생님이 친절하게 진료해 주셨다.	동네/NNG,의사/NNG,선생님/NNG,친절/NNG,진료/NNG
+그녀는 의사가 되기 위해 의과대학에 진학했다.	의사/NNG,되/VV,위하/VV,의과/NNG,대학/NNG,진학/NNG
+응급실 의사가 밤새 환자를 돌봤다.	응급실/NNG,의사/NNG,밤새/NNG,환자/NNG,돌보/VV
+그의 발언에는 협상할 의사가 전혀 없어 보였다.	발언/NNG,협상/NNG,의사/NNG,전혀/MAG,없/VA,보이/VV
+계약을 해지할 의사가 있는지 먼저 확인해야 한다.	계약/NNG,해지/NNG,의사/NNG,있/VV,먼저/MAG,확인/NNG
+회사를 떠날 의사가 있냐는 질문에 그는 침묵했다.	회사/NNG,떠나/VV,의사/NNG,있/VV,질문/NNG,침묵/NNG
+안중근 의사는 하얼빈에서 이토 히로부미를 저격했다.	안중근/NNP,의사/NNG,하얼빈/NNP,이토/NNP,히로부미/NNP,저격/NNG
+독립운동을 이끈 의사들의 희생을 기억해야 한다.	독립운동/NNG,이끌/VV,의사들/NNG,희생/NNG,기억/NNG
+윤봉길 의사의 의거는 널리 알려져 있다.	윤봉길/NNP,의사/NNG,의거/NNG,널리/MAG,알려지/VV
+국회는 오늘 본회의에서 예산안 의사 진행을 시작했다.	국회/NNG,오늘/NNG,본회의/NNG,예산안/NNG,의사/NNG,진행/NNG,시작/NNG
+의사 진행 발언을 신청한 의원이 단상에 올랐다.	의사/NNG,진행/NNG,발언/NNG,신청/NNG,의원/NNG,단상/NNG,오르/VV
+회의 의사 일정에 따라 안건이 순서대로 상정되었다.	회의/NNG,의사/NNG,일정/NNG,따르/VV,안건/NNG,순서/NNG,상정/NNG
+전기가 끊겨서 온 집 안이 캄캄해졌다.	전기/NNG,끊기/VV,집/NNG,안/NNG,캄캄/MAG
+누전으로 전기 사고가 날 뻔했다.	누전/NNG,전기/NNG,사고/NNG,나/VV
+전기 요금이 지난달보다 많이 나왔다.	전기/NNG,요금/NNG,지난달/NNG,많이/MAG,나오/VV
+그는 위인전기 작가로서 여러 인물의 삶을 기록했다.	위인/NNG,전기/NNG,작가/NNG,인물/NNG,삶/NNG,기록/NNG
+그 책은 유명 과학자의 전기를 다룬 작품이다.	책/NNG,유명/NNG,과학자/NNG,전기/NNG,다루/VV,작품/NNG
+전기 작가는 인물의 생애를 꼼꼼히 취재했다.	전기/NNG,작가/NNG,인물/NNG,생애/NNG,꼼꼼히/MAG,취재/NNG
+올해 전기 리그는 예년보다 치열하게 진행되었다.	올해/NNG,전기/NNG,리그/NNG,예년/NNG,치열/NNG,진행/NNG
+전기 졸업생들의 취업률이 발표되었다.	전기/NNG,졸업생들/NNG,취업률/NNG,발표/NNG
+전기 실적을 바탕으로 후기 목표를 다시 세웠다.	전기/NNG,실적/NNG,바탕/NNG,후기/NNG,목표/NNG,다시/MAG,세우/VV
+그 사건은 회사가 재기하는 전기가 되었다.	사건/NNG,회사/NNG,재기/NNG,전기/NNG,되/VV
+부상에서 회복한 것이 선수 인생의 전기가 되었다.	부상/NNG,회복/NNG,선수/NNG,인생/NNG,전기/NNG,되/VV
+새 정책 발표는 지역 경제에 전기를 마련해 주었다.	정책/NNG,발표/NNG,지역/NNG,경제/NNG,전기/NNG,마련/NNG
+공무원의 부정 청탁을 막기 위한 법이 강화되었다.	공무원/NNG,부정/NNG,청탁/NNG,막/VV,위하/VV,법/NNG,강화/NNG
+시험에서 부정 행위가 적발되어 퇴실 조치되었다.	시험/NNG,부정/NNG,행위/NNG,적발/NNG,퇴/NNG,실/NNG,조치/NNG
+회사 내부의 부정 축재 의혹이 제기되었다.	회사/NNG,내부/NNG,부정/NNG,축재/NNG,의혹/NNG,제기/NNG
+그는 혐의를 강하게 부정하며 결백을 주장했다.	혐의/NNG,강하/VA,부정/NNG,결백/NNG,주장/NNG
+목격자의 진술을 부정할 증거가 없었다.	목격자/NNG,진술/NNG,부정/NNG,증거/NNG,없/VA
+회사 측은 유출 사실 자체를 부정했다.	회사/NNG,유출/NNG,사실/NNG,자체/NNG,부정/NNG
+회의 일정은 아직 부정 상태로 남아 있다.	회의/NNG,일정/NNG,아직/MAG,부정/NNG,상태/NNG,남/VV
+그의 거처는 부정하여 연락이 닿지 않았다.	거처/NNG,부정/NNG,연락/NNG,닿/VV
+계약 조건이 부정한 채로 협상이 계속되었다.	계약/NNG,조건/NNG,부정/NNG,협상/NNG,계속/NNG
+그는 세상을 바꾸겠다는 이상을 품고 정치에 뛰어들었다.	세상/NNG,바꾸/VV,이상/NNG,품/VV,정치/NNG,뛰어들/VV
+청년들은 저마다 이상을 좇아 도전을 계속한다.	청년들/NNG,저마다/MAG,이상/NNG,좇/VV,도전/NNG,계속/NNG
+현실과 이상 사이에서 그는 늘 고민했다.	현실/NNG,이상/NNG,사이/NNG,늘/MAG,고민/NNG
+건강 검진에서 심장에 이상 소견이 발견되었다.	건강/NNG,검진/NNG,심장/NNG,이상/NNG,소견/NNG,발견/NNG
+기계에서 이상 소음이 들려서 점검을 요청했다.	기계/NNG,이상/NNG,소음/NNG,들리/VV,점검/NNG,요청/NNG
+그의 행동이 평소와 달리 이상 징후를 보였다.	행동/NNG,평소/NNG,달리/MAG,이상/NNG,징후/NNG,보이/VV
+정원이 서른 명 이상 모이면 강당으로 이동한다.	정원/NNG,이상/NNG,모이/VV,강당/NNG,이동/NNG
+성인 열 명 이상이면 단체 할인을 받을 수 있다.	성인/NNG,이상/NNG,단체/NNG,할인/NNG,받/VV,있/VA
+합격 기준은 총점 팔십 점 이상이다.	합격/NNG,기준/NNG,이상/NNG
+오랜만에 만난 친구와 감정을 나누며 이야기했다.	오랜만/NNG,만나/VV,친구/NNG,감정/NNG,나누/VV,이야기/NNG
+그녀는 감정을 잘 드러내지 않는 편이다.	감정/NNG,잘/MAG,드러내/VV
+슬픈 영화를 보고 감정이 북받쳐 눈물이 났다.	슬프/VA,영화/NNG,보/VV,감정/NNG,북받치/VV,눈물/NNG,나/VV
+전문가가 골동품의 가치를 감정 의뢰받았다.	전문가/NNG,골동품/NNG,가치/NNG,감정/NNG,의뢰/NNG,받/VV
+필적 감정 결과 위조된 서류로 확인되었다.	필적/NNG,감정/NNG,결과/NNG,위조/NNG,서류/NNG,확인/NNG
+부동산 감정 평가사가 건물 시세를 산정했다.	부동산/NNG,감정/NNG,평가사/NNG,건물/NNG,시세/NNG,산정/NNG
+방화 훈련을 위해 소방서에서 안전 교육을 실시했다.	방화/NNG,훈련/NNG,위하/VV,소방서/NNG,안전/NNG,교육/NNG,실시/NNG
+아파트에 방화 셔터가 새로 설치되었다.	아파트/NNG,방화/NNG,셔터/NNG,새로/MAG,설치/NNG
+겨울철 산불 예방을 위한 방화 캠페인이 진행되었다.	겨울철/NNG,산불/NNG,예방/NNG,위하/VV,방화/NNG,캠페인/NNG,진행/NNG
+범인은 창고에 불을 지른 방화 혐의로 체포되었다.	범인/NNG,창고/NNG,불/NNG,지르/VV,방화/NNG,혐의/NNG,체포/NNG
+경찰은 이번 화재를 방화로 추정하고 수사에 나섰다.	경찰/NNG,이번/NNG,화재/NNG,방화/NNG,추정/NNG,수사/NNG,나서/VV
+연쇄 방화 사건으로 주민들이 불안에 떨고 있다.	연쇄/NNG,방화/NNG,사건/NNG,주민들/NNG,불안/NNG,떨/VV
+경기가 침체되면서 실업률이 크게 늘었다.	경기/NNG,침체/NNG,실업률/NNG,크/VA,늘/VV
+정부는 경기 부양을 위해 재정을 확대하기로 했다.	정부/NNG,경기/NNG,부양/NNG,위하/VV,재정/NNG,확대/NNG,하/VV
+소비 심리가 위축되며 경기가 더 나빠졌다.	소비/NNG,심리/NNG,위축/NNG,경기/NNG,더/MAG,나빠지/VV
+오늘 저녁 축구 경기가 열려 온 동네가 들썩였다.	오늘/NNG,저녁/NNG,축구/NNG,경기/NNG,열리/VV,동네/NNG,들썩이/VV
+그 선수는 결승 경기에서 신기록을 세웠다.	선수/NNG,결승/NNG,경기/NNG,신기록/NNG,세우/VV
+양 팀은 치열한 경기 끝에 무승부를 기록했다.	팀/NNG,치열/NNG,경기/NNG,끝/NNG,무승부/NNG,기록/NNG
+경기 지역의 아파트 가격이 크게 올랐다.	경기/NNP,지역/NNG,아파트/NNG,가격/NNG,크/VA,오르/VV
+경기 감사는 도청에서 근무하는 공무원이다.	경기/NNP,감사/NNG,도청/NNG,근무/NNG,공무원/NNG
+경기 북부 지역에 폭설이 내렸다.	경기/NNP,북부/NNG,지역/NNG,폭설/NNG,내리/VV
+이 지방은 특산물로 유명해서 관광객이 많이 찾는다.	지방/NNG,특산물/NNG,유명/XR,관광객/NNG,많이/MAG,찾/VV
+지방 자치단체마다 예산 규모가 다르다.	지방/NNG,자치/NNG,단체/NNG,예산/NNG,규모/NNG,다르/VA
+그는 서울을 떠나 지방 소도시로 이사했다.	서울/NNP,떠나/VV,지방/NNG,소도시/NNG,이사/NNG
+과식하면 몸에 지방이 쌓이기 쉽다.	과식/NNG,몸/NNG,지방/NNG,쌓이/VV,쉽/VA-I
+혈액 검사에서 중성 지방 수치가 높게 나왔다.	혈액/NNG,검사/NNG,중성/NNG,지방/NNG,수치/NNG,높/VA,나오/VV
+운동을 꾸준히 하면 체지방이 줄어든다.	운동/NNG,꾸준히/MAG,하/VV,체지방/NNG,줄어들/VV
+전통 시장 상인들이 손님을 맞을 준비를 했다.	전통/NNG,시장/NNG,상인들/NNG,손님/NNG,맞/VV,준비/NNG,하/VV
+주말이면 재래시장에 사람들이 북적인다.	주말/NNG,재래/NNG,시장/NNG,사람들/NNG,북적이/VV
+채소 가격이 시장에 따라 조금씩 다르다.	채소/NNG,가격/NNG,시장/NNG,따르/VV,조금씩/NNG,다르/VA
+새로 취임한 시장이 취임사를 발표했다.	새로/MAG,취임/NNG,시장/NNG,취임사/NNG,발표/NNG
+서울 시장은 매주 시민들과 소통 행사를 연다.	서울/NNP,시장/NNG,매주/MAG,시민들/NNG,소통/NNG,행사/NNG,열/VV
+시장 후보들이 토론회에서 공약을 발표했다.	시장/NNG,후보들/NNG,토론회/NNG,공약/NNG,발표/NNG
+고속도로에서 큰 교통 사고가 발생했다.	고속도로/NNG,크/VA,교통/NNG,사고/NNG,발생/NNG
+공장에서 안전 사고가 잇따르자 점검이 강화되었다.	공장/NNG,안전/NNG,사고/NNG,잇따르/VV,점검/NNG,강화/NNG
+그는 어릴 적 사고로 다리를 다쳤다.	어리/VA,사고/NNG,다리/NNG,다치/VV
+그는 논리적 사고 능력이 뛰어나다는 평가를 받는다.	논리적/NNG,사고/NNG,능력/NNG,뛰어나/VA,평가/NNG,받/VV
+창의적 사고를 기르기 위한 교육이 필요하다.	창의적/NNG,사고/NNG,기르/VV,위하/VV,교육/NNG,필요/NNG
+그녀는 긍정적 사고 방식으로 위기를 극복했다.	긍정적/NNG,사고/NNG,방식/NNG,위기/NNG,극복/NNG
+조선 시대 왕들의 계보를 정리한 책이 출간되었다.	조선/NNP,시대/NNG,왕들/NNG,계보/NNG,정리/NNG,책/NNG,출간/NNG
+조선 후기에는 실학이 크게 발전했다.	조선/NNP,후기/NNG,실학/NNG,크/VA,발전/NNG
+경복궁은 조선 왕조의 정궁이다.	경복궁/NNP,조선/NNP,왕조/NNG,정궁/NNG
+그 도시는 조선 산업으로 유명한 항구 도시다.	도시/NNG,조선/NNG,산업/NNG,유명/NNG,항구/NNG,도시/NNG
+조선 회사가 대형 컨테이너선을 수주했다.	조선/NNP,회사/NNG,대형/NNG,컨테이너선/NNG,수주/NNG
+조선 기술의 발전으로 선박 건조 기간이 단축되었다.	조선/NNG,기술/NNG,발전/NNG,선박/NNG,건조/NNG,기간/NNG,단축/NNG
+성인이 되면 스스로 결정할 책임도 커진다.	성인/NNG,되/VV,스스로/MAG,결정/NNG,책임/NNG,커지/VV
+이 영화는 성인만 관람할 수 있는 등급이다.	영화/NNG,성인/NNG,관람/NNG,있/VA,등급/NNG
+성인 인구 중 절반이 운동 부족이라는 조사 결과가 나왔다.	성인/NNG,인구/NNG,절반/NNG,운동/NNG,부족/NNG,조사/NNG,결과/NNG,나오/VV
+공자는 동양에서 성인으로 추앙받는 인물이다.	공자/NNP,동양/NNG,성인/NNG,추앙/NNG,받/VV,인물/NNG
+그는 성인의 가르침을 따르며 평생을 수양했다.	성인/NNG,가르침/NNG,따르/VV,평생/NNG,수양/NNG
+여러 종교에서 저마다의 성인을 기린다.	종교/NNG,저마다/NNG,성인/NNG,기리/VV
+군대는 최신 무기를 도입해 전력을 강화했다.	군대/NNG,최신/NNG,무기/NNG,도입/NNG,전력/NNG,강화/NNG
+그 나라는 핵무기 개발 의혹을 받고 있다.	나라/NNG,핵무기/NNG,개발/NNG,의혹/NNG,받/VV
+경찰은 범행에 사용된 무기를 압수했다.	경찰/NNG,범행/NNG,사용/NNG,무기/NNG,압수/NNG
+법원은 그에게 무기 징역을 선고했다.	법원/NNG,무기/NNG,징역/NNG,선고/NNG
+계약은 무기 연기 상태로 보류되었다.	계약/NNG,무기/NNG,연기/NNG,상태/NNG,보류/NNG
+협상이 무기한 중단되며 무기 휴회에 들어갔다.	협상/NNG,무기한/NNG,중단/NNG,무기/NNG,휴회/NNG,들어가/VV
+부모님이 남긴 유산을 형제들이 나누어 가졌다.	부모님/NNG,남기/VV,유산/NNG,형제들/NNG,나누/VV
+그는 막대한 유산을 상속받았다.	막대/XR,유산/NNG,상속/NNG,받/VV
+문화유산을 보존하려는 노력이 계속되고 있다.	문화유산/NNG,보존/NNG,노력/NNG,계속/NNG
+과로로 인해 그녀는 유산의 아픔을 겪었다.	과로/NNG,인하/VV,유산/NNG,아픔/NNG,겪/VV
+임신 초기 유산을 예방하려면 충분한 휴식이 필요하다.	임신/NNG,초기/NNG,유산/NNG,예방/NNG,충분/XR,휴식/NNG,필요/NNG
+스트레스가 심하면 유산 위험이 높아질 수 있다.	스트레스/NNG,심하/VA,유산/NNG,위험/NNG,높아지/VV,있/VA
+첫 만남에서 좋은 인상을 남기는 것이 중요하다.	만남/NNG,좋/VA,인상/NNG,남기/VV,중요/NNG
+그 영화는 강렬한 인상을 남겼다.	영화/NNG,강렬/XR,인상/NNG,남기/VV
+그녀의 미소가 인상 깊게 기억에 남았다.	미소/NNG,인상/NNG,깊/VA,기억/NNG,남/VV
+정부가 최저임금 인상을 발표했다.	정부/NNG,최저/NNG,임금/NNG,인상/NNG,발표/NNG
+버스 요금 인상 소식에 시민들이 불만을 터뜨렸다.	버스/NNG,요금/NNG,인상/NNG,소식/NNG,시민들/NNG,불만/NNG,터뜨리/VV
+회사는 내년부터 제품 가격 인상을 검토하고 있다.	회사/NNG,내년/NNG,제품/NNG,가격/NNG,인상/NNG,검토/NNG
+과식한 후에는 소화가 잘 안 된다.	과식/NNG,후/NNG,소화/NNG,잘/MAG,안/MAG,되/VV
+따뜻한 차를 마시면 소화에 도움이 된다.	따뜻/XR,차/NNG,마시/VV,소화/NNG,도움/NNG,되/VV
+아이는 소화 기능이 약해 죽을 먹였다.	아이/NNG,소화/NNG,기능/NNG,약하/VA,죽/NNG,먹이/VV
+화재 현장에 소화 장비를 갖춘 소방차가 출동했다.	화재/NNG,현장/NNG,소화/NNG,장비/NNG,갖추/VV,소방차/NNG,출동/NNG
+건물마다 소화 설비 점검이 의무화되었다.	건물/NNG,소화/NNG,설비/NNG,점검/NNG,의무화/NNG
+소화기 사용법을 숙지해 두는 것이 안전에 중요하다.	소화기/NNG,사용법/NNG,숙지/NNG,안전/NNG,중요/NNG
+새로 임명된 장관이 취임 일성을 밝혔다.	새로/MAG,임명/NNG,장관/NNG,취임/NNG,일성/NNP,밝히/VV
+국방부 장관이 국회에 출석해 답변했다.	국방부/NNG,장관/NNG,국회/NNG,출석/NNG,답변/NNG
+그는 교육부 장관으로 발탁되었다.	교육부/NNG,장관/NNG,발탁/NNG
+설악산 단풍이 장관을 이루었다.	설악산/NNP,단풍/NNG,장관/NNG,이루/VV
+불꽃놀이가 밤하늘을 수놓으며 장관을 연출했다.	불꽃놀이/NNG,밤하늘/NNG,수놓/VV,장관/NNG,연출/NNG
+정상에서 내려다본 풍경이 그야말로 장관이었다.	정상/NNG,내려다보/VV,풍경/NNG,그야말로/MAG,장관/NNG,잇/VV-I
+어릴 적 화상 때문에 팔에 흉터가 남았다.	어리/VA,화상/NNG,팔/NNG,흉터/NNG,남/VV
+뜨거운 물에 데어 화상을 입었다.	뜨겁/VA-I,물/NNG,데/VV,화상/NNG,입/VV
+화상 환자는 즉시 찬물로 응급 처치를 해야 한다.	화상/NNG,환자/NNG,즉시/MAG,찬물/NNG,응급/NNG,처치/NNG,하/VV
+낡은 화상 액자를 박물관에 기증했다.	낡/VV,화상/NNG,액자/NNG,박물관/NNG,기증/NNG
+조선 시대 왕의 화상이 전시관에 걸려 있다.	조선/NNP,시대/NNG,왕/NNG,화상/NNG,전시관/NNG,걸리/VV
+그 화가는 인물의 화상을 정교하게 그렸다.	화가/NNG,인물/NNG,화상/NNG,정교/XR,그리/VV
+가을이면 노란 국화가 정원 가득 피어난다.	가을/NNG,노랗/VA-I,국화/NNG,정원/NNG,가득/MAG,피어나/VV
+국화 축제가 열려 많은 관광객이 몰렸다.	국화/NNG,축제/NNG,열리/VV,많/VA,관광객/NNG,몰리/VV
+장례식장에는 흰 국화가 놓여 있었다.	장례식장/NNG,희/VA,국화/NNG,놓이/VV
+무궁화는 대한민국의 국화로 지정되어 있다.	무궁화/NNG,대한민국/NNP,국화/NNG,지정/NNG
+각 나라마다 상징하는 국화가 다르다.	나라/NNG,상징/NNG,국화/NNG,다르/VA
+일본의 국화는 벚꽃으로 알려져 있다.	일본/NNP,국화/NNG,벚꽃/NNG,알려지/VV
+생일을 맞아 친구에게 정성스러운 선물을 준비했다.	생일/NNG,맞/VV,친구/NNG,정성/NNG,선물/NNG,준비/NNG
+크리스마스 선물로 목도리를 받았다.	크리스마스/NNG,선물/NNG,목도리/NNG,받/VV
+아이는 선물 상자를 열어 보며 기뻐했다.	아이/NNG,선물/NNG,상자/NNG,열/VV,기뻐하/VV
+투자자는 원자재 선물 거래로 큰 손해를 보았다.	투자자/NNG,원자재/NNG,선물/NNG,거래/NNG,크/VA,손해/NNG,보/VV
+선물 시장에서 유가가 급등했다.	선물/NNG,시장/NNG,유가/NNG,급등/NNG
+그는 주식 선물 옵션에 대해 공부하고 있다.	주식/NNG,선물/NNG,옵션/NNG,대하/VV,공부/NNG,하/VV
+대전에 새로 생긴 과학관을 방문했다.	대전/NNP,새로/MAG,생기/VV,과학관/NNG,방문/NNG
+그는 대전에서 태어나 자란 토박이다.	대전/NNP,태어나/VV,자라/VV,토박이/NNG
+대전역에서 기차를 타고 서울로 향했다.	대전역/NNP,기차/NNG,타/VV,서울/NNP,향하/VV
+두 나라는 결국 대전으로 치달았다.	나라/NNG,결국/NNG,대전/NNP,치닫/VV-I
+세계 대전 이후 국제 질서가 크게 바뀌었다.	세계/NNG,대전/NNG,이후/NNG,국제/NNG,질서/NNG,크/VA,바뀌/VV
+그 소설은 대전의 참혹함을 사실적으로 묘사했다.	소설/NNG,대전/NNP,참혹/NNG,사실적/NNG,묘사/NNG
+결승전에서 두 강팀의 대전이 성사되었다.	결승전/NNG,강팀/NNG,대전/NNG,성사/NNG
+챔피언과의 대전을 앞두고 선수는 긴장한 기색이었다.	챔피언/NNG,대전/NNG,앞두/VV,선수/NNG,긴장/NNG,기색/NNG
+양 팀 감독은 대전 전략을 짜느라 분주했다.	팀/NNG,감독/NNG,대전/NNP,전략/NNG,짜/VV,분주/NNG
+도로 표지를 잘 보고 방향을 확인해야 한다.	도로/NNG,표지/NNG,잘/MAG,보/VV,방향/NNG,확인/NNG
+새로 세운 표지판이 눈에 잘 띈다.	새로/MAG,세우/VV,표지판/NNG,눈/NNG,잘/MAG,띄/VV
+등산로 곳곳에 이정표 표지가 설치되어 있다.	등산로/NNG,곳곳/NNG,이정표/NNG,표지/NNG,설치/NNG
+잡지 표지에 유명 배우의 사진이 실렸다.	잡지/NNG,표지/NNG,유명/NNG,배우/NNG,사진/NNG,실리/VV
+책 표지를 화려하게 디자인했다.	책/NNG,표지/NNG,화려하/VA,디자인/NNG
+그 책은 표지부터 눈길을 사로잡았다.	책/NNG,표지/NNG,눈길/NNG,사로잡/VV

@@ -111,7 +111,7 @@ func mergeHanjaCandidates(
     return merged.values.sorted(by: compareHanjaCandidate(_:_:))
 }
 
-private func compareHanjaCandidate(_ lhs: HanjaCandidate, _ rhs: HanjaCandidate) -> Bool {
+func compareHanjaCandidate(_ lhs: HanjaCandidate, _ rhs: HanjaCandidate) -> Bool {
     if lhs.source != rhs.source {
         return lhs.source == .userDefined
     }

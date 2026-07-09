@@ -8,6 +8,13 @@ import Kiwi
 final class KiwiAnalysisService {
     private static let realtimeAnalysisCandidateCount = 3
 
+    /// Kiwi match options for the realtime conversion path. Also one half of the step-5a
+    /// offline↔runtime morpheme-space contract (see scripts/hanja-context/README.md): the offline
+    /// corpus collector (scripts/hanja-context/collector) analyzes with exactly these options,
+    /// and `KiwiOfflinePipelineConsistencyTests` pins the equivalence against its
+    /// `dump-tokens` output.
+    static let realtimeAnalysisMatchOptions: MatchOptions = [.allWithNormalizing, .joinNounPrefix, .joinNounSuffix]
+
     enum Status: Equatable {
         case uninitialized
         case loading
@@ -94,24 +101,185 @@ final class KiwiAnalysisService {
             return []
         }
 
+        let candidateLookup: (String) -> [HanjaCandidate] = { key in
+            let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
+            return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
+        }
+
         do {
             let results = try kiwi.analyze(
                 clause,
                 topN: Self.realtimeAnalysisCandidateCount,
-                options: [.allWithNormalizing, .joinNounPrefix, .joinNounSuffix]
+                options: Self.realtimeAnalysisMatchOptions
             )
-            return Self.bestRealtimeSegments(
+            let best = Self.bestRealtimeSegmentsWithWinningTokens(
                 from: results,
                 in: clause,
-                candidateLookup: { key in
-                    let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
-                    return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
-                },
+                candidateLookup: candidateLookup,
                 hangulUsageLookup: hanjaService.hangulUsageCount(for:)
+            )
+
+            guard HanjaSettingsStore.shared.useContextHanjaRanking,
+                  let dominantMap = hanjaService.dominantHanjaMap,
+                  !dominantMap.isEmpty
+            else {
+                return best.segments
+            }
+
+            // Step 5c — corpus association scoring (docs/plans/context-aware-hanja-conversion.md
+            // §7 5c). Passed only when the store finished loading; nil otherwise keeps this
+            // identical to step 4b's containment-only reranking.
+            let associationStore = HanjaContextAssociationStore.shared
+            let associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = associationStore.isAvailable
+                ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
+                : nil
+
+            return Self.applyContextReranking(
+                to: best.segments,
+                clause: clause,
+                dominantMap: dominantMap,
+                candidateLookup: candidateLookup,
+                winningTokens: best.winningTokens,
+                associationFeatureLookup: associationFeatureLookup
             )
         } catch {
             return []
         }
+    }
+
+    /// Post-processing step (step 4b — see docs/plans/context-aware-hanja-conversion.md §5) applied
+    /// AFTER `bestRealtimeSegments` has already picked the winning tokenization. Resolves the
+    /// clause's context dominant hanja once, then only re-ranks segments that already carry a
+    /// non-nil `previewCandidate` — segments that were nil (preferHangul / non-auto-convert-eligible
+    /// / not convertible) stay nil, preserving every eligibility rule already applied upstream.
+    /// When `dominantMap` is empty this is a full no-op (context resolves to `[]` for every segment,
+    /// `rankWithContext` returns `compareHanjaCandidate` order, `.first` is unchanged).
+    /// - Parameters:
+    ///   - winningTokens: the Kiwi tokens behind the winning tokenization (from
+    ///     `bestRealtimeSegmentsWithWinningTokens`), used only to derive step-5c association
+    ///     features. Defaults to `[]`, which combined with `associationFeatureLookup == nil`
+    ///     (its default) reproduces step 4b exactly.
+    ///   - associationFeatureLookup: `(reading, hanja) -> matched-feature weights`, backed by
+    ///     `HanjaContextAssociationStore` in production. nil (the default) disables the
+    ///     association axis entirely — the step-4b containment/charShare behavior is unchanged.
+    static func applyContextReranking(
+        to segments: [HanjaSegment],
+        clause: String,
+        dominantMap: [String: String],
+        candidateLookup: (String) -> [HanjaCandidate],
+        winningTokens: [Token] = [],
+        associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = nil,
+        weights: HanjaContextRankingWeights = .default
+    ) -> [HanjaSegment] {
+        guard !segments.isEmpty else {
+            return segments
+        }
+
+        let context = clauseContextDominantHanja(clause: clause, segments: segments, dominantMap: dominantMap)
+        let clauseFeatures = associationFeatureLookup != nil
+            ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: nil)
+            : []
+
+        guard !context.isEmpty || !clauseFeatures.isEmpty else {
+            return segments
+        }
+
+        return segments.map { segment in
+            // Self-exclusion (mirrors the offline collector's span exclusion): the segment's own
+            // surface must not vote for its own candidates.
+            let segmentFeatures = associationFeatureLookup != nil
+                ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: segment.sourceRange)
+                : []
+
+            guard segment.previewCandidate != nil else {
+                return segment.replacingContext(context, features: segmentFeatures, previewCandidate: nil)
+            }
+
+            let candidates = candidateLookup(segment.normalizedLookupKey)
+            let scores = associationFeatureLookup.map {
+                associationScores(for: candidates, contextFeatures: segmentFeatures, lookup: $0)
+            } ?? [:]
+
+            let reranked = rankWithContext(
+                candidates: candidates,
+                contextDominantHanja: context,
+                associationScores: scores,
+                weights: weights
+            )
+            return segment.replacingContext(context, features: segmentFeatures, previewCandidate: reranked.first)
+        }
+    }
+
+    /// Content-morpheme features (`form/TAG`, deduped, order of first appearance) from `tokens`,
+    /// dropping any token whose range overlaps `excludedRange` (self-exclusion for the target
+    /// segment). `excludedRange == nil` keeps every content-morpheme token.
+    private static func clauseContentFeatures(
+        from tokens: [Token],
+        excludingRangeOverlapping excludedRange: NSRange?
+    ) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for token in tokens {
+            guard isContextContentMorphemeTag(token.tag) else { continue }
+            let tokenRange = NSRange(location: token.position, length: token.length)
+            if let excludedRange, rangesOverlap(tokenRange, excludedRange) { continue }
+
+            let feature = "\(token.form)/\(token.tag.description)"
+            guard !seen.contains(feature) else { continue }
+            seen.insert(feature)
+            result.append(feature)
+        }
+        return result
+    }
+
+    /// Groups `segments` into eojeols by the space characters in `clause` between their
+    /// `sourceRange`s (segments with no space in the gap belong to the same eojeol), concatenates
+    /// each eojeol's segment surfaces in order to reconstruct the josa-stripped eojeol reading
+    /// (e.g. 상하 + 수도 → "상하수도"), then resolves both eojeol readings and individual segment
+    /// surfaces through `dominantMap` via `contextDominantHanja(forEojeolReadings:dominantMap:)`.
+    static func clauseContextDominantHanja(
+        clause: String,
+        segments: [HanjaSegment],
+        dominantMap: [String: String]
+    ) -> [String] {
+        guard !segments.isEmpty else {
+            return []
+        }
+
+        let ordered = segments.sorted { $0.sourceRange.location < $1.sourceRange.location }
+
+        var eojeolReadings: [String] = []
+        var currentReading = ordered[0].surface
+        var previousEnd = ordered[0].sourceRange.location + ordered[0].sourceRange.length
+
+        for segment in ordered.dropFirst() {
+            let gapLength = segment.sourceRange.location - previousEnd
+            let gapContainsSpace: Bool = {
+                guard gapLength > 0,
+                      let gapRange = Range(NSRange(location: previousEnd, length: gapLength), in: clause)
+                else {
+                    return false
+                }
+
+                return clause[gapRange].contains(" ")
+            }()
+
+            if gapContainsSpace {
+                eojeolReadings.append(currentReading)
+                currentReading = segment.surface
+            } else {
+                currentReading += segment.surface
+            }
+
+            previousEnd = segment.sourceRange.location + segment.sourceRange.length
+        }
+        eojeolReadings.append(currentReading)
+
+        let individualSurfaces = ordered.map(\.surface)
+        return contextDominantHanja(
+            forEojeolReadings: eojeolReadings + individualSurfaces,
+            dominantMap: dominantMap
+        )
     }
 
     static func bestRealtimeSegments(
@@ -120,8 +288,46 @@ final class KiwiAnalysisService {
         candidateLookup: (String) -> [HanjaCandidate],
         hangulUsageLookup: (String) -> Int = { _ in 0 }
     ) -> [HanjaSegment] {
+        bestRealtimeSegmentsWithWinningTokens(
+            from: results,
+            in: clause,
+            candidateLookup: candidateLookup,
+            hangulUsageLookup: hangulUsageLookup
+        ).segments
+    }
+
+    /// Same selection as `bestRealtimeSegments` (convertibleLength, then `TokenResult.score`
+    /// tie-break), but also returns the winning analysis's raw tokens — step 5c needs them to
+    /// derive clause content-morpheme features for association scoring, without duplicating the
+    /// selection loop or changing `bestRealtimeSegments`'s public signature.
+    ///
+    /// Functional-span containment guard: the top-SCORE analysis's non-hanja-eligible tokens
+    /// (josa/어미/punctuation — see `isRealtimeHanjaEligibleTag`) define "functional spans". When
+    /// scoring convertibleLength for every candidate analysis (including the top one), a
+    /// convertible segment earns credit only if its `sourceRange` is NOT fully contained within a
+    /// single functional span. This stops a lower-scored analysis from "winning" purely because it
+    /// mis-tags a josa as a hanja-eligible POS (e.g. 이/JKS on the top analysis vs 이/NR or 이/MM on
+    /// an alternative) — the alternative's spurious segment is zeroed out, so the top (correct)
+    /// analysis ties or wins on convertibleLength and the score tie-break keeps it.
+    /// Known limitation: if an alternative analysis instead MERGES the josa into a larger token
+    /// (e.g. a hypothetical 배관이/NNG as one token), the merged segment's range no longer matches
+    /// any single functional span exactly, so this guard does not zero it. Accepted for now — no
+    /// such dictionary entries exist today.
+    static func bestRealtimeSegmentsWithWinningTokens(
+        from results: [TokenResult],
+        in clause: String,
+        candidateLookup: (String) -> [HanjaCandidate],
+        hangulUsageLookup: (String) -> Int = { _ in 0 }
+    ) -> (segments: [HanjaSegment], winningTokens: [Token]) {
+        guard let topScoreResult = results.max(by: { $0.score < $1.score }) else {
+            return ([], [])
+        }
+        let functionalSpans = Self.functionalSpans(from: topScoreResult.tokens)
+
         var bestSegments: [HanjaSegment] = []
+        var bestTokens: [Token] = []
         var bestConvertibleLength = -1
+        var bestScore = -Float.greatestFiniteMagnitude
 
         for result in results {
             let segments = makeRealtimeSegments(
@@ -132,15 +338,40 @@ final class KiwiAnalysisService {
             )
             let convertibleLength = segments
                 .filter(\.isConvertible)
-                .reduce(0) { $0 + $1.sourceRange.length }
+                .reduce(0) { total, segment in
+                    isRangeFullyContained(segment.sourceRange, inAnyOf: functionalSpans)
+                        ? total
+                        : total + segment.sourceRange.length
+                }
 
-            if convertibleLength > bestConvertibleLength {
+            if convertibleLength > bestConvertibleLength
+                || (convertibleLength == bestConvertibleLength && result.score > bestScore) {
                 bestSegments = segments
+                bestTokens = result.tokens
                 bestConvertibleLength = convertibleLength
+                bestScore = result.score
             }
         }
 
-        return bestSegments
+        return (bestSegments, bestTokens)
+    }
+
+    /// UTF-16 ranges of `tokens` whose tag is NOT hanja-eligible (josa/어미/punctuation…) — the
+    /// "functional spans" used by the containment guard in `bestRealtimeSegmentsWithWinningTokens`.
+    private static func functionalSpans(from tokens: [Token]) -> [NSRange] {
+        tokens.compactMap { token in
+            guard !isRealtimeHanjaEligibleTag(token.tag), token.length > 0 else {
+                return nil
+            }
+            return NSRange(location: token.position, length: token.length)
+        }
+    }
+
+    /// Whether `range` is fully contained within a single span in `spans` (not merely overlapping).
+    private static func isRangeFullyContained(_ range: NSRange, inAnyOf spans: [NSRange]) -> Bool {
+        spans.contains { span in
+            range.location >= span.location && (range.location + range.length) <= (span.location + span.length)
+        }
     }
 
     static func makeRealtimeSegments(
@@ -246,6 +477,21 @@ final class KiwiAnalysisService {
         }
 
         return segments
+    }
+
+    /// The other half of the step-5a offline↔runtime morpheme-space contract (recorded in
+    /// scripts/hanja-context/README.md): tags whose tokens count as CONTENT morphemes for
+    /// context-association features — NNG, NNP, VV, VV-I, VA, VA-I, MAG, XR, feature key
+    /// `form/TAG` (TAG = `POSTag.description`). The offline collector
+    /// (scripts/hanja-context/collector) uses the identical set; step 5c will use this in the
+    /// production re-ranking path. Not referenced by the realtime path yet — additive only.
+    static func isContextContentMorphemeTag(_ tag: POSTag) -> Bool {
+        switch tag {
+        case .nng, .nnp, .vv, .vvi, .va, .vai, .mag, .xr:
+            return true
+        default:
+            return false
+        }
     }
 
     static func isRealtimeHanjaEligibleTag(_ tag: POSTag) -> Bool {

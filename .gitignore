@@ -22,6 +22,11 @@ AGENTS.md
 CLAUDE.md
 /docs/plans
 
+# Step 5a offline collector build artifacts (scripts/hanja-context/collector)
+/scripts/hanja-context/collector/.build/
+/scripts/hanja-context/collector/.swiftpm/
+/scripts/hanja-context/__pycache__/
+
 # Local signing config (holds the developer Team ID). See Config/Signing.xcconfig.
 /Config/Signing.local.xcconfig
 /build

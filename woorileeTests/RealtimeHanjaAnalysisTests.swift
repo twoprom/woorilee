@@ -193,6 +193,47 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
         XCTAssertEqual(state.selectedSegment?.surface, "백두산")
     }
 
+    func testRealtimeAnalysisPrefersHigherScoreOnConvertibleLengthTie() {
+        let sourceText = "동해"
+        let results = [
+            // Lower score, listed first: one token "동해" (convertibleLength = 2).
+            TokenResult(
+                score: -50.0,
+                tokens: [
+                    Token(form: "동해", tag: .nnp, position: 0, length: 2),
+                ]
+            ),
+            // Higher score, listed second: "동" + "해" (convertibleLength = 1 + 1 = 2).
+            TokenResult(
+                score: -10.0,
+                tokens: [
+                    Token(form: "동", tag: .nnp, position: 0, length: 1),
+                    Token(form: "해", tag: .nng, position: 1, length: 1),
+                ]
+            ),
+        ]
+
+        let segments = KiwiAnalysisService.bestRealtimeSegments(
+            from: results,
+            in: sourceText,
+            candidateLookup: { key in
+                switch key {
+                case "동해": return [candidate(reading: key, value: "東海")]
+                case "동": return [candidate(reading: key, value: "東")]
+                case "해": return [candidate(reading: key, value: "海")]
+                default: return []
+                }
+            }
+        )
+
+        // Both tokenizations yield convertibleLength 2 (a genuine tie), so selection must fall
+        // to the score tie-break and pick the higher-score (second) result: ["동", "해"]. On the
+        // old code (which kept the first result on a convertibleLength tie) this would have
+        // returned ["동해"], so this assertion fails without the score tie-break.
+        XCTAssertEqual(segments.map(\.surface), ["동", "해"])
+        XCTAssertEqual(segments.count, 2)
+    }
+
     func testRealtimeAnalysisKeepsTopTokenizationWhenItHasBetterExactCandidateCoverage() {
         let sourceText = "동해물과 백두산이"
         let wholeCandidate = candidate(reading: sourceText, value: "東海물과白頭山이")

@@ -13,31 +13,40 @@ final class HanjaFrequencyTable {
         self.frequencies = frequencies
     }
 
-    convenience init(loadingFrom urls: [URL]) {
+    // freq-hanja.txt (character frequency) stores a plain Int. freq-hanjaeo.txt (word frequency)
+    // encodes 분류(1자리) + 하위값(6자리) into a 7-digit Int; only the decoded 하위값 (`value % 1_000_000`)
+    // is comparable within a reading. Branch by source URL, not digit count. See
+    // docs/plans/context-aware-hanja-conversion.md section 3 (단계 2 — 빈도 디코딩).
+    convenience init(characterFrequencyURLs: [URL], wordFrequencyURLs: [URL]) {
         var merged: [String: Int] = [:]
         merged.reserveCapacity(256_000)
-        for url in urls {
-            guard let contents = try? String(contentsOf: url, encoding: .utf8) else {
-                continue
-            }
-            for line in contents.split(separator: "\n", omittingEmptySubsequences: true) {
-                guard let separator = line.firstIndex(of: ":") else {
+        func ingest(_ urls: [URL], decodeWordFrequency: Bool) {
+            for url in urls {
+                guard let contents = try? String(contentsOf: url, encoding: .utf8) else {
                     continue
                 }
-                let key = String(line[..<separator])
-                let valueSubstring = line[line.index(after: separator)...]
-                guard let parsed = Int(valueSubstring) else {
-                    continue
-                }
-                if let existing = merged[key] {
-                    if parsed > existing {
-                        merged[key] = parsed
+                for line in contents.split(separator: "\n", omittingEmptySubsequences: true) {
+                    guard let separator = line.firstIndex(of: ":") else {
+                        continue
                     }
-                } else {
-                    merged[key] = parsed
+                    let key = String(line[..<separator])
+                    let valueSubstring = line[line.index(after: separator)...]
+                    guard let parsed = Int(valueSubstring) else {
+                        continue
+                    }
+                    let value = decodeWordFrequency ? parsed % 1_000_000 : parsed
+                    if let existing = merged[key] {
+                        if value > existing {
+                            merged[key] = value
+                        }
+                    } else {
+                        merged[key] = value
+                    }
                 }
             }
         }
+        ingest(characterFrequencyURLs, decodeWordFrequency: false)
+        ingest(wordFrequencyURLs, decodeWordFrequency: true)
         self.init(frequencies: merged)
     }
 
@@ -65,6 +74,10 @@ final class HanjaDictionaryService {
     private(set) var frequencyTable: HanjaFrequencyTable?
     private(set) var userHanjaStore: UserHanjaStore?
     private(set) var usageStore: HanjaUsageStore?
+    /// 읽기 → 지배 한자 매핑 (step 4 — see docs/plans/context-aware-hanja-conversion.md §5).
+    /// Built once at warm-up from the bundled dictionary + word frequency table; nil until warm-up
+    /// resolves, and stays nil if the word frequency table didn't load (nothing to rank dominance by).
+    private(set) var dominantHanjaMap: [String: String]?
     private var pendingWarmUpCompletions: [() -> Void] = []
 
     private init() {}
@@ -112,17 +125,32 @@ final class HanjaDictionaryService {
             let loadedTable = loadedDictionaryURL.flatMap { dictionaryURL in
                 LibHangul.loadHanjaTable(filename: dictionaryURL.path)
             }
-            let frequencyURLs: [URL] = [
-                AppRuntimePaths.hanjaFrequencyCharacterResourceName,
-                AppRuntimePaths.hanjaFrequencyWordResourceName
-            ].compactMap { name in
+            let characterFrequencyURLs: [URL] = [AppRuntimePaths.hanjaFrequencyCharacterResourceName].compactMap { name in
                 bundle.url(
                     forResource: name,
                     withExtension: AppRuntimePaths.hanjaResourceExtension,
                     subdirectory: AppRuntimePaths.hanjaResourceSubdirectory
                 )
             }
-            let loadedFrequencyTable = HanjaFrequencyTable(loadingFrom: frequencyURLs)
+            let wordFrequencyURLs: [URL] = [AppRuntimePaths.hanjaFrequencyWordResourceName].compactMap { name in
+                bundle.url(
+                    forResource: name,
+                    withExtension: AppRuntimePaths.hanjaResourceExtension,
+                    subdirectory: AppRuntimePaths.hanjaResourceSubdirectory
+                )
+            }
+            let loadedFrequencyTable = HanjaFrequencyTable(
+                characterFrequencyURLs: characterFrequencyURLs,
+                wordFrequencyURLs: wordFrequencyURLs
+            )
+            var loadedDominantHanjaMap: [String: String]?
+            if !wordFrequencyURLs.isEmpty, let loadedDictionaryURL,
+               let dictionaryContents = try? String(contentsOf: loadedDictionaryURL, encoding: .utf8) {
+                loadedDominantHanjaMap = buildDominantHanjaMap(
+                    dictionaryLines: dictionaryContents.split(separator: "\n", omittingEmptySubsequences: true),
+                    frequency: loadedFrequencyTable.frequency(for:)
+                )
+            }
             let resolvedStatus: Status
             if let loadedDictionaryURL {
                 if loadedTable != nil {
@@ -147,6 +175,7 @@ final class HanjaDictionaryService {
                     self.frequencyTable = loadedFrequencyTable
                     self.userHanjaStore = loadedUserStore
                     self.usageStore = loadedUsageStore
+                    self.dominantHanjaMap = loadedDominantHanjaMap
                     self.status = resolvedStatus
                     self.drainPendingWarmUpCompletions()
                 }
@@ -196,6 +225,10 @@ final class HanjaDictionaryService {
 
     func flushUsageWrites() {
         usageStore?.flushNow()
+    }
+
+    func resetUsageData() {
+        usageStore?.removeAll()
     }
 
     private func candidates(

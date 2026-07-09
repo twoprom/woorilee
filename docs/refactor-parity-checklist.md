@@ -19,6 +19,7 @@ Confirm the built app bundle still contains:
 - `Contents/Resources/data/hanja/hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanjaeo.txt`
+- `Contents/Resources/data/hanja/hanja-context.txt`
 - `Contents/Resources/KiwiModels/combiningRule.txt`
 - `Contents/Resources/KiwiModels/cong.mdl`
 - `Contents/Resources/KiwiModels/default.dict`

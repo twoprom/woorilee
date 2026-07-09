@@ -38,6 +38,18 @@ struct HanjaSegment: Equatable, Identifiable {
     let tag: POSTag
     let isConvertible: Bool
     let previewCandidate: HanjaCandidate?
+    /// Dominant hanja resolved from the surrounding context (see HanjaContextRanker.swift).
+    /// Empty unless step 4b's post-processing reranking pass has run. Carrying this through
+    /// every copy helper keeps the panel path (HanjaServiceCoordinator.realtimeCandidates(for:))
+    /// able to re-derive the same context without recomputing it.
+    let contextDominantHanja: [String]
+    /// Segment-specific corpus association features (step 5c — see
+    /// docs/plans/context-aware-hanja-conversion.md §7 5c): clause content-morpheme features
+    /// (`form/TAG`) minus the ones from tokens overlapping this segment's own sourceRange
+    /// (self-exclusion). Empty unless `applyContextReranking` has run with an association lookup.
+    /// Carried through the same copy helpers as `contextDominantHanja` so the panel path can
+    /// re-derive the same association scoring without recomputing it.
+    let contextFeatures: [String]
 
     init(
         id: UUID = UUID(),
@@ -46,7 +58,9 @@ struct HanjaSegment: Equatable, Identifiable {
         normalizedLookupKey: String,
         tag: POSTag,
         isConvertible: Bool,
-        previewCandidate: HanjaCandidate?
+        previewCandidate: HanjaCandidate?,
+        contextDominantHanja: [String] = [],
+        contextFeatures: [String] = []
     ) {
         self.id = id
         self.sourceRange = sourceRange
@@ -55,6 +69,8 @@ struct HanjaSegment: Equatable, Identifiable {
         self.tag = tag
         self.isConvertible = isConvertible
         self.previewCandidate = previewCandidate
+        self.contextDominantHanja = contextDominantHanja
+        self.contextFeatures = contextFeatures
     }
 
     func replacingPreviewCandidate(_ candidate: HanjaCandidate?) -> HanjaSegment {
@@ -65,7 +81,23 @@ struct HanjaSegment: Equatable, Identifiable {
             normalizedLookupKey: normalizedLookupKey,
             tag: tag,
             isConvertible: isConvertible,
-            previewCandidate: candidate
+            previewCandidate: candidate,
+            contextDominantHanja: contextDominantHanja,
+            contextFeatures: contextFeatures
+        )
+    }
+
+    func replacingContext(_ context: [String], features: [String] = [], previewCandidate: HanjaCandidate?) -> HanjaSegment {
+        HanjaSegment(
+            id: id,
+            sourceRange: sourceRange,
+            surface: surface,
+            normalizedLookupKey: normalizedLookupKey,
+            tag: tag,
+            isConvertible: isConvertible,
+            previewCandidate: previewCandidate,
+            contextDominantHanja: context,
+            contextFeatures: features
         )
     }
 }

@@ -41,6 +41,7 @@
 				"data/hanja/freq-hanja.txt",
 				"data/hanja/freq-hanjaeo.txt",
 				data/hanja/hanja.txt,
+				"data/hanja/hanja-context.txt",
 				Info.plist,
 				KiwiModels/combiningRule.txt,
 				KiwiModels/cong.mdl,
@@ -254,6 +255,7 @@
 				"$(PROJECT_DIR)/woorilee/data/hanja/hanja.txt",
 				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanja.txt",
 				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanjaeo.txt",
+				"$(PROJECT_DIR)/woorilee/data/hanja/hanja-context.txt",
 			);
 			name = "Copy Bundled Hanja Dictionary";
 			outputFileListPaths = (
@@ -262,10 +264,11 @@
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja.txt",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanja.txt",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanjaeo.txt",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja-context.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\ndest=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja\"\n/bin/mkdir -p \"$dest\"\nfor name in hanja.txt freq-hanja.txt freq-hanjaeo.txt; do\n  /bin/rm -f \"$dest/$name\"\n  /bin/cp \"${PROJECT_DIR}/woorilee/data/hanja/$name\" \"$dest/$name\"\ndone\n";
+			shellScript = "set -eu\ndest=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja\"\n/bin/mkdir -p \"$dest\"\nfor name in hanja.txt freq-hanja.txt freq-hanjaeo.txt hanja-context.txt; do\n  /bin/rm -f \"$dest/$name\"\n  /bin/cp \"${PROJECT_DIR}/woorilee/data/hanja/$name\" \"$dest/$name\"\ndone\n";
 		};
 		60D1C0032FA0000000ABC001 /* Copy Bundled Kiwi Models */ = {
 			isa = PBXShellScriptBuildPhase;
