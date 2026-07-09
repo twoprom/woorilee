@@ -269,12 +269,12 @@ func hideWarmUpPanelIfNeeded() {
         resetHanjaUsageData()
     }
 
-    func analyzeRealtimeClause(_ clause: String) -> [HanjaSegment] {
+    func analyzeRealtimeClause(_ clause: String, composingTailStart: Int? = nil) -> [HanjaSegment] {
         guard kiwiService.isAvailable, hanjaService.isAvailable else {
             return []
         }
 
-        return kiwiService.analyzeClause(clause, hanjaService: hanjaService)
+        return kiwiService.analyzeClause(clause, hanjaService: hanjaService, composingTailStart: composingTailStart)
     }
 
     /// 사용자가 조정한 경계(`boundaries`)로 소스를 분할해 분절을 만든다(Kiwi 미사용, 사전만 사용).

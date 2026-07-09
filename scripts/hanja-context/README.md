@@ -139,7 +139,7 @@ python3 scripts/hanja-context/build_association_table.py
 # 파라미터 override:
 python3 scripts/hanja-context/build_association_table.py \
   --paren-weight 20 --dict-weight 20 --min-anchor-survival 5 --alpha 0.5 \
-  --top-m 300 --eval-floor-count 30
+  --top-m 300 --eval-floor-count 30 --max-feature-df 0.039
 ```
 
 - 신호 결합: `weighted = anchor + W_paren·paren + W_dict·dict` (기본 20/20).
@@ -161,11 +161,28 @@ python3 scripts/hanja-context/build_association_table.py \
   8MB 상한 초과 시 M→200→100, 후보 총가중치<3 드롭, 비-eval27 읽기 총빈도
   오름차순 드롭 순서로 재산출(실측: M=100에서 캡 이하로 수렴, 이후 단계
   불필요 — 상세는 `docs/plans/hanja-context-5b-report.md`).
+- **데이터 품질 후속 수정 — ubiquity(IDF식) 필터** (`--max-feature-df`,
+  기본 0.039, 0이면 비활성): 위 within-reading 대조는 형태소 자체가 아니라
+  **코퍼스 도메인 편향** 때문에 특정 후보에서만 살아남는 피처(예: 修道
+  앵커 문장은 서사체, 水道 앵커 문장은 기술체라서 生존한 나/VV=40)를 잡지
+  못한다. 각 피처의 **프로필 문서빈도(profile DF)** — 생존필터 통과 직후,
+  프루닝 이전의 (읽기,후보) 프로필 중 그 피처가 등장하는 비율 — 을 계산해
+  VV/VA(-I) 태그 피처 중 DF가 문턱을 넘는 것을 전역 배제한다(점수 계산에도
+  전혀 참여하지 않음 — 계산된 불용어 목록과 동등). **VV/VA로 범위를 좁힌
+  이유**: 실측 DF 분포가 태그 무관 단일 문턱으로는 절대 분리되지 않는다
+  — 나라/NNG(6.09%)·정부/NNG(6.00%) 같은 필수 유지 프로브가 감사 대상
+  오/VV(6.04%)보다 DF가 높다(집·물·관·서울 등도 마찬가지 대역). 반면
+  감사 대상 전부(하·있·되·나·오·보·들, 전부 VV/VA)와 반례로 남아야 하는
+  희귀 변별 동사(틀/VV 0.11%·얼/VV 0.45%)는 모두 VV/VA 태그이므로, 그
+  태그로만 범위를 좁히면 확실한 문턱(0.039 = 3.9%)이 존재한다. 상세 —
+  측정된 DF 분포, 선택 근거, 제거된 피처 예시 — 는
+  `docs/plans/hanja-context-5b-report.md` 개정 3.
 - 산출물: `woorilee/data/hanja/hanja-context.txt`
   (`읽기:한자:형태소=가중치,형태소=가중치,...`, `/`는 안전 — TAG에 `/` 없어
   Swift 쪽에서 마지막 `/` 기준 split이면 충분; `:`,`,`,`=`,`%`는 퍼센트
   인코딩) + `counts/association-stats.json`.
-- 실측(최종): M=100 + 플로어에서 7,982,185 B (7.61 MiB) / 캡 8 MiB, 수도
-  교차 후보 스팟체크 9/9 PASS.
+- 실측(개정 3 — ubiquity 필터 적용 후): M=100 + 플로어 + ubiquity 필터에서
+  7,648,546 B (7.29 MiB) / 캡 8 MiB, 수도 교차 후보 스팟체크 9/9 PASS,
+  하/있/되/나/오/보 수도 계열에서 전부 부재 확인.
 - 5b 게이트 보고: `docs/plans/hanja-context-5b-report.md` (스팟체크·thin
-  새니티·크기·재현 명령).
+  새니티·크기·재현 명령; 개정 3에 ubiquity 필터 추가).

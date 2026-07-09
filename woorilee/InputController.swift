@@ -67,7 +67,7 @@ final class InputController: IMKInputSessionController {
         InputCompositionEngine(
             client: client,
             session: session,
-            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0) },
+            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0, composingTailStart: $1) },
             analyzeManualClause: { self.hanjaServices.manualSegments(for: $0, boundaries: $1) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
             updateComposition: { self.updateComposition() },

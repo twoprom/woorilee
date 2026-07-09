@@ -252,7 +252,7 @@ final class RealtimeHanjaCommitCancelTests: XCTestCase {
         let engine = makeEngine(
             client: client,
             session: session,
-            analyzeRealtimeClause: { _ in segments },
+            analyzeRealtimeClause: { _, _ in segments },
             flushRealtimeUsageEvents: { flushSink.batches.append($0) }
         )
 
@@ -270,7 +270,7 @@ final class RealtimeHanjaCommitCancelTests: XCTestCase {
     private func makeEngine(
         client: FakeIMKTextInput,
         session: InputSession,
-        analyzeRealtimeClause: @escaping (String) -> [HanjaSegment] = { _ in [] },
+        analyzeRealtimeClause: @escaping (String, Int) -> [HanjaSegment] = { _, _ in [] },
         analyzeManualClause: @escaping (String, [Int]) -> [HanjaSegment] = { _, _ in [] },
         flushRealtimeUsageEvents: @escaping ([PendingHanjaUsageEvent]) -> Void = { _ in }
     ) -> InputCompositionEngine {

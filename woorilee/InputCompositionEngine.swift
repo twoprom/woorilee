@@ -37,7 +37,7 @@ func inputRealtimeMarkedAttributedString(_ state: RealtimeClauseState) -> NSAttr
 struct InputCompositionEngine {
     let client: any IMKTextInput
     let session: InputSession
-    let analyzeRealtimeClause: (String) -> [HanjaSegment]
+    let analyzeRealtimeClause: (String, Int) -> [HanjaSegment]
     let analyzeManualClause: (String, [Int]) -> [HanjaSegment]
     let flushRealtimeUsageEvents: ([PendingHanjaUsageEvent]) -> Void
     let updateComposition: () -> Void
@@ -233,7 +233,11 @@ struct InputCompositionEngine {
         if let boundaries = state.manualBoundaries {
             segments = analyzeManualClause(sourceText, boundaries)
         } else {
-            segments = analyzeRealtimeClause(sourceText)
+            // tailPreedit is still-composing (uncommitted) — its offset is passed through so the
+            // context-feature axis can ignore tokens overlapping it (see KiwiAnalysisService.
+            // analyzeClause's composingTailStart doc). Segmentation still uses the full sourceText.
+            let composingTailStart = inputUTF16Length(of: state.rawClauseText)
+            segments = analyzeRealtimeClause(sourceText, composingTailStart)
         }
         session.updateRealtimeAnalysis(segments: segments)
     }

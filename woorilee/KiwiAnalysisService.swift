@@ -93,9 +93,17 @@ final class KiwiAnalysisService {
         }
     }
 
+    /// - Parameter composingTailStart: UTF16 offset (in `clause`) where the still-composing,
+    ///   not-yet-committed tail begins (see `InputCompositionEngine.updateRealtimeAnalysis`'s
+    ///   `rawClauseText`/`tailPreedit` split). Tokens that fall entirely at or after this offset
+    ///   are excluded from context-association features (they can still change shape on every
+    ///   keystroke — e.g. a bare jamo growing into a full syllable — and must not perturb an
+    ///   already-settled earlier segment's preview). `nil` (the default) disables this exclusion,
+    ///   treating the whole clause as stable — this reproduces the pre-fix behavior exactly.
     func analyzeClause(
         _ clause: String,
-        hanjaService: HanjaDictionaryService
+        hanjaService: HanjaDictionaryService,
+        composingTailStart: Int? = nil
     ) -> [HanjaSegment] {
         guard !clause.isEmpty, let kiwi else {
             return []
@@ -139,12 +147,25 @@ final class KiwiAnalysisService {
                 clause: clause,
                 dominantMap: dominantMap,
                 candidateLookup: candidateLookup,
-                winningTokens: best.winningTokens,
+                winningTokens: Self.stableWinningTokens(from: best.winningTokens, composingTailStart: composingTailStart),
                 associationFeatureLookup: associationFeatureLookup
             )
         } catch {
             return []
         }
+    }
+
+    /// Composing-tail stability strip (see `analyzeClause`'s `composingTailStart` doc): drops any
+    /// token that extends into the still-composing tail (`token.position + token.length >
+    /// composingTailStart`), so it can never vote as a context-association feature. Mid-sentence
+    /// tokens (fully before the tail) are untouched. `composingTailStart == nil` is a full no-op —
+    /// this is what makes every pre-existing call site (topics untouched by this fix) behave
+    /// exactly as before.
+    static func stableWinningTokens(from tokens: [Token], composingTailStart: Int?) -> [Token] {
+        guard let composingTailStart else {
+            return tokens
+        }
+        return tokens.filter { $0.position + $0.length <= composingTailStart }
     }
 
     /// Post-processing step (step 4b — see docs/plans/context-aware-hanja-conversion.md §5) applied

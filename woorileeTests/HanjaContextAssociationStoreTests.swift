@@ -49,8 +49,8 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
         let contents = try String(contentsOf: url, encoding: .utf8)
         let table = HanjaContextAssociationStore.parse(contents: contents)
 
-        XCTAssertEqual(table["수도"]?["水道"]?["집/NNG"], 37)
-        XCTAssertEqual(table["수도"]?["修道"]?["기도/NNG"], 121)
-        XCTAssertEqual(table["수도"]?["首都"]?["서울/NNP"], 75)
+        XCTAssertEqual(table["수도"]?["水道"]?["집/NNG"], 38)
+        XCTAssertEqual(table["수도"]?["修道"]?["기도/NNG"], 122)
+        XCTAssertEqual(table["수도"]?["首都"]?["서울/NNP"], 74)
     }
 }

@@ -59,6 +59,34 @@ The min-score guard exists because barely-positive generics (하/VV 0.195,
 floor would resurrect exactly the features the contrast is meant to kill.
 Non-eval readings are unaffected.
 
+Ubiquity (IDF-style) filter for cross-domain-biased bare verbs (data-quality
+fix, post-5b): the within-reading contrast above cannot catch a feature whose
+corpus DOMAIN is skewed toward one candidate even though the morpheme itself
+is topic-neutral — e.g. 나/VV survived under 수도:修道 (score>0, weighted=40)
+because 修道-anchor sentences happen to be narrative prose while 水道-anchor
+sentences are technical prose, not because 나/VV means anything about
+monasteries. A GLOBAL ubiquity signal catches this: compute each feature's
+PROFILE DOCUMENT FREQUENCY — the fraction of all post-survival, pre-prune
+(reading, candidate) profiles (every candidate that would receive >=1
+surviving feature, before top-M/eval-floor selection) in which the feature
+appears at all. Bare generic verbs (하, 있, 되, 나, 오, 보, 들, ...) sit at
+the top of this distribution.
+
+Measured on the real corpus (docs/plans/hanja-context-5b-report.md 개정 3),
+the DF distribution does NOT cleanly separate by feature identity alone:
+나라/NNG (6.09%) and 정부/NNG (6.00%) — both required 首都 probes — sit
+*above* 오/VV (6.04%), an audited offender, in raw DF. A single threshold
+over ALL tags cannot drop 오/VV without also dropping 나라/NNG. It CAN be
+done by TAG: every offending bare verb and every "discriminative rare verb"
+counterexample in the audit (틀/VV, 얼/VV) is VV/VA-tagged, and no NNG/NNP
+probe or thin-candidate feature is VV/VA-tagged. So the filter is scoped to
+VV/VA(-I) tags only: drop VV/VA-tagged features whose profile DF exceeds
+MAX_FEATURE_DF (CLI --max-feature-df, fraction of total profiles, 0 disables);
+NNG/NNP/MAG features are never touched by this filter regardless of DF.
+Banned features are excluded entirely from process_reading's by_candidate
+build (before N_c/V_r/pooled_feature_total are computed), so they contribute
+nothing to the contrast math either — equivalent to a computed stoplist.
+
 Then linearly quantize score to 1..255 over the GLOBAL max score in the
 final kept table (quantized values of 0 are dropped, not clamped to 1).
 
@@ -105,6 +133,8 @@ MIN_ANCHOR_SURVIVAL = 5
 TOP_M_BASE = 300  # widest M we ever emit; smaller M values are prefixes of this
 EVAL_FLOOR_COUNT = 30  # eval-27 evidence floor (0 disables)
 EVAL_FLOOR_MIN_SCORE = math.log(2)  # floor also requires >= 2x contrast odds
+MAX_FEATURE_DF = 0.039  # ubiquity filter threshold, VV/VA(-I)-tagged features only (0 disables)
+UBIQUITY_SCOPED_TAG_RE = re.compile(r"/(VV|VA)(-I)?$")
 
 ESCAPE_MAP = {"%": "%25", ":": "%3A", ",": "%2C", "=": "%3D"}
 ESCAPE_RE = re.compile("[%:,=]")
@@ -164,9 +194,35 @@ def iter_by_reading(path_a: Path, path_p: Path, path_d: Path):
         yield reading, list(group)
 
 
+def compute_profile_df(w_paren: int, w_dict: int, min_anchor: int):
+    """Second streaming pass over the merged counts (independent of
+    build_master) computing each feature's PROFILE DOCUMENT FREQUENCY: the
+    number of (reading, hanja) profiles — each an emitted candidate with >=1
+    surviving feature, post-survival pre-prune, i.e. BEFORE the top-M/eval-
+    floor selection and BEFORE the ubiquity filter itself (this pass is what
+    the ubiquity filter is computed from) — in which the feature appears at
+    least once. Returns (df_counts, total_profiles)."""
+    df_counts: dict[str, int] = defaultdict(int)
+    total_profiles = 0
+    for _reading, rows in iter_by_reading(ANCHOR_TSV, PAREN_TSV, DICT_TSV):
+        by_candidate: dict[str, set[str]] = defaultdict(set)
+        for (_, hanja, feature), a, p, d in rows:
+            if not (a >= min_anchor or p >= 1 or d >= 1):
+                continue
+            by_candidate[hanja].add(feature)
+        for feats in by_candidate.values():
+            if not feats:
+                continue
+            total_profiles += 1
+            for f in feats:
+                df_counts[f] += 1
+    return df_counts, total_profiles
+
+
 def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: float,
                     top_m_cap: int, floor: int = 0,
-                    floor_min_score: float = EVAL_FLOOR_MIN_SCORE):
+                    floor_min_score: float = EVAL_FLOOR_MIN_SCORE,
+                    banned_features: frozenset[str] = frozenset()):
     """rows: list of ((reading, hanja, feature), a, p, d) all for one reading.
     Returns (cand_features, cand_totals) or None if fewer than 2 candidates
     have any surviving feature (contrast requires >=2). cand_features maps
@@ -178,10 +234,14 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
     evidence floor). cand_totals
     maps hanja -> N_c (total surviving weighted mass, pre-contrast,
     pre-prune — used later for the min-total-weighted-count cap-tightening
-    step)."""
+    step). banned_features (the ubiquity filter's VV/VA-tagged output) are
+    excluded from by_candidate entirely, so they never enter N_c/V_r/
+    pooled_feature_total either."""
     by_candidate: dict[str, dict[str, int]] = defaultdict(dict)
     for (_, hanja, feature), a, p, d in rows:
         if not (a >= min_anchor or p >= 1 or d >= 1):
+            continue
+        if feature in banned_features:
             continue
         by_candidate[hanja][feature] = a + w_paren * p + w_dict * d
 
@@ -224,7 +284,8 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
 
 
 def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
-                 eval27_set: set[str], eval_floor: int):
+                 eval27_set: set[str], eval_floor: int,
+                 banned_features: frozenset[str] = frozenset()):
     """One full streaming pass over the merged counts. Returns
     (master, n_c_all, dropped_single_candidate_readings) where master is
     reading -> hanja -> (prefix, extras): prefix = [(feature, score,
@@ -237,7 +298,8 @@ def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
     dropped: list[str] = []
     for reading, rows in iter_by_reading(ANCHOR_TSV, PAREN_TSV, DICT_TSV):
         floor = eval_floor if reading in eval27_set else 0
-        result = process_reading(rows, w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor)
+        result = process_reading(rows, w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor,
+                                 banned_features=banned_features)
         if result is None:
             dropped.append(reading)
             continue
@@ -360,6 +422,13 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         f"# Cap-tightening applied (if any): min_total_weighted_count={params['min_total_weighted']}"
         f", non-eval27 total_freq cutoff={params['freq_cutoff']} (eval-27 readings from "
         "eval/hanja-context-eval-set.tsv are never dropped by the freq cutoff).",
+        f"# Ubiquity (IDF-style) filter: VV/VA(-I)-tagged features with profile document "
+        f"frequency > {params['max_feature_df']:.4%} (fraction of {params['total_profiles']} "
+        f"post-survival pre-prune candidate profiles) are banned globally before scoring "
+        f"({params['banned_feature_count']} features banned) — catches cross-domain-biased bare "
+        "generic verbs (하, 있, 되, 나, 오, 보, 들, ...) that pass the within-reading contrast "
+        "only because the corpus happens to be domain-skewed per candidate. Scoped to VV/VA to "
+        "avoid banning topical-noun probes that share similar raw DF (e.g. 나라/NNG, 정부/NNG).",
         f"# Generated: {generated_at} by scripts/hanja-context/build_association_table.py.",
         "#",
     ]
@@ -375,6 +444,14 @@ def main() -> int:
     parser.add_argument("--eval-floor-count", type=int, default=EVAL_FLOOR_COUNT,
                         help="eval-27 evidence floor: keep any surviving score>0 feature "
                              "with weighted_count >= this for eval-set readings (0 disables)")
+    parser.add_argument("--max-feature-df", type=float, default=MAX_FEATURE_DF,
+                        help="ubiquity filter: drop VV/VA(-I)-tagged features whose profile "
+                             "document frequency (fraction of post-survival, pre-prune candidate "
+                             "profiles containing the feature) exceeds this (0 disables). "
+                             "NNG/NNP/MAG features are never affected regardless of DF.")
+    parser.add_argument("--print-feature-df", type=int, default=0,
+                        help="if >0, print the top-N features by profile DF (for threshold "
+                             "tuning) to stderr and exit without writing any output")
     parser.add_argument("--size-cap-bytes", type=int, default=SIZE_CAP_BYTES)
     parser.add_argument("--output", type=Path, default=OUTPUT_TXT)
     parser.add_argument("--stats-output", type=Path, default=STATS_JSON)
@@ -384,10 +461,34 @@ def main() -> int:
     eval27 = set(load_eval_readings())
     print(f"targets={len(targets)} eval27={len(eval27)}", file=sys.stderr)
 
+    print("computing profile document frequency (ubiquity filter pass, "
+          "~8.49M rows)...", file=sys.stderr)
+    df_counts, total_profiles = compute_profile_df(
+        args.paren_weight, args.dict_weight, args.min_anchor_survival
+    )
+    print(f"total_profiles={total_profiles} distinct_features={len(df_counts)}", file=sys.stderr)
+
+    if args.print_feature_df:
+        for feat, cnt in sorted(df_counts.items(), key=lambda x: -x[1])[:args.print_feature_df]:
+            print(f"{feat}\t{cnt}\t{cnt / total_profiles:.4%}", file=sys.stderr)
+        return 0
+
+    banned_features: frozenset[str] = frozenset()
+    if args.max_feature_df > 0:
+        banned_features = frozenset(
+            f for f, cnt in df_counts.items()
+            if UBIQUITY_SCOPED_TAG_RE.search(f) and (cnt / total_profiles) > args.max_feature_df
+        )
+    print(
+        f"ubiquity filter: {len(banned_features)} VV/VA(-I) features banned "
+        f"(profile DF > {args.max_feature_df:.4%} of {total_profiles} profiles)",
+        file=sys.stderr,
+    )
+
     print("merging + scoring (single streaming pass over ~8.49M rows)...", file=sys.stderr)
     master, n_c_all, dropped_single_cand = build_master(
         args.paren_weight, args.dict_weight, args.min_anchor_survival, args.alpha,
-        eval27, args.eval_floor_count,
+        eval27, args.eval_floor_count, banned_features=banned_features,
     )
     print(
         f"scored readings={len(master)} dropped(<2 candidates with surviving features)="
@@ -454,7 +555,9 @@ def main() -> int:
         {**chosen, "w_paren": args.paren_weight, "w_dict": args.dict_weight,
          "min_anchor": args.min_anchor_survival, "alpha": args.alpha,
          "eval_floor": args.eval_floor_count,
-         "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE},
+         "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
+         "max_feature_df": args.max_feature_df, "total_profiles": total_profiles,
+         "banned_feature_count": len(banned_features)},
         global_max, generated_at,
     )
 
@@ -478,7 +581,14 @@ def main() -> int:
             "eval_floor_count": args.eval_floor_count,
             "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
             "selection_metric": "utility = score * ln(1 + weighted_count)",
+            "max_feature_df": args.max_feature_df,
+            "ubiquity_scoped_tags": "VV, VA, VA-I, VV-I",
             **chosen,
+        },
+        "ubiquity_filter": {
+            "total_profiles": total_profiles,
+            "distinct_features": len(df_counts),
+            "banned_feature_count": len(banned_features),
         },
         "size_bytes": actual_size,
         "size_cap_bytes": args.size_cap_bytes,
