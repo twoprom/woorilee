@@ -10,6 +10,7 @@ enum AppRuntimePaths {
     static let hanjaFrequencyCharacterResourceName = "freq-hanja"
     static let hanjaFrequencyWordResourceName = "freq-hanjaeo"
     static let hanjaContextResourceName = "hanja-context"
+    static let hanjaNativeHomographResourceName = "hanja-native-homograph"
     static let kiwiModelDirectory = "KiwiModels"
     static let applicationSupportDirectoryName = "woorilee"
     static let hanjaSupportDirectoryName = "Hanja"

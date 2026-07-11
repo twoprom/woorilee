@@ -33,6 +33,9 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         var segMissRows: [String] = []
         var flagshipRank: Int?
         var perSeries: [String: (n: Int, top1: Int)] = [:]
+        /// Per-row (sentence, reading, answer, rank) detail — used by the small v3 subset (step
+        /// 7d) for row-level pass/fail diagnostics. Additive only; does not affect v1/v2 stats.
+        var perRow: [(row: EvalRow, rank: Int?)] = []
 
         /// Rows that produced a rankable segment — segMiss rows are excluded from the top1/top3
         /// denominators (they are reported separately).
@@ -92,26 +95,41 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         return HanjaContextAssociationStore.parse(contents: contents)
     }()
 
-    private static let rows: (v1: [EvalRow], v2: [EvalRow]) = {
+    /// v3 (step 7d, docs/plans/context-aware-hanja-conversion.md §10 7d) is parsed as a THIRD
+    /// section, delimited by its own "# ---- v3" marker after the v2 section — it must never fold
+    /// into `v2` (that would silently change the v2 subset's row count / off-on percentages that
+    /// are pinned as the step-5d baseline: 53/55). v1/v2 parsing itself is unchanged from before
+    /// step 7d.
+    private static let rows: (v1: [EvalRow], v2: [EvalRow], v3: [EvalRow]) = {
         let url = repoRoot().appendingPathComponent("eval/hanja-context-eval-set.tsv")
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return ([], []) }
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return ([], [], []) }
 
         var v1: [EvalRow] = []
         var v2: [EvalRow] = []
-        var inV2Section = false
+        var v3: [EvalRow] = []
+        enum Section { case v1, v2, v3 }
+        var section = Section.v1
         for raw in text.split(separator: "\n", omittingEmptySubsequences: true) {
             let line = raw.trimmingCharacters(in: .whitespaces)
+            if line.hasPrefix("# ---- v3") {
+                section = .v3
+                continue
+            }
             if line.hasPrefix("# ---- v2") {
-                inV2Section = true
+                section = .v2
                 continue
             }
             if line.isEmpty || line.hasPrefix("#") { continue }
             let c = line.split(separator: "\t", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
             guard c.count >= 3, !c[0].isEmpty, !c[1].isEmpty, !c[2].isEmpty else { continue }
             let row = EvalRow(sentence: c[0], reading: c[1], answer: c[2])
-            if inV2Section { v2.append(row) } else { v1.append(row) }
+            switch section {
+            case .v1: v1.append(row)
+            case .v2: v2.append(row)
+            case .v3: v3.append(row)
+            }
         }
-        return (v1, v2)
+        return (v1, v2, v3)
     }()
 
     /// Mirrors HanjaDictionaryService.exactCandidates(for:) (numeric-first, then dictionary lookup
@@ -186,6 +204,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
                 associationScores: scores, weights: .default
             ).map(\.value)
             let rank = rankedValues.firstIndex(of: row.answer).map { $0 + 1 }
+            outcome.perRow.append((row: row, rank: rank))
 
             if row.reading == "수도", row.sentence == "우리 집 수도가 얼었다." {
                 outcome.flagshipRank = rank
@@ -222,13 +241,22 @@ final class HanjaContextEvalV2Tests: XCTestCase {
 
         let v1 = Self.rows.v1
         let v2 = Self.rows.v2
+        let v3 = Self.rows.v3
         XCTAssertGreaterThanOrEqual(v1.count, 195, "v1 must retain its 195 rows")
         XCTAssertGreaterThanOrEqual(v2.count, 40, "v2 native-context rows must be present")
+        XCTAssertGreaterThanOrEqual(v3.count, 6, "v3 native-homograph-gate rows must be present (step 7d)")
 
         let offV1 = Self.evaluate(rows: v1, useAssociation: false)
         let onV1 = Self.evaluate(rows: v1, useAssociation: true)
         let offV2 = Self.evaluate(rows: v2, useAssociation: false)
         let onV2 = Self.evaluate(rows: v2, useAssociation: true)
+        // v3 (step 7d) is measured but NOT gated here — the plan explicitly separates ranking
+        // measurement (this harness) from the awaitsContextEvidence promotion/suppression
+        // decision, which is pinned by dedicated unit/integration tests instead (see
+        // RealtimeNativeHomographGateTests and HanjaContextNativeHomographIntegrationTests). A
+        // row that ranks below 1 here reflects a real feature gap, not a harness bug — reported,
+        // not doctored.
+        let onV3 = Self.evaluate(rows: v3, useAssociation: true)
 
         print("EVAL5D|config=off|v1 top1=\(offV1.top1)/\(offV1.scored) (\(Self.pct(offV1.top1, offV1.scored))) top3=\(offV1.top3)/\(offV1.scored) segMiss=\(offV1.segMiss)")
         print("EVAL5D|config=on|v1 top1=\(onV1.top1)/\(onV1.scored) (\(Self.pct(onV1.top1, onV1.scored))) top3=\(onV1.top3)/\(onV1.scored) segMiss=\(onV1.segMiss)")
@@ -243,6 +271,12 @@ final class HanjaContextEvalV2Tests: XCTestCase {
             let on = onV2.perSeries[series]!
             let off = offV2.perSeries[series] ?? (n: 0, top1: 0)
             print("EVAL5D|series=\(series) n=\(on.n) off_top1=\(off.top1) on_top1=\(on.top1)")
+        }
+
+        print("EVAL7D|config=on|v3 top1=\(onV3.top1)/\(onV3.scored) (\(Self.pct(onV3.top1, onV3.scored))) top3=\(onV3.top3)/\(onV3.scored) segMiss=\(onV3.segMiss)")
+        for miss in onV3.segMissRows { print("EVAL7D|segMiss v3 \(miss)") }
+        for (row, rank) in onV3.perRow {
+            print("EVAL7D|row reading=\(row.reading) answer=\(row.answer) rank=\(rank.map(String.init) ?? "notFound") :: \(row.sentence)")
         }
 
         // Gate 1 — v1: association ON must not regress top1 vs OFF.

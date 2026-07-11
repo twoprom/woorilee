@@ -139,8 +139,15 @@ python3 scripts/hanja-context/build_association_table.py
 # 파라미터 override:
 python3 scripts/hanja-context/build_association_table.py \
   --paren-weight 20 --dict-weight 20 --min-anchor-survival 5 --alpha 0.5 \
-  --top-m 300 --eval-floor-count 30 --max-feature-df 0.039
+  --top-m 300 --eval-floor-count 30 --max-feature-df-count 662
 ```
+
+- **4번째 신호 — 연어(collocation)** (`--colloc-counts`/`--colloc-weight`,
+  기본 가중치 20): `build_collocation_counts.py`가 krdict 파생어(RelatedForm)
+  관계에서 추출한 (읽기,한자,후행 용언 어간) 연어를 플래그 읽기(단계 7)
+  한정으로 추가 신호원으로 통합한다. 사전 등재 근거이므로 해당 행만
+  ubiquity 필터 면제(예: 고장:故障의 나/VV). 상세는
+  `docs/plans/context-aware-hanja-conversion.md` §10 7b.
 
 - 신호 결합: `weighted = anchor + W_paren·paren + W_dict·dict` (기본 20/20).
 - 생존 규칙: `anchor_count>=5` OR `paren_count>=1` OR `dict_count>=1` (병기·
@@ -161,8 +168,10 @@ python3 scripts/hanja-context/build_association_table.py \
   8MB 상한 초과 시 M→200→100, 후보 총가중치<3 드롭, 비-eval27 읽기 총빈도
   오름차순 드롭 순서로 재산출(실측: M=100에서 캡 이하로 수렴, 이후 단계
   불필요 — 상세는 `docs/plans/hanja-context-5b-report.md`).
-- **데이터 품질 후속 수정 — ubiquity(IDF식) 필터** (`--max-feature-df`,
-  기본 0.039, 0이면 비활성): 위 within-reading 대조는 형태소 자체가 아니라
+- **데이터 품질 후속 수정 — ubiquity(IDF식) 필터** (`--max-feature-df-count`,
+  기본 662 — 절대 DF 상수, 표적 인벤토리 확장에 실효 컷오프가 느슨해지는
+  회귀를 막기 위해 비율(0.039)에서 절대값으로 전환됐다(§10 7b 참고), 0이면
+  비활성): 위 within-reading 대조는 형태소 자체가 아니라
   **코퍼스 도메인 편향** 때문에 특정 후보에서만 살아남는 피처(예: 修道
   앵커 문장은 서사체, 水道 앵커 문장은 기술체라서 生존한 나/VV=40)를 잡지
   못한다. 각 피처의 **프로필 문서빈도(profile DF)** — 생존필터 통과 직후,

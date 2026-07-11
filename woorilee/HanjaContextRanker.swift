@@ -111,6 +111,44 @@ func sharedHanjaCharCount(_ candidate: String, _ contextHanja: String) -> Int {
     return Set(candidate).filter { contextChars.contains($0) }.count
 }
 
+/// Per-candidate context-evidence breakdown (docs/plans/context-aware-hanja-conversion.md §10,
+/// step 7's native-homograph gate): the step-4 dictionary axis (containment + char-share against
+/// every context dominant hanja) and the step-5 corpus association axis, kept separate so a
+/// caller can ask "did this candidate get ANY positive context evidence" without re-deriving
+/// `rankWithContext`'s boost math. `rankWithContext` itself just sums the two axes (after applying
+/// `weights`) into its existing boost — this is a pure decomposition, not a behavior change.
+struct HanjaContextEvidence {
+    /// Step-4 axis: containment count × `weights.containment` + char-share count × `weights.charShare`.
+    let dictionaryBoost: Int
+    /// Step-5 axis: raw (unweighted) matched association score for this candidate.
+    let associationScore: Int
+
+    /// Step 7's promotion condition: containment/dominance contributed something, OR the
+    /// association table scored this candidate above zero.
+    var hasPositiveEvidence: Bool {
+        dictionaryBoost > 0 || associationScore > 0
+    }
+}
+
+/// Computes `candidate`'s `HanjaContextEvidence` against `contextDominantHanja` /
+/// `associationScores` — the same per-candidate quantities `rankWithContext` folds into its boost.
+func contextEvidence(
+    for candidate: HanjaCandidate,
+    contextDominantHanja: [String],
+    associationScores: [String: Int] = [:],
+    weights: HanjaContextRankingWeights
+) -> HanjaContextEvidence {
+    var dictionaryBoost = 0
+    for contextHanja in contextDominantHanja where contextHanja != candidate.value {
+        if contextHanja.contains(candidate.value) {
+            dictionaryBoost += weights.containment
+        }
+        dictionaryBoost += sharedHanjaCharCount(candidate.value, contextHanja) * weights.charShare
+    }
+    let associationScore = associationScores[candidate.value] ?? 0
+    return HanjaContextEvidence(dictionaryBoost: dictionaryBoost, associationScore: associationScore)
+}
+
 /// Re-ranks `candidates` using dominant hanja resolved from the surrounding context. Each
 /// candidate's boost (containment + char-share against every context dominant hanja) is
 /// precomputed once — O(K × context) — then folded into a copy's `frequency` before applying the
@@ -125,15 +163,13 @@ func rankWithContext(
     weights: HanjaContextRankingWeights
 ) -> [HanjaCandidate] {
     let boosts: [Int] = candidates.map { candidate in
-        var boost = 0
-        for contextHanja in contextDominantHanja where contextHanja != candidate.value {
-            if contextHanja.contains(candidate.value) {
-                boost += weights.containment
-            }
-            boost += sharedHanjaCharCount(candidate.value, contextHanja) * weights.charShare
-        }
-        boost += (associationScores[candidate.value] ?? 0) * weights.association
-        return boost
+        let evidence = contextEvidence(
+            for: candidate,
+            contextDominantHanja: contextDominantHanja,
+            associationScores: associationScores,
+            weights: weights
+        )
+        return evidence.dictionaryBoost + evidence.associationScore * weights.association
     }
 
     let boosted: [(original: HanjaCandidate, copy: HanjaCandidate)] = zip(candidates, boosts).map { candidate, boost in

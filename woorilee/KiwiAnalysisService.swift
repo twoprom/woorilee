@@ -15,6 +15,24 @@ final class KiwiAnalysisService {
     /// `dump-tokens` output.
     static let realtimeAnalysisMatchOptions: MatchOptions = [.allWithNormalizing, .joinNounPrefix, .joinNounSuffix]
 
+    /// Step 6 — auto-convert word evidence gate threshold (docs/plans/context-aware-hanja-conversion.md
+    /// §9). Decoded freq-hanjaeo.txt 하위값 실측: 고유어 충돌어(단자 훈음 후보 등) ≤104 — 牛李 92,
+    /// 南無 104, 可知 102, 加持 88, 茄子 66 — vs 정당한 한자어 ≥1,516 — 口頭 1,516, 水道 2,106,
+    /// 修道 2,737, 故障 7,492, 首都 11,750. 500 splits the two bands.
+    static let autoConvertWordEvidenceThreshold = 500
+
+    /// Whether `candidate` has word-level evidence for auto-conversion (step 6). Gates
+    /// `previewCandidate` only — `isConvertible` (candidate-panel access) is untouched by this.
+    static func hasAutoConvertWordEvidence(
+        _ candidate: HanjaCandidate,
+        wordFrequency: (String) -> Int,
+        threshold: Int = autoConvertWordEvidenceThreshold
+    ) -> Bool {
+        candidate.source == .userDefined
+            || candidate.usageCount > 0
+            || wordFrequency(candidate.value) >= threshold
+    }
+
     enum Status: Equatable {
         case uninitialized
         case loading
@@ -114,6 +132,19 @@ final class KiwiAnalysisService {
             return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
         }
 
+        // Step 6 — auto-convert word evidence gate (docs/plans/context-aware-hanja-conversion.md
+        // §9). Fails open (nil gate = pre-step-6 behavior) when the word frequency table hasn't
+        // loaded any rows, since there's nothing to distinguish word evidence from character
+        // evidence with.
+        let autoConvertGate: ((HanjaCandidate) -> Bool)? = hanjaService.hasWordFrequencyData
+            ? { candidate in
+                Self.hasAutoConvertWordEvidence(candidate, wordFrequency: hanjaService.wordFrequency(for:))
+            }
+            : nil
+
+        // Step 7 — native-homograph gate (docs/plans/context-aware-hanja-conversion.md §10).
+        let nativeHomographLookup: (String) -> Bool = hanjaService.isNativeHomographReading(_:)
+
         do {
             let results = try kiwi.analyze(
                 clause,
@@ -124,7 +155,9 @@ final class KiwiAnalysisService {
                 from: results,
                 in: clause,
                 candidateLookup: candidateLookup,
-                hangulUsageLookup: hanjaService.hangulUsageCount(for:)
+                hangulUsageLookup: hanjaService.hangulUsageCount(for:),
+                autoConvertGate: autoConvertGate,
+                nativeHomographLookup: nativeHomographLookup
             )
 
             guard HanjaSettingsStore.shared.useContextHanjaRanking,
@@ -148,7 +181,8 @@ final class KiwiAnalysisService {
                 dominantMap: dominantMap,
                 candidateLookup: candidateLookup,
                 winningTokens: Self.stableWinningTokens(from: best.winningTokens, composingTailStart: composingTailStart),
-                associationFeatureLookup: associationFeatureLookup
+                associationFeatureLookup: associationFeatureLookup,
+                autoConvertGate: autoConvertGate
             )
         } catch {
             return []
@@ -183,6 +217,20 @@ final class KiwiAnalysisService {
     ///   - associationFeatureLookup: `(reading, hanja) -> matched-feature weights`, backed by
     ///     `HanjaContextAssociationStore` in production. nil (the default) disables the
     ///     association axis entirely — the step-4b containment/charShare behavior is unchanged.
+    /// - Parameter autoConvertGate: step 6 (docs/plans/context-aware-hanja-conversion.md §9),
+    ///   applied to `reranked.first` the same way `makeRealtimeSegments` applies it to
+    ///   `candidates.first`. `nil` (the default) is a full no-op, reproducing pre-step-6 behavior.
+    ///
+    /// Step 7 (docs/plans/context-aware-hanja-conversion.md §10): segments with
+    /// `awaitsContextEvidence == true` (native-homograph gate suppressed their preview in
+    /// `makeRealtimeSegments`) are the one exception to "nil stays nil" above — they're reranked
+    /// like any other segment, and promoted to the first `autoConvertGate`-passing candidate in
+    /// reranked order (gate-failing candidates are skipped for the promotion decision only; the
+    /// candidate-panel order is untouched), and only if that candidate itself has positive
+    /// context evidence (`HanjaContextRanker.contextEvidence(...).hasPositiveEvidence`). No such
+    /// candidate, or reranking not reached at all (this function's own early-return above when
+    /// both `context` and `clauseFeatures` are empty), leaves them hangul — the designed safe
+    /// default.
     static func applyContextReranking(
         to segments: [HanjaSegment],
         clause: String,
@@ -190,7 +238,8 @@ final class KiwiAnalysisService {
         candidateLookup: (String) -> [HanjaCandidate],
         winningTokens: [Token] = [],
         associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = nil,
-        weights: HanjaContextRankingWeights = .default
+        weights: HanjaContextRankingWeights = .default,
+        autoConvertGate: ((HanjaCandidate) -> Bool)? = nil
     ) -> [HanjaSegment] {
         guard !segments.isEmpty else {
             return segments
@@ -212,7 +261,11 @@ final class KiwiAnalysisService {
                 ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: segment.sourceRange)
                 : []
 
-            guard segment.previewCandidate != nil else {
+            // Step 7 (docs/plans/context-aware-hanja-conversion.md §10): segments suppressed by
+            // the native-homograph gate carry `previewCandidate == nil` too, but they still need
+            // reranking run so a positive-evidence top candidate can be promoted below. Segments
+            // nil for any OTHER reason (tag-ineligible / preferHangul / step-6 gate) stay nil.
+            guard segment.previewCandidate != nil || segment.awaitsContextEvidence else {
                 return segment.replacingContext(context, features: segmentFeatures, previewCandidate: nil)
             }
 
@@ -227,8 +280,51 @@ final class KiwiAnalysisService {
                 associationScores: scores,
                 weights: weights
             )
-            return segment.replacingContext(context, features: segmentFeatures, previewCandidate: reranked.first)
+
+            let previewCandidate: HanjaCandidate?
+            if segment.awaitsContextEvidence {
+                // Promotion target = the FIRST candidate in reranked order that passes the step-6
+                // word-evidence gate — not blindly `reranked.first`. Rationale (고장/姑藏/故障): a
+                // rare candidate whose dictionary features happen to match the clause (姑藏's
+                // definition mentions 수도) can win the rerank yet fail the step-6 gate; it must
+                // not block a gate-passing candidate right behind it (故障) from being considered.
+                // Skipping is for this promotion decision only — the candidate-panel order
+                // (realtimeCandidates(for:)) is untouched. The chosen candidate must then carry
+                // positive context evidence OF ITS OWN (step-4 containment/dominance axis or
+                // step-5 association axis > 0) — a skipped candidate's evidence never transfers.
+                // No such candidate => stay hangul (safe default).
+                let promotable = reranked.first { !failsAutoConvertGate($0, gate: autoConvertGate) }
+                if let promotable,
+                   contextEvidence(for: promotable, contextDominantHanja: context, associationScores: scores, weights: weights).hasPositiveEvidence {
+                    previewCandidate = promotable
+                } else {
+                    previewCandidate = nil
+                }
+            } else {
+                // Numeric segments bypass the gate (mirrors makeRealtimeSegments); their
+                // previewCandidate is already nil coming in (see makeNumericSegments), so this
+                // branch only matters if that ever changes.
+                let isNumericSegment = NumericHanjaCandidateGenerator.normalizedDigits(from: segment.surface) != nil
+                previewCandidate = isNumericSegment || !failsAutoConvertGate(reranked.first, gate: autoConvertGate)
+                    ? reranked.first
+                    : nil
+            }
+            return segment.replacingContext(context, features: segmentFeatures, previewCandidate: previewCandidate)
         }
+    }
+
+    /// Whether `candidate` should be blocked from becoming a `previewCandidate` by the step-6
+    /// auto-convert gate (docs/plans/context-aware-hanja-conversion.md §9). `gate == nil` never
+    /// blocks (pre-step-6 behavior); `candidate == nil` (no top candidate) never blocks either —
+    /// there is nothing to preview regardless.
+    private static func failsAutoConvertGate(
+        _ candidate: HanjaCandidate?,
+        gate: ((HanjaCandidate) -> Bool)?
+    ) -> Bool {
+        guard let gate, let candidate else {
+            return false
+        }
+        return !gate(candidate)
     }
 
     /// Content-morpheme features (`form/TAG`, deduped, order of first appearance) from `tokens`,
@@ -307,13 +403,17 @@ final class KiwiAnalysisService {
         from results: [TokenResult],
         in clause: String,
         candidateLookup: (String) -> [HanjaCandidate],
-        hangulUsageLookup: (String) -> Int = { _ in 0 }
+        hangulUsageLookup: (String) -> Int = { _ in 0 },
+        autoConvertGate: ((HanjaCandidate) -> Bool)? = nil,
+        nativeHomographLookup: ((String) -> Bool)? = nil
     ) -> [HanjaSegment] {
         bestRealtimeSegmentsWithWinningTokens(
             from: results,
             in: clause,
             candidateLookup: candidateLookup,
-            hangulUsageLookup: hangulUsageLookup
+            hangulUsageLookup: hangulUsageLookup,
+            autoConvertGate: autoConvertGate,
+            nativeHomographLookup: nativeHomographLookup
         ).segments
     }
 
@@ -338,7 +438,9 @@ final class KiwiAnalysisService {
         from results: [TokenResult],
         in clause: String,
         candidateLookup: (String) -> [HanjaCandidate],
-        hangulUsageLookup: (String) -> Int = { _ in 0 }
+        hangulUsageLookup: (String) -> Int = { _ in 0 },
+        autoConvertGate: ((HanjaCandidate) -> Bool)? = nil,
+        nativeHomographLookup: ((String) -> Bool)? = nil
     ) -> (segments: [HanjaSegment], winningTokens: [Token]) {
         guard let topScoreResult = results.max(by: { $0.score < $1.score }) else {
             return ([], [])
@@ -355,7 +457,9 @@ final class KiwiAnalysisService {
                 from: result.tokens,
                 in: clause,
                 candidateLookup: candidateLookup,
-                hangulUsageLookup: hangulUsageLookup
+                hangulUsageLookup: hangulUsageLookup,
+                autoConvertGate: autoConvertGate,
+                nativeHomographLookup: nativeHomographLookup
             )
             let convertibleLength = segments
                 .filter(\.isConvertible)
@@ -399,7 +503,9 @@ final class KiwiAnalysisService {
         from tokens: [Token],
         in clause: String,
         candidateLookup: (String) -> [HanjaCandidate],
-        hangulUsageLookup: (String) -> Int = { _ in 0 }
+        hangulUsageLookup: (String) -> Int = { _ in 0 },
+        autoConvertGate: ((HanjaCandidate) -> Bool)? = nil,
+        nativeHomographLookup: ((String) -> Bool)? = nil
     ) -> [HanjaSegment] {
         let tokenSegments: [HanjaSegment] = tokens.compactMap { token -> HanjaSegment? in
             guard isRealtimeHanjaEligibleTag(token.tag),
@@ -414,21 +520,45 @@ final class KiwiAnalysisService {
             }
 
             let surface = String(clause[stringRange])
-            let normalizedLookupKey = NumericHanjaCandidateGenerator.normalizedDigits(from: surface) ?? surface
+            let normalizedDigits = NumericHanjaCandidateGenerator.normalizedDigits(from: surface)
+            let normalizedLookupKey = normalizedDigits ?? surface
             let candidates = candidateLookup(normalizedLookupKey)
             let topHanjaUsage = candidates.first?.usageCount ?? 0
             let hangulUsage = hangulUsageLookup(normalizedLookupKey)
             let preferHangul = hangulUsage > 0 && hangulUsage >= topHanjaUsage
             let allowsAutoConversion = isRealtimeAutoConvertEligibleTag(token.tag)
-            let previewCandidate: HanjaCandidate? =
-                (preferHangul || !allowsAutoConversion) ? nil : candidates.first
+            // Step 6 (docs/plans/context-aware-hanja-conversion.md §9): numeric surfaces bypass
+            // the word-evidence gate entirely (numeric segments never preview auto-convert to
+            // begin with — see makeNumericSegments).
+            let topCandidateFailsGate = normalizedDigits != nil
+                ? false
+                : failsAutoConvertGate(candidates.first, gate: autoConvertGate)
+            // Step 7 (docs/plans/context-aware-hanja-conversion.md §10): a segment "would auto
+            // convert" under the pre-step-7 rules (tag-eligible + not preferHangul + step-6 gate
+            // passed + a top candidate exists). Numeric keys bypass the homograph check entirely,
+            // mirroring the step-6 numeric bypass above.
+            let wouldAutoConvert = !preferHangul && allowsAutoConversion && !topCandidateFailsGate
+                && candidates.first != nil
+            // Personalization bypass: the user's own confirmation history is the strongest
+            // possible evidence — a top candidate they've picked before (usageCount > 0) or
+            // defined themselves (.userDefined) skips the homograph suppression entirely, so one
+            // manual pick of e.g. 故障 makes 고장 auto-convert from then on.
+            let hasPersonalizationEvidence = candidates.first.map {
+                $0.usageCount > 0 || $0.source == .userDefined
+            } ?? false
+            let isFlaggedHomograph = normalizedDigits == nil
+                && wouldAutoConvert
+                && !hasPersonalizationEvidence
+                && (nativeHomographLookup?(normalizedLookupKey) ?? false)
+            let previewCandidate: HanjaCandidate? = (wouldAutoConvert && !isFlaggedHomograph) ? candidates.first : nil
             return HanjaSegment(
                 sourceRange: sourceRange,
                 surface: surface,
                 normalizedLookupKey: normalizedLookupKey,
                 tag: token.tag,
                 isConvertible: !candidates.isEmpty,
-                previewCandidate: previewCandidate
+                previewCandidate: previewCandidate,
+                awaitsContextEvidence: isFlaggedHomograph
             )
         }
 

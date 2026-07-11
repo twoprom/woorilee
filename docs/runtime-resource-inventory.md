@@ -16,6 +16,7 @@ Current runtime resources:
 - `Contents/Resources/data/hanja/freq-hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanjaeo.txt`
 - `Contents/Resources/data/hanja/hanja-context.txt`
+- `Contents/Resources/data/hanja/hanja-native-homograph.txt`
 - `Contents/Resources/KiwiModels/combiningRule.txt`
 - `Contents/Resources/KiwiModels/cong.mdl`
 - `Contents/Resources/KiwiModels/default.dict`
@@ -43,6 +44,7 @@ Live source paths used by the app target:
 - `woorilee/data/hanja/freq-hanja.txt`
 - `woorilee/data/hanja/freq-hanjaeo.txt`
 - `woorilee/data/hanja/hanja-context.txt`
+- `woorilee/data/hanja/hanja-native-homograph.txt`
 - `woorilee/KiwiModels/*`
 - `woorilee/en.lproj/InfoPlist.strings`
 - `woorilee/ko.lproj/InfoPlist.strings`

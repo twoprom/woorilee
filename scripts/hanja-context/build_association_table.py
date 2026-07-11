@@ -19,10 +19,14 @@ c, feature f):
 
     weighted(f, c)   = anchor_count + W_paren * paren_count + W_dict * dict_count
     survives(f, c)   iff anchor_count >= MIN_ANCHOR (5) OR paren_count >= 1
-                         OR dict_count >= 1
+                         OR dict_count >= 1 OR colloc_count >= 1
                      (the raw-count-5 floor from the plan applies to the
                      anchor-only path; direct-label paren/dict signals are
-                     exempt by design so thin candidates are not erased)
+                     exempt by design so thin candidates are not erased;
+                     colloc = step-7b NIKL 파생어 연어 4th signal, flagged
+                     readings only, weighted W_colloc like dict and EXEMPT
+                     from the ubiquity ban per attested row — see
+                     load_collocation_counts)
     n_c(f)           = weighted(f, c)               [0 if f did not survive for c]
     N_c              = sum over surviving f of n_c(f)
     n_r\\c(f)         = sum over OTHER candidates c' of n_c'(f)
@@ -80,9 +84,12 @@ over ALL tags cannot drop 오/VV without also dropping 나라/NNG. It CAN be
 done by TAG: every offending bare verb and every "discriminative rare verb"
 counterexample in the audit (틀/VV, 얼/VV) is VV/VA-tagged, and no NNG/NNP
 probe or thin-candidate feature is VV/VA-tagged. So the filter is scoped to
-VV/VA(-I) tags only: drop VV/VA-tagged features whose profile DF exceeds
-MAX_FEATURE_DF (CLI --max-feature-df, fraction of total profiles, 0 disables);
-NNG/NNP/MAG features are never touched by this filter regardless of DF.
+VV/VA(-I) tags only: drop VV/VA-tagged features whose ABSOLUTE profile DF
+count is >= MAX_FEATURE_DF_COUNT (CLI --max-feature-df-count, 0 disables;
+662 = the accepted 5b build's effective boundary — originally a fraction
+0.039 of total profiles, converted to an absolute constant 2026-07-10 after
+the 7b pool growth loosened the fractional boundary and re-admitted 나/VV
+into 수도:修道); NNG/NNP/MAG features are never touched regardless of DF.
 Banned features are excluded entirely from process_reading's by_candidate
 build (before N_c/V_r/pooled_feature_total are computed), so they contribute
 nothing to the contrast math either — equivalent to a computed stoplist.
@@ -133,7 +140,20 @@ MIN_ANCHOR_SURVIVAL = 5
 TOP_M_BASE = 300  # widest M we ever emit; smaller M values are prefixes of this
 EVAL_FLOOR_COUNT = 30  # eval-27 evidence floor (0 disables)
 EVAL_FLOOR_MIN_SCORE = math.log(2)  # floor also requires >= 2x contrast odds
-MAX_FEATURE_DF = 0.039  # ubiquity filter threshold, VV/VA(-I)-tagged features only (0 disables)
+# Ubiquity filter threshold — ABSOLUTE profile-DF count, VV/VA(-I)-tagged
+# features only (0 disables). History: this was originally a FRACTION of
+# total profiles (0.039). That made the effective cutoff depend on the size
+# of the target pool: the step-7b target expansion grew total_profiles
+# 16,974 -> 18,285, loosening the effective boundary 662 -> 714 and letting
+# 나/VV(710)·가리키/VV(688) re-enter 수도:修道 — which regressed the flag
+# sentence "우리 집 수도가 고장났다" to 修道 (user-verified regression,
+# 2026-07-10). Fixed by user decision to the absolute constant 662 =
+# ceil(0.039 * 16,974), the effective boundary of the accepted 5b build:
+# on the 5b pool it reproduces the banned set EXACTLY (79/79 features,
+# verified by recomputation over counts-5b-backup); on the 7b pool it bans
+# 84 (all 79 retained + 갖추/그리/사/옮기/잡 — generic verbs whose DF grew
+# with the pool), including 나/VV and 가리키/VV again.
+MAX_FEATURE_DF_COUNT = 662
 UBIQUITY_SCOPED_TAG_RE = re.compile(r"/(VV|VA)(-I)?$")
 
 ESCAPE_MAP = {"%": "%25", ":": "%3A", ",": "%2C", "=": "%3D"}
@@ -194,6 +214,32 @@ def iter_by_reading(path_a: Path, path_p: Path, path_d: Path):
         yield reading, list(group)
 
 
+def load_collocation_counts(path: Path) -> dict[str, dict[tuple[str, str], int]]:
+    """4th signal (step 7b, 2026-07-10 사용자 승인): NIKL derived-verb
+    collocations from build_collocation_counts.py — reading -> {(hanja,
+    feature): count}. Dictionary-attested lexical evidence, restricted by
+    construction to the FINAL flagged readings (7a-final-v2). Empty dict when
+    the file is absent (behavior then identical to the 3-signal build).
+
+    These rows are (a) survival-granting (like paren/dict direct labels) and
+    (b) EXEMPT from the global ubiquity ban for their specific (reading,
+    hanja, feature) — the ban exists to kill corpus-domain-biased generic
+    verbs, but a dictionary-registered derivation (고장나다 → 고장:故障 +
+    나/VV) is exactly the attested collocation the ban must not erase.
+    They deliberately do NOT participate in compute_profile_df, so the
+    banned set stays identical to the 3-signal build."""
+    if not path.exists():
+        return {}
+    result: dict[str, dict[tuple[str, str], int]] = defaultdict(dict)
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("#") or not line.strip():
+                continue
+            reading, hanja, feature, count_s = line.rstrip("\n").split("\t")
+            result[reading][(hanja, feature)] = int(count_s)
+    return dict(result)
+
+
 def compute_profile_df(w_paren: int, w_dict: int, min_anchor: int):
     """Second streaming pass over the merged counts (independent of
     build_master) computing each feature's PROFILE DOCUMENT FREQUENCY: the
@@ -222,7 +268,9 @@ def compute_profile_df(w_paren: int, w_dict: int, min_anchor: int):
 def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: float,
                     top_m_cap: int, floor: int = 0,
                     floor_min_score: float = EVAL_FLOOR_MIN_SCORE,
-                    banned_features: frozenset[str] = frozenset()):
+                    banned_features: frozenset[str] = frozenset(),
+                    colloc: dict[tuple[str, str], int] = {},
+                    w_colloc: int = 20):
     """rows: list of ((reading, hanja, feature), a, p, d) all for one reading.
     Returns (cand_features, cand_totals) or None if fewer than 2 candidates
     have any surviving feature (contrast requires >=2). cand_features maps
@@ -238,12 +286,22 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
     excluded from by_candidate entirely, so they never enter N_c/V_r/
     pooled_feature_total either."""
     by_candidate: dict[str, dict[str, int]] = defaultdict(dict)
+    consumed_colloc: set[tuple[str, str]] = set()
     for (_, hanja, feature), a, p, d in rows:
-        if not (a >= min_anchor or p >= 1 or d >= 1):
+        k = colloc.get((hanja, feature), 0)
+        if k:
+            consumed_colloc.add((hanja, feature))
+        if not (a >= min_anchor or p >= 1 or d >= 1 or k >= 1):
             continue
-        if feature in banned_features:
+        if feature in banned_features and k == 0:
+            # collocation-attested rows are exempt from the ubiquity ban
             continue
-        by_candidate[hanja][feature] = a + w_paren * p + w_dict * d
+        by_candidate[hanja][feature] = a + w_paren * p + w_dict * d + w_colloc * k
+    # collocation rows with no corpus/dict counterpart at all
+    for (hanja, feature), k in colloc.items():
+        if (hanja, feature) in consumed_colloc:
+            continue
+        by_candidate[hanja][feature] = w_colloc * k
 
     candidates_with_data = [c for c, feats in by_candidate.items() if feats]
     if len(candidates_with_data) < 2:
@@ -285,7 +343,9 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
 
 def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
                  eval27_set: set[str], eval_floor: int,
-                 banned_features: frozenset[str] = frozenset()):
+                 banned_features: frozenset[str] = frozenset(),
+                 colloc_by_reading: dict[str, dict[tuple[str, str], int]] = {},
+                 w_colloc: int = 20):
     """One full streaming pass over the merged counts. Returns
     (master, n_c_all, dropped_single_candidate_readings) where master is
     reading -> hanja -> (prefix, extras): prefix = [(feature, score,
@@ -296,10 +356,27 @@ def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
     master: dict[str, dict[str, tuple[list[tuple[str, float, int]], list[tuple[str, float]]]]] = {}
     n_c_all: dict[str, dict[str, int]] = {}
     dropped: list[str] = []
+    seen_readings: set[str] = set()
     for reading, rows in iter_by_reading(ANCHOR_TSV, PAREN_TSV, DICT_TSV):
+        seen_readings.add(reading)
         floor = eval_floor if reading in eval27_set else 0
         result = process_reading(rows, w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor,
-                                 banned_features=banned_features)
+                                 banned_features=banned_features,
+                                 colloc=colloc_by_reading.get(reading, {}), w_colloc=w_colloc)
+        if result is None:
+            dropped.append(reading)
+            continue
+        cand_features, n_c = result
+        master[reading] = cand_features
+        n_c_all[reading] = n_c
+    # readings whose ONLY signal is collocation rows (absent from all three
+    # corpus/dict streams) still get processed
+    for reading, colloc in colloc_by_reading.items():
+        if reading in seen_readings:
+            continue
+        floor = eval_floor if reading in eval27_set else 0
+        result = process_reading([], w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor,
+                                 banned_features=banned_features, colloc=colloc, w_colloc=w_colloc)
         if result is None:
             dropped.append(reading)
             continue
@@ -387,7 +464,12 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         "# Corpus: kowiki pages-articles dump 2026-06-29 (https://dumps.wikimedia.org/kowiki/, "
         "CC BY-SA) via scripts/hanja-context/extract_and_filter.py + collector; "
         "NIKL 3사전 정의문 (사용자 승인, 재배포 없는 집계 통계만) via "
-        "scripts/hanja-context/extract_nikl_defs.py.",
+        "scripts/hanja-context/extract_nikl_defs.py; "
+        f"4th signal (step 7b, 2026-07-10 사용자 승인): NIKL 파생어 연어 "
+        f"(krdict RelatedForm 파생어 + stdict/opendict 용언 표제어, 플래그 읽기 한정, "
+        f"w_colloc={params.get('w_colloc', 0)}, {params.get('colloc_tuples', 0)} tuples/"
+        f"{params.get('colloc_readings', 0)} readings, ubiquity-ban EXEMPT — 사전 등재 근거) via "
+        "scripts/hanja-context/build_collocation_counts.py.",
         "# Format: 읽기:한자:형태소=가중치,형태소=가중치,... (feature key = form/TAG; split "
         "Swift-side on the LAST '/' — TAG never contains '/'). One line per "
         "(reading, candidate) with >=1 surviving+scored feature. Sorted by reading then hanja.",
@@ -422,13 +504,17 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         f"# Cap-tightening applied (if any): min_total_weighted_count={params['min_total_weighted']}"
         f", non-eval27 total_freq cutoff={params['freq_cutoff']} (eval-27 readings from "
         "eval/hanja-context-eval-set.tsv are never dropped by the freq cutoff).",
-        f"# Ubiquity (IDF-style) filter: VV/VA(-I)-tagged features with profile document "
-        f"frequency > {params['max_feature_df']:.4%} (fraction of {params['total_profiles']} "
+        f"# Ubiquity (IDF-style) filter: VV/VA(-I)-tagged features with ABSOLUTE profile document "
+        f"frequency >= {params['max_feature_df_count']} (out of {params['total_profiles']} "
         f"post-survival pre-prune candidate profiles) are banned globally before scoring "
         f"({params['banned_feature_count']} features banned) — catches cross-domain-biased bare "
         "generic verbs (하, 있, 되, 나, 오, 보, 들, ...) that pass the within-reading contrast "
         "only because the corpus happens to be domain-skewed per candidate. Scoped to VV/VA to "
-        "avoid banning topical-noun probes that share similar raw DF (e.g. 나라/NNG, 정부/NNG).",
+        "avoid banning topical-noun probes that share similar raw DF (e.g. 나라/NNG, 정부/NNG). "
+        "The cutoff is an absolute count (662 = the accepted 5b build's effective boundary, "
+        "ceil(0.039 x 16,974)), NOT a fraction — a fractional cutoff loosens as the target pool "
+        "grows, which re-admitted 나/VV into 수도:修道 during the 7b expansion (user-verified "
+        "regression, fixed 2026-07-10).",
         f"# Generated: {generated_at} by scripts/hanja-context/build_association_table.py.",
         "#",
     ]
@@ -444,10 +530,12 @@ def main() -> int:
     parser.add_argument("--eval-floor-count", type=int, default=EVAL_FLOOR_COUNT,
                         help="eval-27 evidence floor: keep any surviving score>0 feature "
                              "with weighted_count >= this for eval-set readings (0 disables)")
-    parser.add_argument("--max-feature-df", type=float, default=MAX_FEATURE_DF,
-                        help="ubiquity filter: drop VV/VA(-I)-tagged features whose profile "
-                             "document frequency (fraction of post-survival, pre-prune candidate "
-                             "profiles containing the feature) exceeds this (0 disables). "
+    parser.add_argument("--max-feature-df-count", type=int, default=MAX_FEATURE_DF_COUNT,
+                        help="ubiquity filter: drop VV/VA(-I)-tagged features whose ABSOLUTE "
+                             "profile document frequency (number of post-survival, pre-prune "
+                             "candidate profiles containing the feature) is >= this (0 disables). "
+                             "Absolute, not a fraction — the cutoff must not loosen when the "
+                             "target pool grows (see MAX_FEATURE_DF_COUNT comment). "
                              "NNG/NNP/MAG features are never affected regardless of DF.")
     parser.add_argument("--print-feature-df", type=int, default=0,
                         help="if >0, print the top-N features by profile DF (for threshold "
@@ -455,6 +543,12 @@ def main() -> int:
     parser.add_argument("--size-cap-bytes", type=int, default=SIZE_CAP_BYTES)
     parser.add_argument("--output", type=Path, default=OUTPUT_TXT)
     parser.add_argument("--stats-output", type=Path, default=STATS_JSON)
+    parser.add_argument("--colloc-counts", type=Path, default=COUNTS_DIR / "collocation-counts.tsv",
+                        help="4th signal: NIKL derived-verb collocation counts "
+                             "(build_collocation_counts.py output; flagged readings only; "
+                             "ubiquity-ban exempt; absent file = 3-signal behavior)")
+    parser.add_argument("--colloc-weight", type=int, default=20,
+                        help="weight per collocation count (same scale as --dict-weight)")
     args = parser.parse_args()
 
     targets = load_targets()
@@ -474,14 +568,23 @@ def main() -> int:
         return 0
 
     banned_features: frozenset[str] = frozenset()
-    if args.max_feature_df > 0:
+    if args.max_feature_df_count > 0:
         banned_features = frozenset(
             f for f, cnt in df_counts.items()
-            if UBIQUITY_SCOPED_TAG_RE.search(f) and (cnt / total_profiles) > args.max_feature_df
+            if UBIQUITY_SCOPED_TAG_RE.search(f) and cnt >= args.max_feature_df_count
         )
     print(
         f"ubiquity filter: {len(banned_features)} VV/VA(-I) features banned "
-        f"(profile DF > {args.max_feature_df:.4%} of {total_profiles} profiles)",
+        f"(absolute profile DF >= {args.max_feature_df_count}; pool={total_profiles} profiles)",
+        file=sys.stderr,
+    )
+
+    colloc_by_reading = load_collocation_counts(args.colloc_counts)
+    colloc_tuples = sum(len(v) for v in colloc_by_reading.values())
+    print(
+        f"collocation signal: {colloc_tuples} tuples over {len(colloc_by_reading)} readings "
+        f"from {args.colloc_counts}" if colloc_by_reading
+        else f"collocation signal: none ({args.colloc_counts} absent/empty)",
         file=sys.stderr,
     )
 
@@ -489,6 +592,7 @@ def main() -> int:
     master, n_c_all, dropped_single_cand = build_master(
         args.paren_weight, args.dict_weight, args.min_anchor_survival, args.alpha,
         eval27, args.eval_floor_count, banned_features=banned_features,
+        colloc_by_reading=colloc_by_reading, w_colloc=args.colloc_weight,
     )
     print(
         f"scored readings={len(master)} dropped(<2 candidates with surviving features)="
@@ -556,8 +660,10 @@ def main() -> int:
          "min_anchor": args.min_anchor_survival, "alpha": args.alpha,
          "eval_floor": args.eval_floor_count,
          "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
-         "max_feature_df": args.max_feature_df, "total_profiles": total_profiles,
-         "banned_feature_count": len(banned_features)},
+         "max_feature_df_count": args.max_feature_df_count, "total_profiles": total_profiles,
+         "banned_feature_count": len(banned_features),
+         "w_colloc": args.colloc_weight, "colloc_tuples": colloc_tuples,
+         "colloc_readings": len(colloc_by_reading)},
         global_max, generated_at,
     )
 
@@ -581,8 +687,14 @@ def main() -> int:
             "eval_floor_count": args.eval_floor_count,
             "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
             "selection_metric": "utility = score * ln(1 + weighted_count)",
-            "max_feature_df": args.max_feature_df,
+            "max_feature_df_count": args.max_feature_df_count,
+            "max_feature_df_count_rationale": "absolute cutoff fixed 2026-07-10 (= ceil(0.039 * 16974), the accepted 5b build's effective boundary); fractional cutoff loosened with pool growth and re-admitted 나/VV into 수도:修道",
             "ubiquity_scoped_tags": "VV, VA, VA-I, VV-I",
+            "colloc_weight": args.colloc_weight,
+            "colloc_counts_file": str(args.colloc_counts),
+            "colloc_tuples": colloc_tuples,
+            "colloc_readings": len(colloc_by_reading),
+            "colloc_note": "NIKL 파생어 연어 (flagged readings only) — survival-granting, ubiquity-ban exempt per row; NOT in compute_profile_df (banned set independent)",
             **chosen,
         },
         "ubiquity_filter": {

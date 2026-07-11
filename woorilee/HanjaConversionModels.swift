@@ -38,6 +38,13 @@ struct HanjaSegment: Equatable, Identifiable {
     let tag: POSTag
     let isConvertible: Bool
     let previewCandidate: HanjaCandidate?
+    /// Step 7 — native-homograph gate (docs/plans/context-aware-hanja-conversion.md §10): `true`
+    /// means this segment's reading is flagged as having a real native-Korean-word homograph, its
+    /// `previewCandidate` was suppressed to `nil` for that reason (not tag-ineligibility /
+    /// preferHangul / step-6 gate failure), and `applyContextReranking` may promote a candidate
+    /// back into `previewCandidate` if it finds positive context evidence. Defaults to `false` so
+    /// every pre-existing initializer call site reproduces prior behavior exactly.
+    let awaitsContextEvidence: Bool
     /// Dominant hanja resolved from the surrounding context (see HanjaContextRanker.swift).
     /// Empty unless step 4b's post-processing reranking pass has run. Carrying this through
     /// every copy helper keeps the panel path (HanjaServiceCoordinator.realtimeCandidates(for:))
@@ -59,6 +66,7 @@ struct HanjaSegment: Equatable, Identifiable {
         tag: POSTag,
         isConvertible: Bool,
         previewCandidate: HanjaCandidate?,
+        awaitsContextEvidence: Bool = false,
         contextDominantHanja: [String] = [],
         contextFeatures: [String] = []
     ) {
@@ -69,6 +77,7 @@ struct HanjaSegment: Equatable, Identifiable {
         self.tag = tag
         self.isConvertible = isConvertible
         self.previewCandidate = previewCandidate
+        self.awaitsContextEvidence = awaitsContextEvidence
         self.contextDominantHanja = contextDominantHanja
         self.contextFeatures = contextFeatures
     }
@@ -82,6 +91,7 @@ struct HanjaSegment: Equatable, Identifiable {
             tag: tag,
             isConvertible: isConvertible,
             previewCandidate: candidate,
+            awaitsContextEvidence: awaitsContextEvidence,
             contextDominantHanja: contextDominantHanja,
             contextFeatures: contextFeatures
         )
@@ -96,6 +106,7 @@ struct HanjaSegment: Equatable, Identifiable {
             tag: tag,
             isConvertible: isConvertible,
             previewCandidate: previewCandidate,
+            awaitsContextEvidence: awaitsContextEvidence,
             contextDominantHanja: context,
             contextFeatures: features
         )
