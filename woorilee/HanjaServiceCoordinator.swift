@@ -301,7 +301,7 @@ func hideWarmUpPanelIfNeeded() {
         let anchorResolution = ManualHanjaPanelAnchorResolver.resolve(content: content, client: client)
         for probe in anchorResolution.probes {
             manualHanjaPanelLogger.debug(
-                "anchor candidate range=\(inputDebugRangeString(probe.range), privacy: .public) actual=\(inputDebugRangeString(probe.actualRange), privacy: .public) rect=\(String(describing: probe.rect), privacy: .public) valid=\(probe.isValid, privacy: .public)"
+                "anchor candidate range=\(inputDebugRangeString(probe.range), privacy: .public) actual=\(inputDebugRangeString(probe.actualRange), privacy: .public) rect=\(String(describing: probe.rect), privacy: .public) lineRect=\(String(describing: probe.lineRect), privacy: .public) valid=\(probe.isValid, privacy: .public)"
             )
         }
 

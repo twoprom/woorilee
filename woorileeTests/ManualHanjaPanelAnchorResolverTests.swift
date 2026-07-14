@@ -94,36 +94,45 @@ final class ManualHanjaPanelAnchorResolverTests: XCTestCase {
         XCTAssertEqual(ranges, [NSRange(location: 3, length: 0)])
     }
 
-    @MainActor
-    func testAugmentsTinyFirstRectHeightFromLineHeightRectangle() {
-        let client = FakeIMKTextInput()
-        client.lineHeightRectHandler = { index in
-            index == 5 ? NSRect(x: 0, y: 500, width: 0, height: 18) : .zero
-        }
+    func testReconciliationAdoptsLineRectVerticalBandForFlippedFirstRect() {
+        // TextEdit/Notes (TextKit 2) return firstRect with origin.y at the line *top*
+        // (observed: firstRect=(1524, 1070, 84.77, 59) vs lineRect=(1524, 1011, 1, 59)).
+        let screenFrames = [NSRect(x: 0, y: 0, width: 2560, height: 1440)]
 
-        let result = ManualHanjaPanelAnchorResolver.augmentedLineHeight(
-            of: NSRect(x: 100, y: 500, width: 0, height: 1),
-            characterIndex: 5,
-            client: client
+        let result = ManualHanjaPanelAnchorResolver.reconciledAnchorRect(
+            rect: NSRect(x: 1524, y: 1070, width: 84.77, height: 59),
+            lineRect: NSRect(x: 1524, y: 1011, width: 1, height: 59),
+            screenFrames: screenFrames
+        )
+
+        // Vertical band comes from the line rect; horizontal geometry stays firstRect's.
+        XCTAssertEqual(result, NSRect(x: 1524, y: 1011, width: 84.77, height: 59))
+    }
+
+    func testReconciliationKeepsFirstRectWhenLineRectUnusable() {
+        let screenFrames = [NSRect(x: 0, y: 0, width: 1440, height: 900)]
+        let healthy = NSRect(x: 100, y: 500, width: 0, height: 18)
+
+        let result = ManualHanjaPanelAnchorResolver.reconciledAnchorRect(
+            rect: healthy,
+            lineRect: .zero,
+            screenFrames: screenFrames
+        )
+
+        XCTAssertEqual(result, healthy)
+    }
+
+    func testReconciliationBorrowsHeightWhenLineRectOffScreen() {
+        let screenFrames = [NSRect(x: 0, y: 0, width: 1440, height: 900)]
+
+        let result = ManualHanjaPanelAnchorResolver.reconciledAnchorRect(
+            rect: NSRect(x: 100, y: 500, width: 0, height: 1),
+            lineRect: NSRect(x: -5000, y: -5000, width: 0, height: 18),
+            screenFrames: screenFrames
         )
 
         // Keeps firstRect's x and line bottom, adopts the real line height.
         XCTAssertEqual(result, NSRect(x: 100, y: 500, width: 0, height: 18))
-    }
-
-    @MainActor
-    func testKeepsFirstRectWhenHeightAlreadyHealthy() {
-        let client = FakeIMKTextInput()
-        client.lineHeightRectHandler = { _ in NSRect(x: 0, y: 0, width: 0, height: 99) }
-        let healthy = NSRect(x: 100, y: 500, width: 0, height: 18)
-
-        let result = ManualHanjaPanelAnchorResolver.augmentedLineHeight(
-            of: healthy,
-            characterIndex: 5,
-            client: client
-        )
-
-        XCTAssertEqual(result, healthy)
     }
 
     @MainActor
