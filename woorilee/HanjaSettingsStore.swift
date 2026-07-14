@@ -9,7 +9,6 @@ final class HanjaSettingsStore {
 
     private enum Keys {
         static let useRealtimeHanjaConversion = "useRealtimeHanjaConversion"
-        static let useContextHanjaRanking = "useContextHanjaRanking"
     }
 
     private let defaults: UserDefaults
@@ -32,22 +31,6 @@ final class HanjaSettingsStore {
 
     func toggleUseRealtimeHanjaConversion() {
         setUseRealtimeHanjaConversion(!useRealtimeHanjaConversion)
-    }
-
-    var useContextHanjaRanking: Bool {
-        bool(forKey: Keys.useContextHanjaRanking, default: true)
-    }
-
-    func setUseContextHanjaRanking(_ enabled: Bool) {
-        guard useContextHanjaRanking != enabled else {
-            return
-        }
-
-        defaults.set(enabled, forKey: Keys.useContextHanjaRanking)
-    }
-
-    func toggleUseContextHanjaRanking() {
-        setUseContextHanjaRanking(!useContextHanjaRanking)
     }
 
     private func bool(forKey key: String, default defaultValue: Bool) -> Bool {

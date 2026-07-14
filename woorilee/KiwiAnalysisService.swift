@@ -160,8 +160,7 @@ final class KiwiAnalysisService {
                 nativeHomographLookup: nativeHomographLookup
             )
 
-            guard HanjaSettingsStore.shared.useContextHanjaRanking,
-                  let dominantMap = hanjaService.dominantHanjaMap,
+            guard let dominantMap = hanjaService.dominantHanjaMap,
                   !dominantMap.isEmpty
             else {
                 return best.segments

@@ -210,8 +210,8 @@ final class RealtimeNativeHomographGateTests: XCTestCase {
     }
 
     /// Reranking never actually runs (no dominant-hanja context and no association lookup at
-    /// all — mirrors `useContextHanjaRanking` being off / stores not ready in `analyzeClause`):
-    /// the flagged segment must stay hangul, not silently fall back to the pre-step-7 preview.
+    /// all — mirrors the stores not being ready in `analyzeClause`): the flagged segment must
+    /// stay hangul, not silently fall back to the pre-step-7 preview.
     func testFlaggedReadingStaysHangulWhenRerankingDoesNotRun() throws {
         let tokens = [Token(form: "구두", tag: .nng, position: 0, length: 2)]
         let segments = KiwiAnalysisService.makeRealtimeSegments(

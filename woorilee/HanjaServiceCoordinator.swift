@@ -23,7 +23,6 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
 
     private enum MenuTitle {
         static let realtimeConversion = "실시간 변환"
-        static let contextHanjaRanking = "문맥 기반 변환"
         static let manageUserDictionary = "漢字 사전 편집…"
         static let resetUsageData = "사용자 학습 데이터 초기화…"
         static let about = "우리입력기에 관하여"
@@ -37,7 +36,6 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     private let userDictionaryWindowController = HanjaUserDictionaryWindowController.shared
     private weak var currentMenu: NSMenu?
     private weak var realtimeMenuItem: NSMenuItem?
-    private weak var contextHanjaRankingMenuItem: NSMenuItem?
     private weak var manageUserDictionaryMenuItem: NSMenuItem?
     private weak var resetUsageDataMenuItem: NSMenuItem?
 
@@ -77,14 +75,6 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     }
 
     var canToggleRealtimeHanjaConversion: Bool {
-        isRealtimeHanjaAvailable
-    }
-
-    var isContextHanjaRankingEnabled: Bool {
-        isRealtimeHanjaAvailable ? settingsStore.useContextHanjaRanking : false
-    }
-
-    var canToggleContextHanjaRanking: Bool {
         isRealtimeHanjaAvailable
     }
 
@@ -141,7 +131,6 @@ func hideWarmUpPanelIfNeeded() {
     func makeMenu(
         target: AnyObject,
         realtimeAction: Selector,
-        contextRankingAction: Selector,
         manageUserDictionaryAction: Selector,
         resetUsageDataAction: Selector,
         aboutAction: Selector
@@ -159,15 +148,6 @@ func hideWarmUpPanelIfNeeded() {
             keyEquivalentModifierMask: InputEventPolicy.realtimeHanjaToggleModifierMask
         )
         menu.addItem(realtimeItem)
-
-        let contextRankingItem = makeToggleMenuItem(
-            title: MenuTitle.contextHanjaRanking,
-            action: contextRankingAction,
-            isOn: isContextHanjaRankingEnabled,
-            isEnabled: canToggleContextHanjaRanking,
-            target: target
-        )
-        menu.addItem(contextRankingItem)
         menu.addItem(.separator())
 
         let manageItem = NSMenuItem(
@@ -199,7 +179,6 @@ func hideWarmUpPanelIfNeeded() {
 
         currentMenu = menu
         realtimeMenuItem = realtimeItem
-        contextHanjaRankingMenuItem = contextRankingItem
         manageUserDictionaryMenuItem = manageItem
         resetUsageDataMenuItem = resetUsageDataItem
         refreshMenuState(menu)
@@ -220,15 +199,6 @@ func hideWarmUpPanelIfNeeded() {
         }
 
         settingsStore.toggleUseRealtimeHanjaConversion()
-        refreshMenuState()
-    }
-
-    func toggleContextHanjaRanking() {
-        guard canToggleContextHanjaRanking else {
-            return
-        }
-
-        settingsStore.toggleUseContextHanjaRanking()
         refreshMenuState()
     }
 
@@ -352,8 +322,7 @@ func hideWarmUpPanelIfNeeded() {
         }
 
         let candidates = hanjaService.exactCandidates(for: segment.normalizedLookupKey)
-        guard settingsStore.useContextHanjaRanking,
-              !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
+        guard !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
         else {
             return candidates
         }
@@ -397,10 +366,6 @@ func hideWarmUpPanelIfNeeded() {
         let realtimeItem = menu?.item(withTitle: MenuTitle.realtimeConversion) ?? realtimeMenuItem
         realtimeItem?.state = isRealtimeHanjaConversionEnabled ? .on : .off
         realtimeItem?.isEnabled = canToggleRealtimeHanjaConversion
-
-        let contextRankingItem = menu?.item(withTitle: MenuTitle.contextHanjaRanking) ?? contextHanjaRankingMenuItem
-        contextRankingItem?.state = isContextHanjaRankingEnabled ? .on : .off
-        contextRankingItem?.isEnabled = canToggleContextHanjaRanking
 
         let manageItem = menu?.item(withTitle: MenuTitle.manageUserDictionary) ?? manageUserDictionaryMenuItem
         manageItem?.isEnabled = isManualHanjaAvailable

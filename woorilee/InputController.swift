@@ -397,7 +397,6 @@ final class InputController: IMKInputSessionController {
         hanjaServices.makeMenu(
             target: self,
             realtimeAction: #selector(toggleRealtimeHanjaConversion(_:)),
-            contextRankingAction: #selector(toggleContextHanjaRanking(_:)),
             manageUserDictionaryAction: #selector(openUserHanjaDictionary(_:)),
             resetUsageDataAction: #selector(resetUserLearningData(_:)),
             aboutAction: #selector(showAbout(_:))
@@ -421,10 +420,6 @@ final class InputController: IMKInputSessionController {
         case #selector(toggleRealtimeHanjaConversion(_:)):
             menuItem.state = hanjaServices.isRealtimeHanjaConversionEnabled ? .on : .off
             return hanjaServices.canToggleRealtimeHanjaConversion
-
-        case #selector(toggleContextHanjaRanking(_:)):
-            menuItem.state = hanjaServices.isContextHanjaRankingEnabled ? .on : .off
-            return hanjaServices.canToggleContextHanjaRanking
 
         case #selector(openUserHanjaDictionary(_:)):
             return hanjaServices.isManualHanjaAvailable
@@ -1439,11 +1434,6 @@ final class InputController: IMKInputSessionController {
 
     @objc private func toggleRealtimeHanjaConversion(_ sender: Any?) {
         hanjaServices.toggleRealtimeHanjaConversion()
-        refreshVisibleMenuState(from: sender)
-    }
-
-    @objc private func toggleContextHanjaRanking(_ sender: Any?) {
-        hanjaServices.toggleContextHanjaRanking()
         refreshVisibleMenuState(from: sender)
     }
 
