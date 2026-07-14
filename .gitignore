@@ -32,3 +32,6 @@ CLAUDE.md
 /Config/Signing.local.xcconfig
 
 /build
+/scripts/hanja-context/collector/.build
+/scripts/hanja-context/__pycache__
+/scripts/hanja-context/__pycache__
