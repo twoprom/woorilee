@@ -145,7 +145,7 @@ final class ManualHanjaPanelAnchorResolverTests: XCTestCase {
         let screenFrames = [NSRect(x: 0, y: 0, width: 1440, height: 900)]
 
         let result = ManualHanjaPanelAnchorResolver.reverseLineHeightRect(
-            caretIndex: 12,
+            from: 12,
             client: client,
             screenFrames: screenFrames
         )
@@ -163,12 +163,68 @@ final class ManualHanjaPanelAnchorResolverTests: XCTestCase {
         let screenFrames = [NSRect(x: 0, y: 0, width: 1440, height: 900)]
 
         let result = ManualHanjaPanelAnchorResolver.reverseLineHeightRect(
-            caretIndex: 100,
+            from: 100,
             client: client,
             screenFrames: screenFrames
         )
 
         XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testReverseSearchOperatesOnInlineSessionIndices() {
+        let client = FakeIMKTextInput()
+        var recordedIndices: [Int] = []
+        // Only inline-session-relative indices 0...2 are valid; a document-absolute index
+        // this deep in the document would never resolve.
+        client.lineHeightRectHandler = { index in
+            recordedIndices.append(index)
+            return index <= 2 ? NSRect(x: 80, y: 400, width: 1, height: 18) : .zero
+        }
+        let screenFrames = [NSRect(x: 0, y: 0, width: 1440, height: 900)]
+
+        let result = ManualHanjaPanelAnchorResolver.reverseLineHeightRect(
+            from: 2,
+            client: client,
+            screenFrames: screenFrames
+        )
+
+        XCTAssertEqual(result, NSRect(x: 80, y: 400, width: 1, height: 18))
+        XCTAssertEqual(recordedIndices, [2])
+    }
+
+    func testInlineSessionIndexConvertsDocumentIndexRelativeToMarkedRange() {
+        let markedRange = NSRange(location: 13, length: 2)
+
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 13, markedRange: markedRange),
+            0
+        )
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 14, markedRange: markedRange),
+            1
+        )
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 15, markedRange: markedRange),
+            2
+        )
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 20, markedRange: markedRange),
+            2
+        )
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 3, markedRange: markedRange),
+            0
+        )
+    }
+
+    func testInlineSessionIndexReturnsZeroWhenNoMarkedRange() {
+        let markedRange = NSRange(location: NSNotFound, length: 0)
+
+        XCTAssertEqual(
+            ManualHanjaPanelAnchorResolver.inlineSessionIndex(forDocumentIndex: 42, markedRange: markedRange),
+            0
+        )
     }
 
     func testValidAnchorRectRequiresFiniteVisibleRect() {

@@ -24,15 +24,27 @@ enum ManualHanjaPanelAnchorResolver {
     /// How far back the reverse line-height search walks before giving up.
     static let maxReverseSearchSteps = 8
 
+    /// `attributes(forCharacterIndex:lineHeightRectangle:)` takes an index "relative to the
+    /// inline session" (IMKInputSession.h); with no inline session the index "should be 0,
+    /// which indicates that the information should be taken from the current selection".
+    /// Convert a document-absolute index into that space.
+    static func inlineSessionIndex(forDocumentIndex documentIndex: Int, markedRange: NSRange) -> Int {
+        guard markedRange.location != NSNotFound else {
+            return 0
+        }
+        return min(max(documentIndex - markedRange.location, 0), markedRange.length)
+    }
+
     @MainActor
     static func resolve(
         content: ManualHanjaPanelContent,
         client: any IMKTextInput
     ) -> ManualHanjaPanelAnchorResolution {
         let selectedRange = client.selectedRange()
+        let markedRange = client.markedRange()
         let ranges = anchorCandidateRanges(
             for: content,
-            markedRange: client.markedRange(),
+            markedRange: markedRange,
             selectedRange: selectedRange
         )
         let screenFrames = NSScreen.screens.map(\.frame)
@@ -45,7 +57,7 @@ enum ManualHanjaPanelAnchorResolver {
             var lineRect = NSRect.zero
             if isValid, range.location != NSNotFound {
                 lineRect = reverseLineHeightRect(
-                    caretIndex: range.location,
+                    from: inlineSessionIndex(forDocumentIndex: range.location, markedRange: markedRange),
                     client: client,
                     screenFrames: screenFrames
                 ) ?? .zero
@@ -73,7 +85,7 @@ enum ManualHanjaPanelAnchorResolver {
         // All firstRect candidates failed — fall back to vChewing's reverse line-height search.
         if let caretIndex = caretCharacterIndex(for: content, selectedRange: selectedRange),
            let rect = reverseLineHeightRect(
-               caretIndex: caretIndex,
+               from: inlineSessionIndex(forDocumentIndex: caretIndex, markedRange: markedRange),
                client: client,
                screenFrames: screenFrames
            ) {
@@ -108,16 +120,18 @@ enum ManualHanjaPanelAnchorResolver {
         return rect
     }
 
-    /// Walk the caret index backwards, asking for the line-height rectangle at each index until a
-    /// valid one appears (vChewing's `lineHeightRect(u16Cursor:)`).
+    /// Walk the start index backwards, asking for the line-height rectangle at each index until a
+    /// valid one appears (vChewing's `lineHeightRect(u16Cursor:)`). The index is relative to the
+    /// inline session — the same space vChewing's `lineHeightRect(u16Cursor:)` walks with its
+    /// composition-buffer cursor — not a document-absolute offset.
     @MainActor
     static func reverseLineHeightRect(
-        caretIndex: Int,
+        from startIndex: Int,
         client: any IMKTextInput,
         screenFrames: [NSRect]
     ) -> NSRect? {
-        var index = caretIndex
-        let lowerBound = max(caretIndex - maxReverseSearchSteps, 0)
+        var index = startIndex
+        let lowerBound = max(startIndex - maxReverseSearchSteps, 0)
 
         while index >= lowerBound {
             var lineRect = NSRect.zero
