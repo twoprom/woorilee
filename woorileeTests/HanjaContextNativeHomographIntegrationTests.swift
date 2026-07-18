@@ -87,10 +87,12 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
     }
 
     /// Step 6 gate, wired the same way KiwiAnalysisService.analyzeClause wires it (real decoded
-    /// freq-hanjaeo.txt 하위값 via HanjaFrequencyTable.wordFrequency).
-    private static let autoConvertGate: (HanjaCandidate) -> Bool = { candidate in
+    /// freq-hanjaeo.txt 하위값 via HanjaFrequencyTable.wordFrequency, tag-aware for the NNP
+    /// proper-noun evidence axis).
+    private static let autoConvertGate: (HanjaCandidate, POSTag) -> Bool = { candidate, tag in
         KiwiAnalysisService.hasAutoConvertWordEvidence(
-            candidate, wordFrequency: HanjaContextNativeHomographIntegrationTests.freqTable.wordFrequency(for:))
+            candidate, tag: tag,
+            wordFrequency: HanjaContextNativeHomographIntegrationTests.freqTable.wordFrequency(for:))
     }
 
     private static let nativeHomographLookup: (String) -> Bool = {
@@ -187,6 +189,47 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
 
         let gudu = try XCTUnwrap(segment(segments, reading: "구두"))
         XCTAssertEqual(gudu.previewCandidate?.value, "口頭", "구두 must be promoted to 口頭 via the 계약 context")
+    }
+
+    /// 2026-07-11 defect: "한국의 수도는 서울이다" — 한국 stayed hangul because 국명·지명 decoded
+    /// freq-hanjaeo 하위값 all sit in the ~100 band (韓國 104, 美國 104, 釜山 84), below the step-6
+    /// threshold 500. The NNP proper-noun evidence axis (hasAutoConvertWordEvidence's `tag:`)
+    /// accepts weak word evidence (하위값 > 0) or a hanja.txt comment for multi-syllable
+    /// NNP-tagged segments. 미국·부산 rankings verified against the real dictionary before
+    /// asserting (美國 104 > 尾局 74 > 米麴 63; 釜山 84 > 副産 81 > 傅山 80 — both top and both
+    /// carrying NNP-axis evidence), so their hard assertions are safe.
+    func testHangukSudoSeoulClauseAutoConvertsProperNouns() throws {
+        guard requireInfra() else { return }
+
+        let clause = "한국의 수도는 서울이다"
+        let segments = try finalSegments(for: clause)
+
+        let hanguk = try XCTUnwrap(segment(segments, reading: "한국"))
+        XCTAssertEqual(
+            hanguk.previewCandidate?.value, "韓國",
+            "한국/NNP must auto-convert via the NNP evidence axis (韓國 하위값 104 < threshold 500)"
+        )
+
+        let sudo = try XCTUnwrap(segment(segments, reading: "수도"))
+        XCTAssertEqual(sudo.previewCandidate?.value, "首都", "수도 must preview 首都 in the 서울 context")
+
+        // 서울 is a native word with no hanja.txt entry: if the analyzer emits a segment for it at
+        // all, it must be non-convertible with no preview.
+        if let seoul = segment(segments, reading: "서울") {
+            XCTAssertFalse(seoul.isConvertible, "서울 has no dictionary entry and must not be convertible")
+            XCTAssertNil(seoul.previewCandidate)
+        }
+
+        // 미국·부산 through the same pipeline (separate clause so this stays one realistic
+        // sentence each; both tagged NNP per the 2026-07-11 measurements).
+        let travelSegments = try finalSegments(for: "미국과 부산을 오간다")
+        let miguk = try XCTUnwrap(segment(travelSegments, reading: "미국"))
+        XCTAssertEqual(miguk.previewCandidate?.value, "美國")
+        let busan = try XCTUnwrap(segment(travelSegments, reading: "부산"))
+        XCTAssertEqual(
+            busan.previewCandidate?.value, "釜山",
+            "부산 must convert via the weak-frequency alternative (釜山 has no hanja.txt comment)"
+        )
     }
 
     /// Plan §10 scenario 4: "지금 뛴다" — 지금 is NOT a flagged native homograph (no non-hanja-origin
