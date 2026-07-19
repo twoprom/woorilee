@@ -161,6 +161,10 @@ final class InputSession {
     private(set) var manualNoticeState: ManualHanjaNoticeState?
     private(set) var pendingManualReplacementRange: NSRange?
     private(set) var pendingManualLookupKey: String?
+    /// WYSIWYG live-preview bookkeeping for the manual panel: the text currently written into the
+    /// client over `pendingManualReplacementRange` by arrow-key browsing. `nil` = nothing applied
+    /// yet (the document still shows the original source text).
+    private(set) var manualLiveAppliedText: String?
     private(set) var pendingManualHanjaTrigger: PendingManualHanjaTrigger?
     private(set) var pendingManualHanjaNewlineSuppressionUptime: TimeInterval?
     private var manualHanjaNewlineSuppressionGeneration = 0
@@ -376,12 +380,12 @@ final class InputSession {
     }
 
     @discardableResult
-    func applyRealtimeHangulFallbackForSelectedSegment() -> Bool {
+    func applyRealtimeHangulFallbackForSelectedSegment(keepingCandidateState: Bool = false) -> Bool {
         guard compositionMode == .realtimeHanja else {
             return false
         }
 
-        return realtimeClauseState.applyHangulFallbackForSelectedSegment()
+        return realtimeClauseState.applyHangulFallbackForSelectedSegment(keepingCandidateState: keepingCandidateState)
     }
 
     func drainPendingRealtimeUsageEvents() -> [PendingHanjaUsageEvent] {
@@ -430,6 +434,18 @@ final class InputSession {
         manualCandidateState = state
     }
 
+    /// Records a WYSIWYG live-preview replacement: `text` is now what the client shows over the
+    /// manual replacement range, whose length is updated to match so subsequent replacements (and
+    /// the mouse-click selection path) target the correct span.
+    func recordManualLivePreview(text: String) {
+        guard let range = pendingManualReplacementRange else {
+            return
+        }
+
+        manualLiveAppliedText = text
+        pendingManualReplacementRange = NSRange(location: range.location, length: inputUTF16Length(of: text))
+    }
+
     func setManualNoticeState(_ state: ManualHanjaNoticeState) {
         compositionMode = .manualHanja
         manualCandidateState = nil
@@ -447,6 +463,7 @@ final class InputSession {
         manualNoticeState = nil
         pendingManualReplacementRange = nil
         pendingManualLookupKey = nil
+        manualLiveAppliedText = nil
         if compositionMode == .manualHanja {
             compositionMode = .hangul
         }

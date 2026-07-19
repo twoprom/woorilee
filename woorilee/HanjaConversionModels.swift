@@ -496,8 +496,12 @@ struct RealtimeClauseState: Equatable {
         return true
     }
 
+    /// - Parameter keepingCandidateState: `true` keeps the candidate panel state alive (used by
+    ///   the WYSIWYG highlight-preview path, where browsing onto the hangul row must update the
+    ///   inline display without closing the panel). `false` (the default) preserves the original
+    ///   select-and-dismiss behavior.
     @discardableResult
-    mutating func applyHangulFallbackForSelectedSegment() -> Bool {
+    mutating func applyHangulFallbackForSelectedSegment(keepingCandidateState: Bool = false) -> Bool {
         guard let selectedSegmentIndex,
               segments.indices.contains(selectedSegmentIndex)
         else {
@@ -516,7 +520,9 @@ struct RealtimeClauseState: Equatable {
                 value: segment.normalizedLookupKey
             )
         )
-        candidateState = nil
+        if !keepingCandidateState {
+            candidateState = nil
+        }
         segments[selectedSegmentIndex] = segment.replacingPreviewCandidate(nil)
         previewClauseText = Self.previewText(
             sourceText: rawClauseText + tailPreedit,

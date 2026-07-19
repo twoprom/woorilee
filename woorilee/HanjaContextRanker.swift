@@ -6,6 +6,7 @@
 // Nothing in this file is wired into the production input path yet; that is step 4b.
 
 import Foundation
+import Kiwi
 
 struct HanjaContextRankingWeights {
     /// Boost applied when a context word's dominant hanja CONTAINS the candidate as a substring
@@ -22,6 +23,16 @@ struct HanjaContextRankingWeights {
     /// - Must never overcome containment: realistic max association sum (~30 features × 255 ≈
     ///   7,650) × 300 ≈ 2.3M, still well under containment's 10,000,000.
     var association: Int
+    /// NNP gazette bonus, expressed in association RAW-score units (the boost added is
+    /// `nnpGazetteBonus * association`): when the segment is tagged `.nnp` and the candidate
+    /// carries a non-empty hanja.txt comment (지명·국명 관보 — 韓國:대한민국, 朝鮮:조선민주주의
+    /// 인민공화국), the proper-noun reading gets a fixed head start. Calibration (2026-07-18
+    /// 실측, "서울은 조선의 수도였다"): must beat 祖先's corpus noise (수도/NNG=66 → 19,800) —
+    /// 朝鮮 24×300 + 100×300 = 37,200 > 19,800 ✓ — but must LOSE to a strong real association
+    /// like 造船's 중공업 173×300 = 51,900 > 30,000 + 造船-side features ✓. Not part of
+    /// `HanjaContextEvidence` — the gazette is a prior, not context evidence, so it never
+    /// promotes an `awaitsContextEvidence` segment by itself.
+    var nnpGazetteBonus: Int = 100
     static let `default` = HanjaContextRankingWeights(containment: 10_000_000, charShare: 0, association: 300)
 }
 
@@ -149,44 +160,43 @@ func contextEvidence(
     return HanjaContextEvidence(dictionaryBoost: dictionaryBoost, associationScore: associationScore)
 }
 
-/// Re-ranks `candidates` using dominant hanja resolved from the surrounding context. Each
-/// candidate's boost (containment + char-share against every context dominant hanja) is
-/// precomputed once — O(K × context) — then folded into a copy's `frequency` before applying the
-/// existing `compareHanjaCandidate` order, so all other tie-break tiers (source, usageCount,
-/// baseRank, value, reading) are untouched. When `contextDominantHanja` is empty (or every boost
-/// is 0), every copy keeps its original frequency and the result is EXACTLY
+/// Re-ranks `candidates` context-first: each candidate's total context boost (containment +
+/// char-share + association, plus the NNP gazette bonus when `segmentTag == .nnp` and the
+/// candidate has a hanja.txt comment) is precomputed once — O(K × context) — then candidates are
+/// sorted by **boost descending, ties broken by `compareHanjaCandidate`**. Context evidence
+/// therefore outranks every personalization tier (source / usageCount / frequency), per the
+/// 2026-07-18 user directive; containment's 10M scale keeps it above everything else naturally.
+/// When every boost is 0 (no context, no gazette hit) the comparator degenerates to EXACTLY
 /// `compareHanjaCandidate` order — this is the invariant `HanjaContextRankerTests` pins.
+/// - Parameter segmentTag: the segment's Kiwi POS tag. `nil` (the default) disables the gazette
+///   bonus, reproducing tag-unaware behavior exactly.
 func rankWithContext(
     candidates: [HanjaCandidate],
     contextDominantHanja: [String],
     associationScores: [String: Int] = [:],
-    weights: HanjaContextRankingWeights
+    weights: HanjaContextRankingWeights,
+    segmentTag: POSTag? = nil
 ) -> [HanjaCandidate] {
-    let boosts: [Int] = candidates.map { candidate in
+    let boosted: [(candidate: HanjaCandidate, boost: Int)] = candidates.map { candidate in
         let evidence = contextEvidence(
             for: candidate,
             contextDominantHanja: contextDominantHanja,
             associationScores: associationScores,
             weights: weights
         )
-        return evidence.dictionaryBoost + evidence.associationScore * weights.association
-    }
-
-    let boosted: [(original: HanjaCandidate, copy: HanjaCandidate)] = zip(candidates, boosts).map { candidate, boost in
-        guard boost != 0 else { return (candidate, candidate) }
-        let copy = HanjaCandidate(
-            reading: candidate.reading,
-            value: candidate.value,
-            comment: candidate.comment,
-            source: candidate.source,
-            usageCount: candidate.usageCount,
-            frequency: candidate.frequency + boost,
-            baseRank: candidate.baseRank
-        )
-        return (candidate, copy)
+        var boost = evidence.dictionaryBoost + evidence.associationScore * weights.association
+        if segmentTag == .nnp, !candidate.comment.isEmpty {
+            boost += weights.nnpGazetteBonus * weights.association
+        }
+        return (candidate, boost)
     }
 
     return boosted
-        .sorted { compareHanjaCandidate($0.copy, $1.copy) }
-        .map(\.original)
+        .sorted { lhs, rhs in
+            if lhs.boost != rhs.boost {
+                return lhs.boost > rhs.boost
+            }
+            return compareHanjaCandidate(lhs.candidate, rhs.candidate)
+        }
+        .map(\.candidate)
 }

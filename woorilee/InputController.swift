@@ -23,11 +23,6 @@ final class InputController: IMKInputSessionController {
         case blockedNoTarget(anchorRange: NSRange)
     }
 
-    private enum CandidatePanelSelectionSource {
-        case highlighted
-        case numbered
-    }
-
     private weak var session: InputSession?
     private let debugLoggingEnabled = true
     private let hanjaServices = HanjaServiceCoordinator.shared
@@ -549,7 +544,9 @@ final class InputController: IMKInputSessionController {
 
         switch keyCode {
         case InputEventPolicy.KeyCode.escape:
-            dismissManualPanel(session: session)
+            // Escape cancels: restore the original source text if browsing live-applied a
+            // candidate, then close.
+            revertManualLivePreview(client: client, session: session)
             return true
         default:
             if session.isShowingManualNotice {
@@ -560,16 +557,11 @@ final class InputController: IMKInputSessionController {
             if let handled = handleCandidatePanelCommonKeyInput(
                 keyCode: keyCode,
                 modifiers: modifiers,
-                currentState: { session.manualCandidateState },
                 updateState: { session.updateManualCandidateState($0) },
                 refreshPanel: { showManualCandidatePanel(client: client, session: session) },
-                dismissPanel: { dismissManualPanel(session: session) },
-                selectCandidate: { candidate, _ in
-                    applyManualCandidateSelection(candidate, client: client, session: session)
-                },
-                selectHangul: {
-                    applyManualHangulSelection(client: client, session: session)
-                }
+                dismissPanel: { revertManualLivePreview(client: client, session: session) },
+                commitVisible: { finalizeManualLivePreview(session: session) },
+                applyHighlightPreview: { applyManualHighlightPreview(client: client, session: session) }
             ) {
                 return handled
             }
@@ -580,15 +572,18 @@ final class InputController: IMKInputSessionController {
                 session.updateManualCandidateState { state in
                     state.movePage(by: keyCode == InputEventPolicy.KeyCode.rightArrow ? 1 : -1)
                 }
+                applyManualHighlightPreview(client: client, session: session)
                 showManualCandidatePanel(client: client, session: session)
                 return true
 
             case InputEventPolicy.KeyCode.space:
-                dismissManualPanel(session: session)
+                finalizeManualLivePreview(session: session)
                 return true
 
             default:
-                dismissManualPanel(session: session)
+                // Any other key keeps what is visible (WYSIWYG), records it, and lets the key
+                // process normally.
+                finalizeManualLivePreview(session: session)
                 return nil
             }
         }
@@ -744,21 +739,16 @@ final class InputController: IMKInputSessionController {
         if let handled = handleCandidatePanelCommonKeyInput(
             keyCode: keyCode,
             modifiers: modifiers,
-            currentState: { session.realtimeCandidateState },
             updateState: { session.updateRealtimeCandidateState($0) },
             refreshPanel: { _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false) },
             dismissPanel: { dismissRealtimeCandidatePanel(session: session) },
-            selectCandidate: { candidate, source in
-                applyRealtimeCandidateSelection(
-                    candidate,
-                    client: client,
-                    session: session,
-                    advanceAfterSelection: source == .numbered,
-                    keepPanelWhenNotAdvancing: source == .numbered
-                )
+            commitVisible: {
+                // Return: commit the composition exactly as displayed (preview + browsed
+                // highlights already live-applied inline) and close the panel.
+                commitCurrentComposition(client, session: session)
             },
-            selectHangul: {
-                _ = applyRealtimeHangulFallbackSelection(client: client, session: session)
+            applyHighlightPreview: {
+                applyRealtimeHighlightPreview(client: client, session: session)
             }
         ) {
             return handled
@@ -791,15 +781,18 @@ final class InputController: IMKInputSessionController {
         }
     }
 
+    /// WYSIWYG candidate-panel key handling (2026-07-18 user directive): arrow keys browse AND
+    /// live-apply the highlighted row to the inline display (`applyHighlightPreview`), Return
+    /// commits exactly what is visible (`commitVisible`) — it never "selects" a candidate — and
+    /// numbered selection is removed (arrows are the only keyboard exploration path).
     private func handleCandidatePanelCommonKeyInput(
         keyCode: UInt16,
         modifiers: NSEvent.ModifierFlags,
-        currentState: () -> HanjaCandidatePanelState?,
         updateState: ((inout HanjaCandidatePanelState) -> Void) -> Void,
         refreshPanel: () -> Void,
         dismissPanel: () -> Void,
-        selectCandidate: (HanjaCandidate, CandidatePanelSelectionSource) -> Void,
-        selectHangul: () -> Void
+        commitVisible: () -> Void,
+        applyHighlightPreview: () -> Void
     ) -> Bool? {
         switch keyCode {
         case InputEventPolicy.KeyCode.escape:
@@ -808,22 +801,14 @@ final class InputController: IMKInputSessionController {
 
         case InputEventPolicy.KeyCode.returnKey,
              InputEventPolicy.KeyCode.enter:
-            if currentState()?.highlightedIsHangul == true {
-                selectHangul()
-                return true
-            }
-            guard let candidate = currentState()?.highlightedCandidate else {
-                dismissPanel()
-                return true
-            }
-
-            selectCandidate(candidate, .highlighted)
+            commitVisible()
             return true
 
         case InputEventPolicy.KeyCode.tab:
             updateState { state in
                 state.movePage(by: modifiers.contains(.shift) ? -1 : 1)
             }
+            applyHighlightPreview()
             refreshPanel()
             return true
 
@@ -832,61 +817,45 @@ final class InputController: IMKInputSessionController {
             updateState { state in
                 state.moveHighlight(by: keyCode == InputEventPolicy.KeyCode.downArrow ? 1 : -1)
             }
+            applyHighlightPreview()
             refreshPanel()
             return true
 
         default:
-            guard let state = currentState(),
-                  state.mode.allowsNumberedSelection,
-                  let numericIndex = InputEventPolicy.numericCandidateIndex(keyCode: keyCode),
-                  !modifiers.contains(.shift) else {
-                return nil
-            }
-
-            if numericIndex == 9 {
-                selectHangul()
-                return true
-            }
-
-            guard let candidate = state.candidateForPageNumberIndex(numericIndex) else {
-                return true
-            }
-
-            selectCandidate(candidate, .numbered)
-            return true
+            return nil
         }
     }
 
+    /// Mouse-click selection from the realtime panel: apply, refresh the inline display, close.
     private func applyRealtimeCandidateSelection(
         _ candidate: HanjaCandidate,
         client: any IMKTextInput,
-        session: InputSession,
-        advanceAfterSelection: Bool,
-        keepPanelWhenNotAdvancing: Bool
+        session: InputSession
     ) {
         guard session.applyRealtimeCandidateSelection(candidate) else {
             dismissRealtimeCandidatePanel(session: session)
             return
         }
 
-        let composition = compositionEngine(for: client, session: session)
-        composition.updateDisplay()
+        compositionEngine(for: client, session: session).updateDisplay()
+        dismissRealtimeCandidatePanel(session: session)
+    }
 
-        if advanceAfterSelection {
-            if session.moveRealtimeSegmentSelection(by: 1) {
-                composition.updateDisplay()
-                _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false)
-            } else {
-                commitCurrentComposition(client, session: session)
-            }
+    /// WYSIWYG live preview for the realtime panel (2026-07-18 user directive): reflects the
+    /// highlighted row (candidate or the hangul fallback row) into the segment's inline preview
+    /// immediately, keeping the panel open — so Return can commit exactly what is on screen.
+    private func applyRealtimeHighlightPreview(client: any IMKTextInput, session: InputSession) {
+        guard let state = session.realtimeCandidateState else {
             return
         }
 
-        if keepPanelWhenNotAdvancing {
-            _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false)
-        } else {
-            dismissRealtimeCandidatePanel(session: session)
+        if state.highlightedIsHangul {
+            session.applyRealtimeHangulFallbackForSelectedSegment(keepingCandidateState: true)
+        } else if let candidate = state.highlightedCandidate {
+            session.applyRealtimeCandidateSelection(candidate)
         }
+
+        compositionEngine(for: client, session: session).updateDisplay()
     }
 
     private func showRealtimeCandidatePanel(
@@ -918,13 +887,7 @@ final class InputController: IMKInputSessionController {
 
             switch selection {
             case .candidate(let candidate):
-                self.applyRealtimeCandidateSelection(
-                    candidate,
-                    client: client,
-                    session: session,
-                    advanceAfterSelection: false,
-                    keepPanelWhenNotAdvancing: false
-                )
+                self.applyRealtimeCandidateSelection(candidate, client: client, session: session)
             case .hangul:
                 _ = self.applyRealtimeHangulFallbackSelection(client: client, session: session)
             }
@@ -1403,6 +1366,72 @@ final class InputController: IMKInputSessionController {
         client.insertText(sourceText, replacementRange: replacementRange)
         hanjaServices.recordHangulSelection(lookupKey: lookupKey)
         session.reset()
+    }
+
+    /// WYSIWYG live preview for the manual panel (2026-07-18 user directive): writes the
+    /// highlighted row's text into the client over the length-tracked manual replacement range,
+    /// so the document always shows exactly what Return would finalize.
+    private func applyManualHighlightPreview(
+        client: any IMKTextInput,
+        session: InputSession
+    ) {
+        guard let state = session.manualCandidateState,
+              let sourceText = state.mode.manualSourceText,
+              let replacementRange = session.pendingManualReplacementRange
+        else {
+            return
+        }
+
+        let desired = state.highlightedIsHangul
+            ? sourceText
+            : (state.highlightedCandidate?.value ?? sourceText)
+        let current = session.manualLiveAppliedText ?? sourceText
+        guard desired != current else {
+            return
+        }
+
+        // 마크된 한글이 남아 있으면 먼저 커밋해 클라이언트가 replacementRange를 문서 절대
+        // 좌표로 해석하게 한다(applyManualCandidateSelection과 동일한 이유).
+        if session.hasPendingHangulText {
+            commitCurrentComposition(client, session: session)
+        }
+
+        client.insertText(desired, replacementRange: replacementRange)
+        session.recordManualLivePreview(text: desired)
+    }
+
+    /// Return (and any other finalizing key) under WYSIWYG: the document already shows the
+    /// browsed selection, so this only records usage for it and closes the panel. When nothing
+    /// was ever live-applied the source text is untouched — close without recording.
+    private func finalizeManualLivePreview(session: InputSession) {
+        guard let applied = session.manualLiveAppliedText,
+              let sourceText = session.manualCandidateState?.mode.manualSourceText
+        else {
+            dismissManualPanel(session: session)
+            return
+        }
+
+        let lookupKey = session.pendingManualLookupKey ?? sourceText
+        if applied == sourceText {
+            hanjaServices.recordHangulSelection(lookupKey: lookupKey)
+        } else {
+            hanjaServices.recordSelection(lookupKey: lookupKey, value: applied)
+        }
+        hanjaServices.hideManualCandidatePanel()
+        session.reset()
+    }
+
+    /// Escape under WYSIWYG: restore the original source text if browsing live-applied anything,
+    /// then close the panel without recording usage.
+    private func revertManualLivePreview(client: any IMKTextInput, session: InputSession) {
+        if let applied = session.manualLiveAppliedText,
+           let sourceText = session.manualCandidateState?.mode.manualSourceText,
+           let replacementRange = session.pendingManualReplacementRange,
+           applied != sourceText {
+            client.insertText(sourceText, replacementRange: replacementRange)
+        }
+
+        dismissManualPanel(session: session)
     }
 
     private func dismissManualPanel(session: InputSession) {

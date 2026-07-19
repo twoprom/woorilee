@@ -3,6 +3,7 @@
 
 import Cocoa
 import IMKSwift
+import Kiwi
 import OSLog
 
 private let manualHanjaPanelLogger = Logger(
@@ -340,7 +341,8 @@ func hideWarmUpPanelIfNeeded() {
             candidates: candidates,
             contextDominantHanja: segment.contextDominantHanja,
             associationScores: scores,
-            weights: .default
+            weights: .default,
+            segmentTag: segment.tag
         )
     }
 

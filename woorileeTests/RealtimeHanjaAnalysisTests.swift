@@ -523,6 +523,43 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
         XCTAssertFalse(state.hangulLockedSegments.isEmpty)
     }
 
+    /// WYSIWYG highlight browsing (2026-07-18): the hangul-row live preview must be able to keep
+    /// the candidate panel state alive — `keepingCandidateState: true` applies the fallback (preview
+    /// reverts, usage event queued) WITHOUT clearing `candidateState`, so arrow browsing can pass
+    /// through the hangul row and continue.
+    func testRealtimeHangulFallbackCanKeepCandidateStateForHighlightBrowsing() {
+        let tokens = [
+            Token(form: "한국", tag: .nnp, position: 0, length: 2),
+        ]
+        let defaultCandidate = candidate(reading: "한국", value: "韓國")
+        let segments = KiwiAnalysisService.makeRealtimeSegments(
+            from: tokens,
+            in: "한국",
+            candidateLookup: { key in
+                key == "한국" ? [defaultCandidate] : []
+            }
+        )
+        var state = RealtimeClauseState()
+        state.rawClauseText = "한국"
+        state.updateAnalysis(segments: segments)
+        state.setCandidateState(
+            HanjaCandidatePanelState(
+                mode: .realtime(segmentIndex: 0, segmentSurface: "한국"),
+                anchorRange: NSRange(location: 0, length: 2),
+                candidates: [defaultCandidate]
+            )
+        )
+
+        XCTAssertTrue(state.applyHangulFallbackForSelectedSegment(keepingCandidateState: true))
+
+        XCTAssertEqual(state.previewClauseText, "한국")
+        XCTAssertNotNil(state.candidateState, "keepingCandidateState must leave the panel state alive")
+
+        // The default (select-and-dismiss) path still clears it.
+        XCTAssertTrue(state.applyHangulFallbackForSelectedSegment())
+        XCTAssertNil(state.candidateState)
+    }
+
     func testRealtimeHangulFallbackCanAdvanceToNextConvertibleSegment() {
         let tokens = [
             Token(form: "한국", tag: .nnp, position: 0, length: 2),

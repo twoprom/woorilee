@@ -1,6 +1,7 @@
 // Tests for the context-aware Hanja candidate ranking interface.
 //     Copyright (C) 2026 Seungjin Lee.
 
+import Kiwi
 import XCTest
 @testable import woorilee
 
@@ -109,5 +110,82 @@ final class HanjaContextRankerTests: XCTestCase {
         )
 
         XCTAssertEqual(ranked.first?.value, "水道", "containment (10,000,000) must outrank even a maximal association sum (~2.3M)")
+    }
+
+    // MARK: - Context-first ordering + NNP gazette bonus (2026-07-18 user directives)
+
+    /// Context evidence must outrank every personalization tier: a plain system candidate with an
+    /// association hit beats a userDefined candidate AND a heavily-used candidate that carry no
+    /// context evidence (the old fold-into-frequency scheme could never do this — source and
+    /// usageCount compared before frequency).
+    func testContextBoostOutranksUsageCountAndUserDefined() {
+        let candidates = [
+            HanjaCandidate(reading: "수도", value: "首都", comment: "", source: .userDefined, usageCount: 0, frequency: 11750, baseRank: 0),
+            HanjaCandidate(reading: "수도", value: "修道", comment: "", source: .system, usageCount: 50, frequency: 2737, baseRank: 1),
+            HanjaCandidate(reading: "수도", value: "水道", comment: "", source: .system, usageCount: 0, frequency: 2106, baseRank: 2),
+        ]
+
+        let ranked = rankWithContext(
+            candidates: candidates,
+            contextDominantHanja: [],
+            associationScores: ["水道": 37],
+            weights: .default
+        )
+
+        XCTAssertEqual(ranked.first?.value, "水道", "context evidence must outrank userDefined/usageCount tiers")
+        // Ties (boost 0) among the rest still follow compareHanjaCandidate: userDefined first.
+        XCTAssertEqual(ranked.map(\.value), ["水道", "首都", "修道"])
+    }
+
+    // 조선 실측 (2026-07-18, "서울은 조선의 수도였다"): 造船 3,824 > 朝鮮 1,093 > 祖先 101;
+    // association 祖先 수도/NNG=66 (노이즈), 朝鮮 서울/NNP=24; only 朝鮮 has a hanja.txt comment.
+    private func chosunCandidates() -> [HanjaCandidate] {
+        [
+            HanjaCandidate(reading: "조선", value: "造船", comment: "", source: .system, usageCount: 0, frequency: 3824, baseRank: 0),
+            HanjaCandidate(reading: "조선", value: "朝鮮", comment: "조선민주주의인민공화국", source: .system, usageCount: 0, frequency: 1093, baseRank: 1),
+            HanjaCandidate(reading: "조선", value: "祖先", comment: "", source: .system, usageCount: 0, frequency: 101, baseRank: 2),
+        ]
+    }
+
+    /// NNP gazette bonus flagship: 朝鮮 (assoc 24 + comment bonus 100 → 24×300 + 30,000 = 37,200)
+    /// must beat 祖先's corpus noise (66×300 = 19,800) when the segment is tagged NNP.
+    func testNnpGazetteBonusLiftsCommentedProperNounOverNoise() {
+        let ranked = rankWithContext(
+            candidates: chosunCandidates(),
+            contextDominantHanja: [],
+            associationScores: ["祖先": 66, "朝鮮": 24],
+            weights: .default,
+            segmentTag: .nnp
+        )
+
+        XCTAssertEqual(ranked.first?.value, "朝鮮")
+    }
+
+    /// The same inputs WITHOUT the NNP tag get no bonus — 祖先's larger association score wins
+    /// (this is exactly the 2026-07-18 defect ordering, preserved for non-proper-noun segments).
+    func testNoGazetteBonusForNonNnpTag() {
+        let ranked = rankWithContext(
+            candidates: chosunCandidates(),
+            contextDominantHanja: [],
+            associationScores: ["祖先": 66, "朝鮮": 24],
+            weights: .default,
+            segmentTag: .nng
+        )
+
+        XCTAssertEqual(ranked.first?.value, "祖先")
+    }
+
+    /// A strong real association (造船 중공업/NNG=173 → 51,900) must beat the gazette bonus
+    /// (朝鮮 24×300 + 30,000 = 37,200) — the bonus is a prior, not a trump card.
+    func testStrongAssociationOutranksGazetteBonus() {
+        let ranked = rankWithContext(
+            candidates: chosunCandidates(),
+            contextDominantHanja: [],
+            associationScores: ["造船": 173, "朝鮮": 24],
+            weights: .default,
+            segmentTag: .nnp
+        )
+
+        XCTAssertEqual(ranked.first?.value, "造船")
     }
 }

@@ -232,6 +232,36 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
         )
     }
 
+    /// 2026-07-18 defect: "서울은 조선의 수도였다" must preview 朝鮮 (not 祖先) for 조선 and 首都
+    /// (not 水道) for 수도. Diagnostics are printed (CHOSUN| prefix) so the per-candidate boosts
+    /// behind any failure are visible in the test log.
+    func testSeoulChosunSudoClausePreviews() throws {
+        guard requireInfra() else { return }
+
+        let clause = "서울은 조선의 수도였다"
+        let segments = try finalSegments(for: clause)
+
+        for seg in segments {
+            print("CHOSUN|segment surface=\(seg.surface) tag=\(seg.tag.description) preview=\(seg.previewCandidate?.value ?? "nil") awaits=\(seg.awaitsContextEvidence) features=\(seg.contextFeatures) context=\(seg.contextDominantHanja)")
+            guard ["조선", "수도"].contains(seg.normalizedLookupKey) else { continue }
+            let candidates = Self.candidateLookup(seg.normalizedLookupKey)
+            let scores = associationScores(
+                for: candidates,
+                contextFeatures: seg.contextFeatures,
+                lookup: { reading, hanja in Self.associationTable[reading]?[hanja] }
+            )
+            for candidate in candidates {
+                print("CHOSUN|  candidate \(candidate.value) freq=\(candidate.frequency) assoc=\(scores[candidate.value] ?? 0) comment=\(candidate.comment)")
+            }
+        }
+
+        let chosun = try XCTUnwrap(segment(segments, reading: "조선"))
+        XCTAssertEqual(chosun.previewCandidate?.value, "朝鮮", "조선/NNP must preview 朝鮮 (gazette bonus over 祖先 noise)")
+
+        let sudo = try XCTUnwrap(segment(segments, reading: "수도"))
+        XCTAssertEqual(sudo.previewCandidate?.value, "首都", "수도 must preview 首都 in the 서울/조선 context")
+    }
+
     /// Plan §10 scenario 4: "지금 뛴다" — 지금 is NOT a flagged native homograph (no non-hanja-origin
     /// stdict/opendict homograph headword), so step 6 alone governs and this is unchanged by step 7.
     func testJigeumClauseUnaffectedByStep7() throws {

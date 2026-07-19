@@ -327,7 +327,8 @@ final class KiwiAnalysisService {
                 candidates: candidates,
                 contextDominantHanja: context,
                 associationScores: scores,
-                weights: weights
+                weights: weights,
+                segmentTag: segment.tag
             )
 
             let previewCandidate: HanjaCandidate?
