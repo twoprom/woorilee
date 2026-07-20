@@ -90,15 +90,45 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
             mode: .realtime(segmentIndex: 0, segmentSurface: segment.surface),
             anchorRange: NSRange(location: 0, length: 3),
             candidates: candidates,
-            highlightedIsHangul: HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(
-                segment: segment,
-                candidates: candidates,
-                hangulUsage: 0
-            )
+            highlightedIsHangul: HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment)
         )
 
         XCTAssertTrue(panelState.hasHangulRow)
         XCTAssertTrue(panelState.highlightedIsHangul)
+    }
+
+    func testRealtimeCandidatePanelDefaultsToHangulWhenInlinePreviewIsHangul() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        let segment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2),
+            surface: "화려",
+            normalizedLookupKey: "화려",
+            tag: .nng,
+            isConvertible: true,
+            previewCandidate: nil
+        )
+
+        XCTAssertTrue(
+            HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment),
+            "the panel highlight must match the inline hangul preview even without usage history"
+        )
+    }
+
+    func testRealtimeCandidatePanelDefaultsToInlineHanjaPreview() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        let segment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2),
+            surface: "화려",
+            normalizedLookupKey: "화려",
+            tag: .xr,
+            isConvertible: true,
+            previewCandidate: candidate
+        )
+
+        XCTAssertFalse(
+            HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment),
+            "the panel highlight must match the inline hanja preview"
+        )
     }
 
     func testRealtimeNumericSegmentMergesWithHangulSegments() {

@@ -1,0 +1,4 @@
+# Reviewed context links for user-reported gaps absent from the corpus-derived target pool.
+# Same encoded format as woorilee/data/hanja/hanja-context.txt; weights are final UInt8 values.
+기사:技師:세탁기/NNG=255
+보우:保佑:하느님/NNG=255

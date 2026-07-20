@@ -262,6 +262,66 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
         XCTAssertEqual(sudo.previewCandidate?.value, "首都", "수도 must preview 首都 in the 서울/조선 context")
     }
 
+    /// 2026-07-20 defect: the 애국가 phrase provides decisive 하느님 context for 保佑, but the
+    /// frequency-only fallback prefers 普雨 (decoded word frequencies 86 vs 71). The bundled
+    /// association table must carry that context through the full realtime pipeline.
+    func testAegukgaClausePreviewsBoyu() throws {
+        guard requireInfra() else { return }
+
+        let clause = "하느님이 보우하사 우리나라 만세"
+        let segments = try finalSegments(for: clause)
+
+        let bowoo = try XCTUnwrap(segment(segments, reading: "보우"))
+        XCTAssertTrue(
+            bowoo.contextFeatures.contains("하느님/NNG"),
+            "the decisive 하느님 context feature must reach the 보우 segment: \(bowoo.contextFeatures)"
+        )
+        XCTAssertEqual(bowoo.previewCandidate?.value, "保佑", "보우 must preview 保佑 in the 하느님 context")
+
+        let manse = try XCTUnwrap(segment(segments, reading: "만세"))
+        XCTAssertEqual(manse.previewCandidate?.value, "萬歲", "만세 must keep its expected preview")
+    }
+
+    /// 2026-07-20 defect: 華麗 is a legitimate word but its decoded word-table frequency (72)
+    /// falls below the general step-6 threshold, leaving only 江山 converted in this phrase.
+    func testHwaryeoGangsanClausePreviewsBothWords() throws {
+        guard requireInfra() else { return }
+
+        let clause = "화려강산"
+        let segments = try finalSegments(for: clause)
+
+        let hwaryeo = try XCTUnwrap(segment(segments, reading: "화려"))
+        XCTAssertEqual(hwaryeo.tag, .xr, "the regression depends on Kiwi's XR weak-evidence path")
+        XCTAssertEqual(hwaryeo.previewCandidate?.value, "華麗", "화려 must preview 華麗")
+
+        let gangsan = try XCTUnwrap(segment(segments, reading: "강산"))
+        XCTAssertEqual(gangsan.previewCandidate?.value, "江山", "강산 must preview 江山")
+    }
+
+    func testWashingMachineRepairClausePreviewsEngineer() throws {
+        guard requireInfra() else { return }
+
+        let clause = "세탁기가 고장나서 기사를 불렀다"
+        let segments = try finalSegments(for: clause)
+
+        let engineer = try XCTUnwrap(segment(segments, reading: "기사"))
+        XCTAssertTrue(
+            engineer.contextFeatures.contains("세탁기/NNG"),
+            "the appliance context must reach 기사: \(engineer.contextFeatures)"
+        )
+        XCTAssertEqual(engineer.previewCandidate?.value, "技師", "repair context must prefer 技師 over 記事")
+    }
+
+    func testSingleSyllableMountainStaysHangul() throws {
+        guard requireInfra() else { return }
+
+        let clause = "우리 고장은 산과 바다가 아름답다"
+        let segments = try finalSegments(for: clause)
+
+        let mountain = try XCTUnwrap(segment(segments, reading: "산"))
+        XCTAssertNil(mountain.previewCandidate, "single-syllable auto-conversion must remain blocked")
+    }
+
     /// Plan §10 scenario 4: "지금 뛴다" — 지금 is NOT a flagged native homograph (no non-hanja-origin
     /// stdict/opendict homograph headword), so step 6 alone governs and this is unchanged by step 7.
     func testJigeumClauseUnaffectedByStep7() throws {

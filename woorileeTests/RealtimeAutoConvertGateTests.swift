@@ -43,6 +43,39 @@ final class RealtimeAutoConvertGateTests: XCTestCase {
         )
     }
 
+    func testXRMultiSyllableWithWeakWordFrequencyPasses() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        XCTAssertTrue(
+            KiwiAnalysisService.hasAutoConvertWordEvidence(
+                candidate,
+                tag: .xr,
+                wordFrequency: { _ in 72 }
+            )
+        )
+    }
+
+    func testXRMustStillHaveWordTableEvidence() {
+        let candidate = candidate(reading: "화려", value: "華麗", comment: "아름답다")
+        XCTAssertFalse(
+            KiwiAnalysisService.hasAutoConvertWordEvidence(
+                candidate,
+                tag: .xr,
+                wordFrequency: { _ in 0 }
+            )
+        )
+    }
+
+    func testSameWeakCandidateUnderNNGTagStaysBlocked() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        XCTAssertFalse(
+            KiwiAnalysisService.hasAutoConvertWordEvidence(
+                candidate,
+                tag: .nng,
+                wordFrequency: { _ in 72 }
+            )
+        )
+    }
+
     // MARK: - makeRealtimeSegments: gate applied to the token path
 
     /// Flagship regression: 집/NNG only has a single-character 訓音 candidate (集) with no word

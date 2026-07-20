@@ -922,14 +922,9 @@ final class InputController: IMKInputSessionController {
             page = currentPreviewIndex / HanjaCandidatePanelState.defaultPageSize
             highlightedIsHangul = false
         } else {
-            let hangulUsage = hanjaServices.hangulUsageCount(for: segment.normalizedLookupKey)
             highlightedIndex = 0
             page = 0
-            highlightedIsHangul = HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(
-                segment: segment,
-                candidates: candidates,
-                hangulUsage: hangulUsage
-            )
+            highlightedIsHangul = HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment)
         }
 
         return HanjaCandidatePanelState(

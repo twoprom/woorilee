@@ -239,17 +239,11 @@ struct HanjaCandidatePanelState: Equatable {
         return text?.isEmpty == false
     }
 
-    static func realtimeDefaultHighlightedIsHangul(
-        segment: HanjaSegment,
-        candidates: [HanjaCandidate],
-        hangulUsage: Int
-    ) -> Bool {
-        if NumericHanjaCandidateGenerator.isNumericCandidateSource(segment.normalizedLookupKey) {
-            return true
-        }
-
-        let topHanjaUsage = candidates.first?.usageCount ?? 0
-        return hangulUsage > 0 && hangulUsage >= topHanjaUsage
+    static func realtimeDefaultHighlightedIsHangul(segment: HanjaSegment) -> Bool {
+        // The inline preview is the source of truth. Recomputing a default from candidate usage
+        // can highlight 華麗 while the marked text still shows 화려 when the auto-convert gate
+        // deliberately left previewCandidate nil.
+        segment.previewCandidate == nil
     }
 
     mutating func moveHighlight(by delta: Int) {

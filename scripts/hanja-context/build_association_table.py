@@ -133,6 +133,7 @@ DICT_TSV = COUNTS_DIR / "dict-counts.tsv"
 
 OUTPUT_TXT = WOORILEE_ROOT / "woorilee/data/hanja/hanja-context.txt"
 STATS_JSON = COUNTS_DIR / "association-stats.json"
+CURATED_OVERRIDES_TXT = Path(__file__).resolve().with_name("curated-association-overrides.txt")
 
 SIZE_CAP_BYTES = 8 * 1024 * 1024
 ALPHA = 0.5
@@ -162,6 +163,39 @@ ESCAPE_RE = re.compile("[%:,=]")
 
 def escape_feature(feature: str) -> str:
     return ESCAPE_RE.sub(lambda m: ESCAPE_MAP[m.group()], feature)
+
+
+def merge_curated_overrides(lines: list[str], path: Path = CURATED_OVERRIDES_TXT) -> list[str]:
+    """Merge reviewed regression corrections expressed in the runtime table format."""
+    table: dict[tuple[str, str], dict[str, int]] = defaultdict(dict)
+
+    def ingest(line: str) -> None:
+        reading, hanja, feature_list = line.split(":", 2)
+        if not reading or not hanja or not feature_list:
+            raise ValueError(f"invalid association row: {line!r}")
+        for entry in feature_list.split(","):
+            feature, weight_s = entry.rsplit("=", 1)
+            weight = int(weight_s)
+            if not feature or not 1 <= weight <= 255:
+                raise ValueError(f"invalid association feature: {entry!r}")
+            table[(reading, hanja)][feature] = max(table[(reading, hanja)].get(feature, 0), weight)
+
+    for line in lines:
+        ingest(line)
+    if path.exists():
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                ingest(line)
+
+    merged: list[str] = []
+    for (reading, hanja), features in sorted(table.items()):
+        feature_list = ",".join(
+            f"{feature}={weight}"
+            for feature, weight in sorted(features.items(), key=lambda item: (-item[1], item[0]))
+        )
+        merged.append(f"{reading}:{hanja}:{feature_list}")
+    return merged
 
 
 def load_targets(path: Path = TARGETS_TSV) -> dict[str, tuple[int, list[str]]]:
@@ -515,6 +549,10 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         "ceil(0.039 x 16,974)), NOT a fraction — a fractional cutoff loosens as the target pool "
         "grows, which re-admitted 나/VV into 수도:修道 during the 7b expansion (user-verified "
         "regression, fixed 2026-07-10).",
+        f"# Curated regression corrections: {params['curated_override_rows']} rows from "
+        "scripts/hanja-context/curated-association-overrides.txt are merged after quantization; "
+        "these are reviewed, deterministic context links for user-reported gaps not represented "
+        "in the corpus-derived target pool.",
         f"# Generated: {generated_at} by scripts/hanja-context/build_association_table.py.",
         "#",
     ]
@@ -587,6 +625,10 @@ def main() -> int:
         else f"collocation signal: none ({args.colloc_counts} absent/empty)",
         file=sys.stderr,
     )
+    curated_override_rows = sum(
+        1 for raw in CURATED_OVERRIDES_TXT.read_text(encoding="utf-8").splitlines()
+        if raw.strip() and not raw.startswith("#")
+    ) if CURATED_OVERRIDES_TXT.exists() else 0
 
     print("merging + scoring (single streaming pass over ~8.49M rows)...", file=sys.stderr)
     master, n_c_all, dropped_single_cand = build_master(
@@ -616,6 +658,7 @@ def main() -> int:
             master, n_c_all, targets, eval27, params["m"], params["min_total_weighted"],
             params["freq_cutoff"], args.eval_floor_count,
         )
+        lines = merge_curated_overrides(lines)
         size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
         tightening_log.append({**params, "size_bytes": size})
         print(f"try M={params['m']} min_total_weighted={params['min_total_weighted']} "
@@ -640,6 +683,7 @@ def main() -> int:
                 master, n_c_all, targets, eval27, base_params["m"],
                 base_params["min_total_weighted"], cutoff, args.eval_floor_count,
             )
+            lines = merge_curated_overrides(lines)
             size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
             if size <= args.size_cap_bytes:
                 best = (cutoff, lines, global_max, stats, size)
@@ -654,6 +698,10 @@ def main() -> int:
         chosen = {**base_params, "freq_cutoff": cutoff}
         tightening_log.append({**chosen, "size_bytes": size, "binary_search": True})
 
+    stats["readings"] = len({line.split(":", 1)[0] for line in lines})
+    stats["candidates"] = len(lines)
+    stats["features"] = sum(line.split(":", 2)[2].count(",") + 1 for line in lines)
+
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     header = build_header(
         {**chosen, "w_paren": args.paren_weight, "w_dict": args.dict_weight,
@@ -663,7 +711,8 @@ def main() -> int:
          "max_feature_df_count": args.max_feature_df_count, "total_profiles": total_profiles,
          "banned_feature_count": len(banned_features),
          "w_colloc": args.colloc_weight, "colloc_tuples": colloc_tuples,
-         "colloc_readings": len(colloc_by_reading)},
+         "colloc_readings": len(colloc_by_reading),
+         "curated_override_rows": curated_override_rows},
         global_max, generated_at,
     )
 
@@ -695,6 +744,7 @@ def main() -> int:
             "colloc_tuples": colloc_tuples,
             "colloc_readings": len(colloc_by_reading),
             "colloc_note": "NIKL 파생어 연어 (flagged readings only) — survival-granting, ubiquity-ban exempt per row; NOT in compute_profile_df (banned set independent)",
+            "curated_override_rows": curated_override_rows,
             **chosen,
         },
         "ubiquity_filter": {

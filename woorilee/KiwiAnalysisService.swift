@@ -17,14 +17,18 @@ final class KiwiAnalysisService {
 
     /// Step 6 — auto-convert word evidence gate threshold (docs/plans/context-aware-hanja-conversion.md
     /// §9). Decoded freq-hanjaeo.txt 하위값 실측: 고유어 충돌어(단자 훈음 후보 등) ≤104 — 牛李 92,
-    /// 南無 104, 可知 102, 加持 88, 茄子 66 — vs 정당한 한자어 ≥1,516 — 口頭 1,516, 水道 2,106,
-    /// 修道 2,737, 故障 7,492, 首都 11,750. 500 splits the two bands.
+    /// 南無 104, 可知 102, 加持 88, 茄子 66 — vs 일반 명사의 정당한 한자어 ≥1,516 — 口頭 1,516,
+    /// 水道 2,106, 修道 2,737, 故障 7,492, 首都 11,750. 500 splits the two NNG bands; NNP와 XR의
+    /// 구조적으로 낮은 단어 빈도는 아래의 품사별 약한 증거 축에서 별도로 다룬다.
     static let autoConvertWordEvidenceThreshold = 500
 
     /// Whether `candidate` has word-level evidence for auto-conversion (step 6). Gates
     /// `previewCandidate` only — `isConvertible` (candidate-panel access) is untouched by this.
     ///
-    /// - Parameter tag: the segment's Kiwi POS tag, enabling the proper-noun evidence axis
+    /// - Parameter tag: the segment's Kiwi POS tag, enabling weak-evidence axes for proper nouns
+    ///   and roots.
+    ///
+    ///   Proper-noun axis
     ///   (2026-07-11 실측): 국명·지명의 freq-hanjaeo 하위값은 전부 ~100 대역이라 (韓國 104,
     ///   美國 104, 中國 107, 釜山 84) 임계값 500에 원리적으로 걸린다. `.nnp`-tagged multi-syllable
     ///   segments therefore accept weaker evidence: any word-table presence (decoded 하위값 > 0)
@@ -33,8 +37,12 @@ final class KiwiAnalysisService {
     ///   Guards: the NNP condition blocks 고전 음역 오변환 like 가나다→加那陀 ("가나다순" is a
     ///   single NNG token, 실측); the ≥ 2 syllable condition keeps single-character 훈음 candidates
     ///   out (freq-hanjaeo has zero 1-syllable rows — step-6 실측 — so weak-frequency evidence is
-    ///   principled-impossible there). `nil` (the default) disables the axis, reproducing the
-    ///   pre-NNP behavior exactly.
+    ///   principled-impossible there).
+    ///
+    ///   Root axis (2026-07-20 실측): 화려/XR의 정당한 단어 후보 華麗도 하위값 72라 일반 NNG
+    ///   임계값에 걸린다. XR은 독립 명사와 달리 어근이라는 형태소 제약이 이미 있으므로, 다음절
+    ///   후보가 단어표에 실제로 있으면(> 0) 약한 단어 증거로 인정한다. comment-only evidence는
+    ///   지명 관보 용도인 NNP에만 허용한다. `nil` tag는 두 축을 모두 끈다.
     static func hasAutoConvertWordEvidence(
         _ candidate: HanjaCandidate,
         tag: POSTag? = nil,
@@ -50,11 +58,18 @@ final class KiwiAnalysisService {
             return true
         }
 
-        guard tag == .nnp, candidate.reading.count >= 2 else {
+        guard candidate.reading.count >= 2 else {
             return false
         }
 
-        return frequency > 0 || !candidate.comment.isEmpty
+        switch tag {
+        case .nnp:
+            return frequency > 0 || !candidate.comment.isEmpty
+        case .xr:
+            return frequency > 0
+        default:
+            return false
+        }
     }
 
     enum Status: Equatable {

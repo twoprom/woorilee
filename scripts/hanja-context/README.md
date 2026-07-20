@@ -189,7 +189,9 @@ python3 scripts/hanja-context/build_association_table.py \
 - 산출물: `woorilee/data/hanja/hanja-context.txt`
   (`읽기:한자:형태소=가중치,형태소=가중치,...`, `/`는 안전 — TAG에 `/` 없어
   Swift 쪽에서 마지막 `/` 기준 split이면 충분; `:`,`,`,`=`,`%`는 퍼센트
-  인코딩) + `counts/association-stats.json`.
+  인코딩) + `counts/association-stats.json`. 코퍼스 표적 풀에 없지만 실제 입력에서
+  확인된 문맥 누락은 `curated-association-overrides.txt`에 같은 형식으로 기록하며,
+  생성기가 양자화 뒤 병합해 재생성 시에도 보존한다.
 - 실측(개정 3 — ubiquity 필터 적용 후): M=100 + 플로어 + ubiquity 필터에서
   7,648,546 B (7.29 MiB) / 캡 8 MiB, 수도 교차 후보 스팟체크 9/9 PASS,
   하/있/되/나/오/보 수도 계열에서 전부 부재 확인.
