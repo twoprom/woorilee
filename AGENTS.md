@@ -1,21 +1,21 @@
 # AGENTS.md
 
+이 저장소에서 사소하지 않은 변경을 시작하기 전에 이 파일과 `docs/internal-module-map.md`, `docs/runtime-resource-inventory.md`를 함께 읽는다. 세 문서는 서로 보완하는 기준 문서다.
+
+Sparkle 업데이트 릴리스 작업(빌드 → 서명 → 업로드 → appcast)은 `docs/sparkle-release-workflow.md`를 따른다.
+
 ## 프로젝트 개요
 
 - 이 저장소는 macOS용 한국어 입력기 `woorilee` 프로젝트다.
 - 앱은 `InputMethodKit` 기반이며, 일반적인 storyboard/nib 앱이 아니라 `woorilee/main.swift`에서 `NSManualApplication`을 직접 띄우는 구조다.
 - 한글 조합 엔진은 `LibHangul`을 사용하고, 한자 변환은 번들된 사전(`woorilee/data/hanja/hanja.txt`)과 로컬 벤더링된 `Kiwi` Swift 패키지 + `KiwiModels` 리소스의 형태소 분석을 기반으로 한다.
-- 입력 처리는 한 파일에 모여 있지 않고 다음 경계로 나뉘어 있다 — `InputController`(IMK 디스패치), `InputEventPolicy`(키 정규화), `InputCompositionEngine`(marked/replacement 처리), `InputSession`(클라이언트별 상태와 캐시). 자세한 구조는 `docs/internal-module-map.md`를 참고한다.
+- `IMKSwift`가 raw `InputMethodKit` API를 감싼다. 직접 `InputMethodKit`을 쓰기보다 `IMKSwift`를 우선하고, 불가피하게 raw IMK로 우회할 때는 이유를 코드 주석에 명시한다.
 
 ## 주요 경로
 
 - `woorilee/`: 메인 앱 타깃 소스와 리소스.
 - `woorilee/main.swift`: 입력기 앱 진입점. storyboard 기반 실행으로 바꾸지 말 것.
 - `woorilee/AppDelegate.swift`: `IMKServer` 초기화와 `HanjaServiceCoordinator.shared`를 통한 Hanja/Kiwi 웜업 트리거.
-- `woorilee/InputController.swift`: IMK가 클라이언트마다 생성하는 컨트롤러. 조합 상태는 직접 보유하지 않고 `InputSessionCache`를 통해 `InputSession`으로 위임한다.
-- `woorilee/InputEventPolicy.swift`, `woorilee/InputCompositionEngine.swift`, `woorilee/InputSession.swift`: 키 정규화, marked/replacement 범위, 세션/캐시 상태를 각각 담당.
-- `woorilee/HanjaServiceCoordinator.swift`: 한자 메뉴, 웜업 패널, 수동 후보 패널, 실시간 변환 경로를 묶는 `@MainActor` 싱글톤. 자세한 모듈 경계는 `docs/internal-module-map.md`.
-- 실시간 변환 모드에서는 일본어 IME식 문절 신축을 지원한다: `Shift+←/→`로 포커스 분절의 오른쪽 경계를 한 글자씩 줄이거나 늘린다. 경계 오버레이(`RealtimeClauseState.manualBoundaries`)는 재분석이 존중하며(Kiwi 대신 `KiwiAnalysisService.makeManualSegments` 사용), 글자 입력·Backspace·Space 등 소스 편집 시 폐기되어 Kiwi 자동 분절로 복귀한다.
 - `woorilee/Info.plist`: 입력기 등록 정보와 `InputMethodConnectionName`, `InputMethodServerControllerClass` 정의.
 - `woorilee/woorilee.entitlements`: 샌드박스와 Mach 등록 관련 권한.
 - `woorilee/data/hanja/`: 번들된 한자 사전(`hanja.txt`, `freq-hanja.txt`, `freq-hanjaeo.txt`).
@@ -28,16 +28,60 @@
 ## 빌드와 검증
 
 - 스킴 확인: `xcodebuild -list -project woorilee.xcodeproj`
-- 기본 빌드: `xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build`
+- 소스 변경 후 설치 포함 빌드: `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1 xcodebuild -project woorilee.xcodeproj -scheme woorilee -configuration Debug build`
 - 유닛 테스트: `xcodebuild -project woorilee.xcodeproj -scheme woorilee -destination 'platform=macOS,arch=arm64' test` (대상 타깃은 `woorileeTests`).
-- 빌드 단계에서 `scripts/install-built-input-method.sh`가 자동 실행되어 `killall woorilee` 후 빌드된 `woorilee.app`을 `/Library/Input Methods/`로 `ditto`한다. 필요 시 `osascript`로 권한 상승을 시도한다.
-  - 끄려면 `WOORILEE_SKIP_INSTALL=1` 또는 `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0`. 평소 개발에서는 끄지 않는다.
+- 단일 테스트 클래스: `xcodebuild -project woorilee.xcodeproj -scheme woorilee -destination 'platform=macOS,arch=arm64' test -only-testing:woorileeTests/InputEventPolicyTests`
+- 단일 테스트 메서드: 위 명령의 `-only-testing` 값을 `woorileeTests/InputEventPolicyTests/testPrintableASCIICharacterUsesEventCharacters`처럼 지정한다.
+- 스킴의 `Install Built Input Method` 빌드 PostAction은 모든 빌드에서 `scripts/install-built-input-method.sh`를 실행하지만, 설치는 기본적으로 건너뛴다. `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1`일 때만 기존 `woorilee` 프로세스를 종료하고 빌드된 앱을 `/Library/Input Methods/`에 `ditto`하며, 필요하면 `osascript`로 권한 상승을 시도한다.
+  - `WOORILEE_SKIP_INSTALL=1` 또는 `WOORILEE_INSTALL_BUILT_INPUT_METHOD=0`은 opt-in이 있어도 설치를 강제로 건너뛴다.
+  - 소스 변경 후에는 별도 요청을 기다리지 말고 `WOORILEE_INSTALL_BUILT_INPUT_METHOD=1`로 빌드해 실행 중인 입력기를 갱신한다.
+  - 테스트 빌드는 `/Library/Input Methods/`를 건드리지 않도록 설치 환경 변수 없이 실행한다.
 - 수동 설치 시에도 앱 번들 복사는 `cp -R`보다 `ditto`를 우선 사용하고, 먼저 `killall woorilee`로 기존 프로세스를 내려야 macOS가 새 번들을 인식한다.
+- UI 테스트 타깃은 없다.
 - 입력 로직을 바꿨다면 최소한 다음 동작을 확인한다.
   - 한글 조합/확정이 정상 동작하는지
   - `Backspace`, `Space`, `Return`, `Escape`, `Tab` 처리에 회귀가 없는지
   - 화살표/이동 명령 시 조합 중 텍스트가 남지 않고 적절히 확정되는지
   - `markedRange`와 `replacementRange`가 깨지지 않는지 (Safari/TextEdit/Terminal 등 호스트별 차이 주의)
+
+## 아키텍처
+
+실행 경로는 `main.swift` → `NSManualApplication`(`AppDelegate.swift`에 정의) → `AppDelegate.applicationDidFinishLaunching` 순서다. `AppDelegate`는 `Info.plist`의 `InputMethodConnectionName`으로 `IMKServer`를 생성하고 `HanjaServiceCoordinator.shared`를 통해 Hanja/Kiwi 웜업을 시작한다.
+
+`Info.plist` 연결 정보는 이름을 바꿀 때 반드시 함께 맞춘다.
+
+- `InputMethodConnectionName` ↔ `AppDelegate`에서 `IMKServer`에 전달하는 `name:` 인자.
+- `InputMethodServerControllerClass` ↔ IMK가 클라이언트마다 생성하는 `IMKInputSessionController` 하위 클래스인 `InputController`.
+
+입력기 런타임은 의도적으로 다음 경계로 분리되어 있다. 자세한 내용은 `docs/internal-module-map.md`를 참고하고, 이 책임을 `InputController` 하나로 다시 합치지 않는다.
+
+- `woorilee/InputController.swift`: `handle(_:client:)`, 메뉴 연결, 아래 헬퍼로의 디스패치만 담당하는 IMK 경계 오케스트레이션.
+- `woorilee/InputEventPolicy.swift`: 출력 가능한 ASCII 추출, 두벌식 Shift 매핑, 이동/selector 분류 등 상태 없는 키 이벤트 정규화. 유닛 테스트 가능한 순수 로직으로 유지한다.
+- `woorilee/InputCompositionEngine.swift`: marked text와 replacement range bookkeeping, `IMKTextInput` 호출을 감싼 확정/갱신 헬퍼.
+- `woorilee/InputSession.swift`: 클라이언트별 `InputSession`, `InputSessionCache`, `InputRangeState`. IMK는 컨트롤러 인스턴스를 여러 클라이언트에 재사용할 수 있으므로 조합 상태를 `InputController` 자체에 저장하지 않는다.
+- `woorilee/HanjaServiceCoordinator.swift`: 한자 메뉴, 웜업 패널, 수동 후보 패널, Kiwi 기반 실시간 변환을 묶는 싱글톤. `realtimeConversionPhaseUnlocked`(현재 `true`)는 실시간 경로 kill switch이며, `isRealtimeAvailable`은 Kiwi와 한자 사전이 모두 `ready`여야 참이다.
+- `woorilee/HanjaConversionModels.swift`: `CompositionMode`(`hangul` / `manualHanja` / `realtimeHanja`), `SegmentLockKey` 등 coordinator/session/test가 공유하는 값 타입. `RealtimeClauseState`의 `manualBoundaries`와 `focusedSpanStart`는 실시간 모드에서 `Shift+←/→` 문절 신축을 지원한다. 수동 경계가 있으면 재분석은 Kiwi를 다시 실행하지 않고 `KiwiAnalysisService.makeManualSegments`를 사용하며, 글자 입력·Backspace·Space 등 소스 편집 시 경계를 버린다.
+- `woorilee/ManualHanjaModels.swift`, `woorilee/ManualHanjaPanelAnchorResolver.swift`: 수동 한자 패널의 target/notice/content 값 타입과 호스트 앱별 caret rect 탐색 로직.
+- `woorilee/CandidatePanelOriginCalculator.swift`: caret rect를 후보 패널 원점으로 바꾸는 순수 배치 계산. caret 아래 배치, 공간 부족 시 위로 반전, visible frame 내부 제한을 담당하며 상태 없이 유닛 테스트한다.
+- `woorilee/NumericHanjaCandidateGenerator.swift`: 숫자 입력을 자릿수별/수량 단위별 한자와 한글 후보로 만드는 상태 없는 생성기.
+
+지원 서비스는 각각 `uninitialized` / `loading` / `ready` / `unavailable(reason)` 상태 enum을 소유한다.
+
+- `woorilee/KiwiAnalysisService.swift`: Kiwi 형태소 분석기 백그라운드 웜업.
+- `woorilee/HanjaDictionaryService.swift`: 번들된 한자 테이블 로딩.
+- `woorilee/HanjaUsageStore.swift`, `woorilee/UserHanjaStore.swift`: 후보 순위에 쓰는 사용 통계와 사용자 정의 항목. 공유 Codable 타입은 `woorilee/HanjaPersonalizationModels.swift`, Application Support와 번들 리소스 경로는 `woorilee/AppRuntimePaths.swift`에 모여 있다.
+- `woorilee/HanjaSettingsStore.swift`: 실시간 변환 토글, 숫자 후보 선택 후 자동 이동 등 메뉴 설정.
+- `woorilee/HanjaWarmUpPanelController.swift`, `woorilee/HanjaCandidatePanelController.swift`: 활성화되지 않는 웜업/후보 패널. `woorilee/HanjaCandidatePanelView.swift`는 후보 패널에 호스팅되는 SwiftUI 뷰다.
+- `woorilee/AboutWindowController.swift`: About 패널과 자동 업데이트용 Sparkle `SPUStandardUpdaterController` 소유.
+- `woorilee/HanjaUserDictionaryWindowController.swift`, `woorilee/HanjaUserDictionaryView.swift`: `UserHanjaStore` 기반 사용자 한자 사전 편집기.
+
+## 리소스와 의존성
+
+- 앱 번들 리소스는 `woorilee/` 아래에 있다. `data/hanja/{hanja.txt,freq-hanja.txt,freq-hanjaeo.txt}`, `KiwiModels/*`, `main.tiff`, `mainicon.icon`, `*.lproj/InfoPlist.strings`가 포함된다. 프로젝트 파일 변경 후에는 기준 목록인 `docs/refactor-parity-checklist.md`를 확인한다.
+- `mainicon.icon`은 빌드 시 `mainicon.icns`로 컴파일되는 Icon Composer 번들이다.
+- SwiftPM 의존성은 Xcode 프로젝트가 해석하는 `IMKSwift`, `LibHangul`, `Sparkle`과 `Kiwi/bindings/swift`의 로컬 경로 `Kiwi` 패키지다. Sparkle은 자동 업데이트를 위해 `AboutWindowController`에서만 사용한다.
+- 루트의 `Kiwi/`와 `KiwiModels/`는 gitignore된 벤더링 복사본이고, 실제 앱 번들 리소스는 `woorilee/KiwiModels/`에 있다.
+- 생성/캐시 경로인 `DerivedData/`, `DerivedDataPlan/`, `.xcode-home/`, `.xcode-swiftpm-modulecache/`는 수정하지 않는다.
 
 ## 수정 원칙
 
