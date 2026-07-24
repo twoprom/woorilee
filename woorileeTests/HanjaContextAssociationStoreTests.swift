@@ -49,13 +49,16 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
         let contents = try String(contentsOf: url, encoding: .utf8)
         let table = HanjaContextAssociationStore.parse(contents: contents)
 
-        // 집/NNG=38 (house — the word that disambiguates "우리 집 수도") is no longer in the fair
-        // A0 table: it fell below the uniform M=100 cut once the eval-27 evidence floor that used
-        // to rescue it was removed (단계 0a, docs/plans/hanja-context-scaling-plan.md). Spot-check
-        // against a feature that survives the M=100 cut instead — 수돗물/NNG (tap water) is 水道's
-        // top feature by selection utility in the regenerated table.
-        XCTAssertEqual(table["수도"]?["水道"]?["수돗물/NNG"], 184)
-        XCTAssertEqual(table["수도"]?["修道"]?["기도/NNG"], 122)
-        XCTAssertEqual(table["수도"]?["首都"]?["서울/NNP"], 74)
+        // 집/NNG=38 (house — the word that disambiguates "우리 집 수도") is still not in the
+        // table: it fell below the uniform M=100 cut once the eval-27 evidence floor that used
+        // to rescue it was removed (단계 0a, docs/plans/hanja-context-scaling-plan.md), and 단계
+        // 0b's document/family dedup recollection did not restore it either (still below the
+        // M=100 cut in the regenerated table). Spot-check against a feature that survives the
+        // M=100 cut instead — 수돗물/NNG (tap water) is 水道's top feature by selection utility
+        // in the regenerated table. Weights bumped 0b (document-count-based table, re-run
+        // 2026-07-24): 184->186, 122->123, 74->76.
+        XCTAssertEqual(table["수도"]?["水道"]?["수돗물/NNG"], 186)
+        XCTAssertEqual(table["수도"]?["修道"]?["기도/NNG"], 123)
+        XCTAssertEqual(table["수도"]?["首都"]?["서울/NNP"], 76)
     }
 }
