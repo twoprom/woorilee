@@ -261,6 +261,30 @@ final class KiwiAnalysisService {
         }
     }
 
+    /// R1b (docs/plans/hanja-context-scaling-plan.md §6): analyzes a standalone text window (the
+    /// document-context fetch's trailing pre-cursor text — see
+    /// `InputCompositionEngine.fetchDocumentContextIfNeeded`) into the SAME feature space as
+    /// `analyzeClauseDetailed`'s `clauseContentFeatures` — content-morpheme `form/TAG`, deduped,
+    /// via the shared `isContextContentMorphemeTag` filter (the offline↔runtime feature-space
+    /// contract). Same match options / topN as the realtime path. Kiwi unavailable, an empty/
+    /// whitespace-only `text`, or a failed/empty analysis all quietly return `[]` — no throw, no
+    /// retry, matching the fetch path's "quiet fallback" contract.
+    func contentFeatures(for text: String) -> [String] {
+        guard !text.isEmpty, let kiwi else {
+            return []
+        }
+
+        do {
+            let results = try kiwi.analyze(text, topN: 1, options: Self.realtimeAnalysisMatchOptions)
+            guard let winner = results.max(by: { $0.score < $1.score }) else {
+                return []
+            }
+            return Self.clauseContentFeatures(from: winner.tokens, excludingRangeOverlapping: nil)
+        } catch {
+            return []
+        }
+    }
+
     /// Composing-tail stability strip (see `analyzeClause`'s `composingTailStart` doc): drops any
     /// token that extends into the still-composing tail (`token.position + token.length >
     /// composingTailStart`), so it can never vote as a context-association feature. Mid-sentence

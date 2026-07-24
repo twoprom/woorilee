@@ -257,6 +257,18 @@ func hideWarmUpPanelIfNeeded() {
         )
     }
 
+    /// R1b (docs/plans/hanja-context-scaling-plan.md §6): analyzes the document-context fetch
+    /// window (see `InputCompositionEngine.fetchDocumentContextIfNeeded`) into content-morpheme
+    /// features. Only needs Kiwi (no hanja dictionary lookups happen here) — `kiwiService.isAvailable`
+    /// is the sole gate; `[]` otherwise.
+    func analyzeDocumentContext(_ text: String) -> [String] {
+        guard kiwiService.isAvailable else {
+            return []
+        }
+
+        return kiwiService.contentFeatures(for: text)
+    }
+
     /// 사용자가 조정한 경계(`boundaries`)로 소스를 분할해 분절을 만든다(Kiwi 미사용, 사전만 사용).
     func manualSegments(for clause: String, boundaries: [Int]) -> [HanjaSegment] {
         KiwiAnalysisService.makeManualSegments(

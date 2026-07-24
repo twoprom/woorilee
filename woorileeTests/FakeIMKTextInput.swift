@@ -24,6 +24,9 @@ final class FakeIMKTextInput: NSObject, IMKTextInput {
     var firstRectHandler: ((NSRange) -> NSRect)?
     /// Stub for the line-height rectangle out-param of `attributes(forCharacterIndex:)`.
     var lineHeightRectHandler: ((Int) -> NSRect)?
+    /// Stub for `attributedSubstring(from:)` (R1b document-context fetch). `nil` by default —
+    /// every pre-existing test's behavior is unaffected; tests that need document text set this.
+    var attributedSubstringHandler: ((NSRange) -> NSAttributedString?)?
 
     func insertText(_ string: Any!, replacementRange: NSRange) {
         let text = (string as? String) ?? (string as? NSAttributedString)?.string ?? ""
@@ -52,7 +55,9 @@ final class FakeIMKTextInput: NSObject, IMKTextInput {
 
     func selectedRange() -> NSRange { stubbedSelectedRange }
     func markedRange() -> NSRange { stubbedMarkedRange }
-    func attributedSubstring(from range: NSRange) -> NSAttributedString? { nil }
+    func attributedSubstring(from range: NSRange) -> NSAttributedString? {
+        attributedSubstringHandler?(range)
+    }
     func length() -> Int { 0 }
     func characterIndex(
         for point: NSPoint,

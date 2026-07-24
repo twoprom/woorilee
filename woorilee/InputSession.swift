@@ -172,6 +172,18 @@ final class InputSession {
     /// — memory-only, survives across `reset()` (see `reset()`'s comment), never persisted or
     /// logged.
     private(set) var hanjaSessionContext = HanjaSessionContext()
+    /// R1b (docs/plans/hanja-context-scaling-plan.md §6): content-morpheme features from the
+    /// already-committed document text just before the cursor, fetched once per composition (see
+    /// `documentContextFetchAttempted` below and `InputCompositionEngine.fetchDocumentContextIfNeeded`).
+    /// Unlike `hanjaSessionContext`, this is cleared on `reset()`/`clearRealtimeClauseState()` — the
+    /// cursor position changes across compositions, so a stale fetch would describe the wrong spot.
+    /// Never Codable, never persisted, never logged (only the raw text is briefly held during
+    /// fetch/analysis, in `InputCompositionEngine`, and discarded there).
+    private(set) var documentContextFeatures: Set<String>?
+    /// Guards the document-context fetch to (at most) once per composition: set the moment the
+    /// fetch is ATTEMPTED, regardless of success, so a failed/empty fetch doesn't retry on every
+    /// keystroke of the same composition.
+    private(set) var documentContextFetchAttempted = false
 
     var preeditText: String {
         inputUCSCharsToString(hangul.getPreeditString())
@@ -233,11 +245,37 @@ final class InputSession {
         realtimeClauseState.selectedSegment
     }
 
-    /// Immutable snapshot for the ranker (R1a — docs/plans/hanja-context-scaling-plan.md §6).
-    /// `nil` whenever the session buffer is empty, so every caller's existing `?? [:]` / `.map`
-    /// fallback reproduces pre-R1a behavior exactly.
+    /// Immutable snapshot for the ranker (R1a/R1b — docs/plans/hanja-context-scaling-plan.md §6).
+    /// `nil` whenever BOTH the session buffer and the document-context fetch are empty, so every
+    /// caller's existing `?? [:]` / `.map` fallback reproduces pre-R1a behavior exactly. When
+    /// `documentContextFeatures` is nil/empty this returns `hanjaSessionContext.scoringInputs`
+    /// (or nil) completely unchanged — R1b is a pure addition, never a behavior change on its own.
+    /// Otherwise `vocabularyFeatures` is the Set union of the session buffer's vocabulary and the
+    /// document-context features (selectionPriors are untouched — R1b has no selection axis).
     var sessionScoringInputs: HanjaSessionScoringInputs? {
-        hanjaSessionContext.isEmpty ? nil : hanjaSessionContext.scoringInputs
+        let bufferScoring = hanjaSessionContext.isEmpty ? nil : hanjaSessionContext.scoringInputs
+
+        guard let documentContextFeatures, !documentContextFeatures.isEmpty else {
+            return bufferScoring
+        }
+
+        return HanjaSessionScoringInputs(
+            vocabularyFeatures: (bufferScoring?.vocabularyFeatures ?? []).union(documentContextFeatures),
+            selectionPriors: bufferScoring?.selectionPriors ?? [:],
+            isEmpty: false
+        )
+    }
+
+    /// R1b: marks the document-context fetch as attempted for the current composition, regardless
+    /// of outcome (see `documentContextFetchAttempted`'s doc).
+    func markDocumentContextFetchAttempted() {
+        documentContextFetchAttempted = true
+    }
+
+    /// R1b: records the analyzed document-context features. Empty input normalizes to `nil` (same
+    /// "empty means absent" convention as the rest of the session-scoring types).
+    func setDocumentContextFeatures(_ features: [String]) {
+        documentContextFeatures = features.isEmpty ? nil : Set(features)
     }
 
     func process(_ char: Character) -> Bool {
@@ -446,6 +484,10 @@ final class InputSession {
 
     func clearRealtimeClauseState() {
         realtimeClauseState = RealtimeClauseState()
+        // R1b: the cursor position is about to change (or this clause is being abandoned), so a
+        // fetch taken at the old position is no longer valid — see documentContextFeatures's doc.
+        documentContextFeatures = nil
+        documentContextFetchAttempted = false
         if compositionMode == .realtimeHanja {
             compositionMode = .hangul
         }
@@ -587,6 +629,10 @@ final class InputSession {
         clearManualPanelState()
         clearManualHanjaTrigger()
         clearManualHanjaNewlineSuppression()
+        // R1b: cleared on every reset (unlike hanjaSessionContext below) — the next composition
+        // starts at a different cursor position, so the fetch must run again there.
+        documentContextFeatures = nil
+        documentContextFetchAttempted = false
         // hanjaSessionContext is intentionally NOT reset here: reset() runs on every commit, but
         // the R1a session vocabulary/selection buffer must survive across clauses for the whole
         // client session (docs/plans/hanja-context-scaling-plan.md §6).
