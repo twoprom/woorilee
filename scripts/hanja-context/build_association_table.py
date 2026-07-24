@@ -49,20 +49,6 @@ context morphemes are everyday words, so selection weighs discriminativeness
 by evidence mass. The EMITTED quantized weight stays the pure contrast
 score; only which features are kept changes.
 
-Eval-27 evidence floor (targeted 5b gate remedy): for readings in the eval
-set (eval/hanja-context-eval-set.tsv), IN ADDITION to the top M by utility,
-every surviving feature with weighted_count >= EVAL_FLOOR_COUNT (default 30)
-AND score >= EVAL_FLOOR_MIN_SCORE (default ln 2 — at least 2x contrast odds)
-is kept regardless of rank. Rationale: high-vocabulary candidates (水道 803 /
-首都 2,083 surviving features) push common-but-correct probes (집 w=35,
-관 w=67, 나라 w=66, 정부 w=140; scores 1.09..2.65) below any affordable
-global M even under utility selection; the floor keeps exactly the "real
-evidence + meaningfully associated" set for the series the plan gates on.
-The min-score guard exists because barely-positive generics (하/VV 0.195,
-있/VV 0.221, 되/VV 0.405 under 修道) also have huge counts — without it the
-floor would resurrect exactly the features the contrast is meant to kill.
-Non-eval readings are unaffected.
-
 Ubiquity (IDF-style) filter for cross-domain-biased bare verbs (data-quality
 fix, post-5b): the within-reading contrast above cannot catch a feature whose
 corpus DOMAIN is skewed toward one candidate even though the morpheme itself
@@ -72,7 +58,7 @@ sentences are technical prose, not because 나/VV means anything about
 monasteries. A GLOBAL ubiquity signal catches this: compute each feature's
 PROFILE DOCUMENT FREQUENCY — the fraction of all post-survival, pre-prune
 (reading, candidate) profiles (every candidate that would receive >=1
-surviving feature, before top-M/eval-floor selection) in which the feature
+surviving feature, before top-M selection) in which the feature
 appears at all. Bare generic verbs (하, 있, 되, 나, 오, 보, 들, ...) sit at
 the top of this distribution.
 
@@ -123,7 +109,7 @@ from itertools import groupby
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from hanja_common import WOORILEE_ROOT, WORK_DIR, EVAL_SET_TSV, load_eval_readings  # noqa: E402
+from hanja_common import WOORILEE_ROOT, WORK_DIR  # noqa: E402
 
 COUNTS_DIR = WORK_DIR / "counts"
 TARGETS_TSV = WORK_DIR / "inventory/targets.tsv"
@@ -139,8 +125,6 @@ SIZE_CAP_BYTES = 8 * 1024 * 1024
 ALPHA = 0.5
 MIN_ANCHOR_SURVIVAL = 5
 TOP_M_BASE = 300  # widest M we ever emit; smaller M values are prefixes of this
-EVAL_FLOOR_COUNT = 30  # eval-27 evidence floor (0 disables)
-EVAL_FLOOR_MIN_SCORE = math.log(2)  # floor also requires >= 2x contrast odds
 # Ubiquity filter threshold — ABSOLUTE profile-DF count, VV/VA(-I)-tagged
 # features only (0 disables). History: this was originally a FRACTION of
 # total profiles (0.039). That made the effective cutoff depend on the size
@@ -278,8 +262,8 @@ def compute_profile_df(w_paren: int, w_dict: int, min_anchor: int):
     """Second streaming pass over the merged counts (independent of
     build_master) computing each feature's PROFILE DOCUMENT FREQUENCY: the
     number of (reading, hanja) profiles — each an emitted candidate with >=1
-    surviving feature, post-survival pre-prune, i.e. BEFORE the top-M/eval-
-    floor selection and BEFORE the ubiquity filter itself (this pass is what
+    surviving feature, post-survival pre-prune, i.e. BEFORE the top-M
+    selection and BEFORE the ubiquity filter itself (this pass is what
     the ubiquity filter is computed from) — in which the feature appears at
     least once. Returns (df_counts, total_profiles)."""
     df_counts: dict[str, int] = defaultdict(int)
@@ -300,20 +284,16 @@ def compute_profile_df(w_paren: int, w_dict: int, min_anchor: int):
 
 
 def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: float,
-                    top_m_cap: int, floor: int = 0,
-                    floor_min_score: float = EVAL_FLOOR_MIN_SCORE,
+                    top_m_cap: int,
                     banned_features: frozenset[str] = frozenset(),
                     colloc: dict[tuple[str, str], int] = {},
                     w_colloc: int = 20):
     """rows: list of ((reading, hanja, feature), a, p, d) all for one reading.
     Returns (cand_features, cand_totals) or None if fewer than 2 candidates
     have any surviving feature (contrast requires >=2). cand_features maps
-    hanja -> (prefix, extras): prefix = [(feature, score, weighted)] sorted
-    desc by the SELECTION metric utility = score * ln(1 + weighted_count),
-    sliced to top_m_cap (score is still the value emitted/quantized); extras
-    = [(feature, score)] for utility rank >= top_m_cap whose weighted count
-    >= floor AND score >= floor_min_score (only when floor > 0 — the eval-27
-    evidence floor). cand_totals
+    hanja -> [(feature, score, weighted)] sorted desc by the SELECTION metric
+    utility = score * ln(1 + weighted_count), sliced to top_m_cap (score is
+    still the value emitted/quantized). cand_totals
     maps hanja -> N_c (total surviving weighted mass, pre-contrast,
     pre-prune — used later for the min-total-weighted-count cap-tightening
     step). banned_features (the ubiquity filter's VV/VA-tagged output) are
@@ -349,7 +329,7 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
             pooled_feature_total[f] += w
     v_r = len(pooled_feature_total)
 
-    cand_features: dict[str, tuple[list[tuple[str, float, int]], list[tuple[str, float]]]] = {}
+    cand_features: dict[str, list[tuple[str, float, int]]] = {}
     for c in candidates_with_data:
         nc = n_c[c]
         n_rest = n_total - nc
@@ -364,37 +344,27 @@ def process_reading(rows, w_paren: int, w_dict: int, min_anchor: int, alpha: flo
                 scored.append((f, score, utility, n_c_f))
         scored.sort(key=lambda x: -x[2])
         if scored:
-            prefix = [(f, score, w) for f, score, _, w in scored[:top_m_cap]]
-            extras = (
-                [(f, score) for f, score, _, w in scored[top_m_cap:]
-                 if w >= floor and score >= floor_min_score]
-                if floor > 0 else []
-            )
-            cand_features[c] = (prefix, extras)
+            cand_features[c] = [(f, score, w) for f, score, _, w in scored[:top_m_cap]]
 
     return cand_features, n_c
 
 
 def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
-                 eval27_set: set[str], eval_floor: int,
                  banned_features: frozenset[str] = frozenset(),
                  colloc_by_reading: dict[str, dict[tuple[str, str], int]] = {},
                  w_colloc: int = 20):
     """One full streaming pass over the merged counts. Returns
     (master, n_c_all, dropped_single_candidate_readings) where master is
-    reading -> hanja -> (prefix, extras): prefix = [(feature, score,
-    weighted)] (<=TOP_M_BASE, desc by the selection utility, so any smaller
-    M slice is a prefix), extras = eval-27 evidence-floor features beyond
-    TOP_M_BASE (empty for non-eval readings). n_c_all is reading -> hanja ->
-    N_c."""
-    master: dict[str, dict[str, tuple[list[tuple[str, float, int]], list[tuple[str, float]]]]] = {}
+    reading -> hanja -> [(feature, score, weighted)] (<=TOP_M_BASE, desc by
+    the selection utility, so any smaller M slice is a prefix). n_c_all is
+    reading -> hanja -> N_c."""
+    master: dict[str, dict[str, list[tuple[str, float, int]]]] = {}
     n_c_all: dict[str, dict[str, int]] = {}
     dropped: list[str] = []
     seen_readings: set[str] = set()
     for reading, rows in iter_by_reading(ANCHOR_TSV, PAREN_TSV, DICT_TSV):
         seen_readings.add(reading)
-        floor = eval_floor if reading in eval27_set else 0
-        result = process_reading(rows, w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor,
+        result = process_reading(rows, w_paren, w_dict, min_anchor, alpha, TOP_M_BASE,
                                  banned_features=banned_features,
                                  colloc=colloc_by_reading.get(reading, {}), w_colloc=w_colloc)
         if result is None:
@@ -408,8 +378,7 @@ def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
     for reading, colloc in colloc_by_reading.items():
         if reading in seen_readings:
             continue
-        floor = eval_floor if reading in eval27_set else 0
-        result = process_reading([], w_paren, w_dict, min_anchor, alpha, TOP_M_BASE, floor,
+        result = process_reading([], w_paren, w_dict, min_anchor, alpha, TOP_M_BASE,
                                  banned_features=banned_features, colloc=colloc, w_colloc=w_colloc)
         if result is None:
             dropped.append(reading)
@@ -420,35 +389,22 @@ def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
     return master, n_c_all, dropped
 
 
-def render(master, n_c_all, targets, eval27_set, m, min_total_weighted, freq_cutoff,
-           eval_floor: int, eval_floor_min_score: float = EVAL_FLOOR_MIN_SCORE):
+def render(master, n_c_all, targets, m, min_total_weighted, freq_cutoff):
     """Assemble final (reading, hanja, feature, score) entries under the
     given cap-tightening params, quantize over the fresh global max, and
-    return (lines, global_max, stats) or (None, None, stats) if empty.
-    For eval-27 readings, features beyond the m-slice are still kept when
-    their weighted count >= eval_floor AND score >= eval_floor_min_score
-    (prefix carries weighted counts; the pre-computed extras beyond
-    TOP_M_BASE, already floor-filtered, are always included)."""
+    return (lines, global_max, stats) or (None, None, stats) if empty."""
     entries: list[tuple[str, str, str, float]] = []
     kept_readings: set[str] = set()
     kept_pairs: set[tuple[str, str]] = set()
-    floor_added = 0
     for reading, cand_map in master.items():
         total_freq = targets[reading][0]
-        is_eval = reading in eval27_set
-        if not is_eval and total_freq < freq_cutoff:
+        if total_freq < freq_cutoff:
             continue
         any_kept_for_reading = False
-        for hanja, (prefix, extras) in cand_map.items():
+        for hanja, prefix in cand_map.items():
             if n_c_all[reading][hanja] < min_total_weighted:
                 continue
             kept: list[tuple[str, float]] = [(f, s) for f, s, _ in prefix[:m]]
-            if is_eval and eval_floor > 0:
-                floor_tail = [(f, s) for f, s, w in prefix[m:]
-                              if w >= eval_floor and s >= eval_floor_min_score]
-                kept.extend(floor_tail)
-                kept.extend(extras)
-                floor_added += len(floor_tail) + len(extras)
             if not kept:
                 continue
             for feature, score in kept:
@@ -486,7 +442,6 @@ def render(master, n_c_all, targets, eval27_set, m, min_total_weighted, freq_cut
         "candidates": len(lines_map),
         "features": n_features,
         "dropped_zero_quant": dropped_zero_quant,
-        "eval_floor_added_features": floor_added,
     }
     return lines, global_max, stats
 
@@ -528,16 +483,8 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         "rare-but-perfect ones; the EMITTED weight is still the pure contrast score. Linear "
         f"quantization of score to 1..255 over the GLOBAL max score in this table "
         f"(global_max={global_max:.6f} nats); quantized values of 0 are dropped (not clamped to 1).",
-        f"# Eval-27 evidence floor: for the eval-set readings "
-        f"(eval/hanja-context-eval-set.tsv), every surviving feature with weighted_count >= "
-        f"{params['eval_floor']} AND score >= {params['eval_floor_min_score']:.6f} "
-        "(= ln 2, at least 2x contrast odds) is kept in addition to the top M — common "
-        "runtime words would otherwise fall below M for high-vocabulary candidates; the "
-        "min-score guard keeps barely-positive generics (하/VV, 있/VV, 되/VV) out. "
-        "Non-eval readings get the top M only.",
         f"# Cap-tightening applied (if any): min_total_weighted_count={params['min_total_weighted']}"
-        f", non-eval27 total_freq cutoff={params['freq_cutoff']} (eval-27 readings from "
-        "eval/hanja-context-eval-set.tsv are never dropped by the freq cutoff).",
+        f", total_freq cutoff={params['freq_cutoff']} (applies uniformly to all readings).",
         f"# Ubiquity (IDF-style) filter: VV/VA(-I)-tagged features with ABSOLUTE profile document "
         f"frequency >= {params['max_feature_df_count']} (out of {params['total_profiles']} "
         f"post-survival pre-prune candidate profiles) are banned globally before scoring "
@@ -565,9 +512,6 @@ def main() -> int:
     parser.add_argument("--min-anchor-survival", type=int, default=MIN_ANCHOR_SURVIVAL)
     parser.add_argument("--alpha", type=float, default=ALPHA)
     parser.add_argument("--top-m", type=int, default=TOP_M_BASE)
-    parser.add_argument("--eval-floor-count", type=int, default=EVAL_FLOOR_COUNT,
-                        help="eval-27 evidence floor: keep any surviving score>0 feature "
-                             "with weighted_count >= this for eval-set readings (0 disables)")
     parser.add_argument("--max-feature-df-count", type=int, default=MAX_FEATURE_DF_COUNT,
                         help="ubiquity filter: drop VV/VA(-I)-tagged features whose ABSOLUTE "
                              "profile document frequency (number of post-survival, pre-prune "
@@ -590,8 +534,7 @@ def main() -> int:
     args = parser.parse_args()
 
     targets = load_targets()
-    eval27 = set(load_eval_readings())
-    print(f"targets={len(targets)} eval27={len(eval27)}", file=sys.stderr)
+    print(f"targets={len(targets)}", file=sys.stderr)
 
     print("computing profile document frequency (ubiquity filter pass, "
           "~8.49M rows)...", file=sys.stderr)
@@ -633,7 +576,7 @@ def main() -> int:
     print("merging + scoring (single streaming pass over ~8.49M rows)...", file=sys.stderr)
     master, n_c_all, dropped_single_cand = build_master(
         args.paren_weight, args.dict_weight, args.min_anchor_survival, args.alpha,
-        eval27, args.eval_floor_count, banned_features=banned_features,
+        banned_features=banned_features,
         colloc_by_reading=colloc_by_reading, w_colloc=args.colloc_weight,
     )
     print(
@@ -643,7 +586,7 @@ def main() -> int:
     )
 
     # Cap-tightening ladder: M 300 -> 200 -> 100, then min-total-weighted-count,
-    # then ascending total_freq cutoff among non-eval27 readings.
+    # then ascending total_freq cutoff (applies uniformly to all readings).
     tightening_log = []
     attempts = [
         {"m": args.top_m, "min_total_weighted": 0, "freq_cutoff": 0},
@@ -655,8 +598,8 @@ def main() -> int:
     lines = global_max = stats = None
     for params in attempts:
         lines, global_max, stats = render(
-            master, n_c_all, targets, eval27, params["m"], params["min_total_weighted"],
-            params["freq_cutoff"], args.eval_floor_count,
+            master, n_c_all, targets, params["m"], params["min_total_weighted"],
+            params["freq_cutoff"],
         )
         lines = merge_curated_overrides(lines)
         size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
@@ -668,20 +611,18 @@ def main() -> int:
             break
 
     if chosen is None:
-        # Ascending total_freq cutoff among non-eval27 readings, binary search
-        # over distinct total_freq thresholds until under cap.
+        # Ascending total_freq cutoff, binary search over distinct total_freq
+        # thresholds until under cap.
         base_params = attempts[-1]
-        non_eval_freqs = sorted(
-            {targets[r][0] for r in master if r not in eval27}
-        )
-        lo, hi = 0, len(non_eval_freqs)
+        all_freqs = sorted({targets[r][0] for r in master})
+        lo, hi = 0, len(all_freqs)
         best = None
         while lo < hi:
             mid = (lo + hi) // 2
-            cutoff = non_eval_freqs[mid] + 1
+            cutoff = all_freqs[mid] + 1
             lines, global_max, stats = render(
-                master, n_c_all, targets, eval27, base_params["m"],
-                base_params["min_total_weighted"], cutoff, args.eval_floor_count,
+                master, n_c_all, targets, base_params["m"],
+                base_params["min_total_weighted"], cutoff,
             )
             lines = merge_curated_overrides(lines)
             size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
@@ -692,7 +633,7 @@ def main() -> int:
                 lo = mid + 1
         if best is None:
             print("STOP: cap unreachable even after all tightening steps "
-                  "(M->100, min_total_weighted>=3, dropping ALL non-eval27 readings).", file=sys.stderr)
+                  "(M->100, min_total_weighted>=3, dropping ALL readings).", file=sys.stderr)
             return 1
         cutoff, lines, global_max, stats, size = best
         chosen = {**base_params, "freq_cutoff": cutoff}
@@ -706,8 +647,6 @@ def main() -> int:
     header = build_header(
         {**chosen, "w_paren": args.paren_weight, "w_dict": args.dict_weight,
          "min_anchor": args.min_anchor_survival, "alpha": args.alpha,
-         "eval_floor": args.eval_floor_count,
-         "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
          "max_feature_df_count": args.max_feature_df_count, "total_profiles": total_profiles,
          "banned_feature_count": len(banned_features),
          "w_colloc": args.colloc_weight, "colloc_tuples": colloc_tuples,
@@ -733,8 +672,6 @@ def main() -> int:
             "w_dict": args.dict_weight,
             "min_anchor_survival": args.min_anchor_survival,
             "alpha": args.alpha,
-            "eval_floor_count": args.eval_floor_count,
-            "eval_floor_min_score": EVAL_FLOOR_MIN_SCORE,
             "selection_metric": "utility = score * ln(1 + weighted_count)",
             "max_feature_df_count": args.max_feature_df_count,
             "max_feature_df_count_rationale": "absolute cutoff fixed 2026-07-10 (= ceil(0.039 * 16974), the accepted 5b build's effective boundary); fractional cutoff loosened with pool growth and re-admitted 나/VV into 수도:修道",
@@ -757,7 +694,6 @@ def main() -> int:
         "readings_kept": stats["readings"],
         "candidates_kept": stats["candidates"],
         "features_kept": stats["features"],
-        "eval_floor_added_features": stats["eval_floor_added_features"],
         "dropped_zero_quant": stats["dropped_zero_quant"],
         "dropped_single_candidate_readings": len(dropped_single_cand),
         "tightening_log": tightening_log,
