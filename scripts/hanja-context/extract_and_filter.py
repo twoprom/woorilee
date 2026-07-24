@@ -8,6 +8,16 @@ sentences that carry usable context-association signal — never the
 raw/unfiltered corpus. See README.md for the full pipeline contract (corpus
 identity, license, run commands, output format).
 
+Filtered output format v2 (단계 0b, docs/plans/hanja-context-scaling-plan.md
+§4): each line is `종류<TAB>페이지ID<TAB>문장` (페이지ID = the wiki dump's
+numeric page `<id>`), and each part file starts with a `# format: v2 ...`
+header comment line recording the column layout. Rotation happens ONLY at
+page boundaries — a page's sentences are always written contiguously and
+never split across two part files — so the Swift collector's per-page
+document dedup (per page, count each (reading,candidate,feature) at most
+once) stays correct with the existing per-part parallel/resumable
+architecture.
+
 A sentence is kept iff EITHER holds:
   (a) 병기 — contains a validated "한글(漢字)" pair: the trailing suffix of
       the hangul run (same length as the parenthesized hanja run) is a
@@ -50,8 +60,11 @@ CORPUS_PATH = Path("/Volumes/Workbench/wooriHanjaModel/data/kowiki-latest-pages-
 MEDIAWIKI_NS = "{http://www.mediawiki.org/xml/export-0.11/}"
 PAGE_TAG = MEDIAWIKI_NS + "page"
 NS_TAG = MEDIAWIKI_NS + "ns"
+ID_TAG = MEDIAWIKI_NS + "id"
 REDIRECT_TAG = MEDIAWIKI_NS + "redirect"
 TEXT_PATH = MEDIAWIKI_NS + "revision/" + MEDIAWIKI_NS + "text"
+
+FORMAT_V2_HEADER = "# format: v2 종류<TAB>페이지ID<TAB>문장"
 
 ROTATE_EVERY_LINES = 200_000
 PROGRESS_EVERY_PAGES = 50_000
@@ -376,17 +389,21 @@ def classify_sentence(
 # XML streaming
 # ---------------------------------------------------------------------------
 
-def extract_page_text(elem) -> tuple[bool, bool, str | None]:
-    """(is_ns0, is_redirect, text_or_None) for a fully-parsed <page> element."""
+def extract_page_text(elem) -> tuple[bool, bool, str | None, str | None]:
+    """(is_ns0, is_redirect, text_or_None, page_id_or_None) for a fully-parsed
+    <page> element. `elem.find(ID_TAG)` only searches direct children, so it
+    returns the page-level <id> (not the nested <revision><id>)."""
     ns_el = elem.find(NS_TAG)
     is_ns0 = ns_el is not None and (ns_el.text or "").strip() == "0"
     is_redirect = elem.find(REDIRECT_TAG) is not None
+    id_el = elem.find(ID_TAG)
+    page_id = (id_el.text or "").strip() if id_el is not None else None
     text = None
     if is_ns0 and not is_redirect:
         text_el = elem.find(TEXT_PATH)
         if text_el is not None:
             text = text_el.text or ""
-    return is_ns0, is_redirect, text
+    return is_ns0, is_redirect, text, page_id
 
 
 def main() -> int:
@@ -463,6 +480,7 @@ def main() -> int:
             out_f.close()
         part_path = hc.FILTERED_DIR / f"part-{part_index:04d}.txt"
         out_f = part_path.open("w", encoding="utf-8")
+        out_f.write(FORMAT_V2_HEADER + "\n")
         lines_in_part = 0
 
     open_next_part()
@@ -496,7 +514,7 @@ def main() -> int:
                     continue
                 stats["pages_seen"] += 1
 
-                is_ns0, is_redirect, text = extract_page_text(elem)
+                is_ns0, is_redirect, text, page_id = extract_page_text(elem)
                 elem.clear()
                 root.clear()
 
@@ -506,8 +524,9 @@ def main() -> int:
                     stats["pages_redirect_skipped"] += 1
                 else:
                     stats["pages_ns0_kept"] += 1
-                    if text:
+                    if text and page_id:
                         cleaned = strip_wiki_markup(text)
+                        page_kept: list[tuple[str, str]] = []  # (kind, sentence)
                         for sentence in split_sentences(cleaned):
                             stats["sentences_scanned"] += 1
                             kind = classify_sentence(
@@ -518,11 +537,18 @@ def main() -> int:
                             if kind is None:
                                 continue
                             stats[f"sentences_kept_{kind}"] += 1
-                            out_f.write(f"{kind}\t{sentence}\n")
+                            page_kept.append((kind, sentence))
+                        # Page-boundary rotation: write the WHOLE page's kept
+                        # sentences to the current part, then rotate only
+                        # after the page is fully written — a page's
+                        # sentences must never span two part files (keeps
+                        # the collector's per-part/per-page dedup correct).
+                        for kind, sentence in page_kept:
+                            out_f.write(f"{kind}\t{page_id}\t{sentence}\n")
                             lines_in_part += 1
-                            if lines_in_part >= ROTATE_EVERY_LINES:
-                                part_index += 1
-                                open_next_part()
+                        if lines_in_part >= ROTATE_EVERY_LINES:
+                            part_index += 1
+                            open_next_part()
 
                 if stats["pages_seen"] % PROGRESS_EVERY_PAGES == 0:
                     log_progress(fh.tell())

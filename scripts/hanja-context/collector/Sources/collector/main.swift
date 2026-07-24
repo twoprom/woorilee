@@ -7,13 +7,26 @@
 //
 // Modes:
 //   collect [--parts 0-14|0,3,5] [--workers N] [--limit-lines N]
-//       Analyze filtered corpus parts, write per-part sorted TSVs
-//       counts/part-NNNN.{paren,anchor}.tsv (`reading\thanja\tfeature\tcount`, LC_ALL=C order)
-//       plus counts/part-NNNN.stats.json. Resumable: parts with all three outputs are skipped
+//       Analyze filtered corpus parts (format v2: `종류<TAB>페이지ID<TAB>문장`, tolerating a
+//       leading `# format: v2 ...` header comment), write per-part sorted TSVs
+//       counts/part-NNNN.{paren,anchor,family-doc,family-sentence}.tsv
+//       (`reading\thanja\tfeature\tcount` / `target\thanja\tanchorReading\tcount`, LC_ALL=C order)
+//       plus counts/part-NNNN.stats.json. Resumable: parts with all outputs are skipped
 //       (unless --limit-lines is set, which writes to *.smoke.* files instead).
+//       Document dedup (단계 0b, docs/plans/hanja-context-scaling-plan.md §4): since a page's
+//       sentences are always contiguous within one part file (extract_and_filter.py rotates only
+//       at page boundaries), each (reading,candidate,feature) tuple is counted AT MOST ONCE per
+//       page for both the anchor and paren signals — the emitted count is "number of distinct
+//       documents", not "number of sentence occurrences". dict/colloc signals (separate
+//       collect-defs mode / build_association_table.py --colloc-counts) are dictionary-derived,
+//       not corpus-derived, and are unaffected by this change.
 //   merge
-//       K-way streaming merge of all part TSVs into counts/paren-counts.tsv and
-//       counts/anchor-counts.tsv (summing counts for equal keys). No global in-memory table.
+//       K-way streaming merge of all part TSVs into counts/paren-counts.tsv,
+//       counts/anchor-counts.tsv, counts/family-doc-counts.tsv, counts/family-sentence-counts.tsv
+//       (summing counts for equal keys; per-part dedup + merge-by-sum stays correct because pages
+//       never span parts), then combines the two family count files into
+//       counts/anchor-family-stats.tsv (`표적읽기<TAB>후보한자<TAB>앵커읽기<TAB>doc_count<TAB>
+//       sentence_count` — observation only this stage, no cap applied). No global in-memory table.
 //   dump-tokens
 //       Analyze the 195 eval sentences and write
 //       scripts/hanja-context/verification-tokens.tsv (`sentence<TAB>form/TAG,...`, content tags
@@ -332,6 +345,10 @@ final class SentenceProcessor {
         var anchorTuples = Set<String>()
         var parenPairs = Set<String>() // "reading\thanja"
         var anchorPairs = Set<String>()
+        // Family axis (단계 0b, observation only — no cap this stage): "target\thanja\tanchorReading",
+        // deduped within this sentence. anchorReading is the within-family axis (family = same
+        // (target, hanja) — several anchor readings can attribute to the same family).
+        var familyTuples = Set<String>()
     }
 
     func process(sentence: String, kiwi: Kiwi) -> LineSignals {
@@ -376,6 +393,7 @@ final class SentenceProcessor {
                 for feature in features {
                     signals.anchorTuples.insert(pairKey + "\t" + feature)
                 }
+                signals.familyTuples.insert(pairKey + "\t" + anchorReading)
             }
         }
 
@@ -410,6 +428,18 @@ final class SentenceProcessor {
         return signals
     }
 
+    /// Format v2 line: `종류<TAB>페이지ID<TAB>문장`. Returns nil for the header comment or any
+    /// malformed line (missing either tab) so the caller can skip it.
+    private func parseFormatV2(_ raw: Substring) -> (pageID: Substring, sentence: String)? {
+        guard !raw.hasPrefix("#") else { return nil }
+        guard let tab1 = raw.firstIndex(of: "\t") else { return nil }
+        let rest = raw[raw.index(after: tab1)...]
+        guard let tab2 = rest.firstIndex(of: "\t") else { return nil }
+        let pageID = rest[rest.startIndex..<tab2]
+        let sentence = String(rest[rest.index(after: tab2)...])
+        return (pageID, sentence)
+    }
+
     func processPart(
         _ part: Int, kiwi: Kiwi, logger: Logger, progress: Progress, limitLines: Int?
     ) throws -> PartStats {
@@ -418,33 +448,62 @@ final class SentenceProcessor {
         var stats = PartStats(part: part)
         var parenCounts: [String: Int] = [:]
         var anchorCounts: [String: Int] = [:]
+        var familyDocCounts: [String: Int] = [:]
+        var familySentenceCounts: [String: Int] = [:]
         let start = Date()
+
+        // Document dedup (단계 0b): within a page, each (reading,candidate,feature) tuple — and
+        // each family (target,candidate,anchorReading) tuple — is counted at most once. Since a
+        // page's lines are always contiguous within a part file (extract_and_filter.py rotates
+        // only at page boundaries), a simple "flush on page-ID change" pass suffices — no need to
+        // buffer the whole part.
+        var currentPageID: Substring?
+        var pageParenSeen = Set<String>()
+        var pageAnchorSeen = Set<String>()
+        var pageFamilySeen = Set<String>()
+
+        func flushPage() {
+            guard currentPageID != nil else { return }
+            for tuple in pageParenSeen { parenCounts[tuple, default: 0] += 1 }
+            for tuple in pageAnchorSeen { anchorCounts[tuple, default: 0] += 1 }
+            for tuple in pageFamilySeen { familyDocCounts[tuple, default: 0] += 1 }
+            pageParenSeen.removeAll(keepingCapacity: true)
+            pageAnchorSeen.removeAll(keepingCapacity: true)
+            pageFamilySeen.removeAll(keepingCapacity: true)
+        }
 
         for raw in text.split(separator: "\n", omittingEmptySubsequences: true) {
             if let limit = limitLines, stats.lines >= limit { break }
-            // Strip the `kind<TAB>` prefix; the kind column is otherwise ignored (both signal
-            // extractions run on every line — re-scanning is required anyway for exact spans).
-            let sentence: String
-            if let tab = raw.firstIndex(of: "\t") {
-                sentence = String(raw[raw.index(after: tab)...])
-            } else {
-                sentence = String(raw)
+            guard let parsed = parseFormatV2(raw) else { continue } // header comment / malformed
+
+            if currentPageID != parsed.pageID {
+                flushPage()
+                currentPageID = parsed.pageID
             }
 
-            let signals = process(sentence: sentence, kiwi: kiwi)
+            let signals = process(sentence: parsed.sentence, kiwi: kiwi)
             stats.lines += 1
             if !signals.anchorPairs.isEmpty { stats.anchorHitLines += 1 }
             if !signals.parenPairs.isEmpty { stats.parenValidatedLines += 1 }
             for pair in signals.anchorPairs { stats.anchorPairLines[pair, default: 0] += 1 }
             for pair in signals.parenPairs { stats.parenPairLines[pair, default: 0] += 1 }
-            for tuple in signals.anchorTuples { anchorCounts[tuple, default: 0] += 1 }
-            for tuple in signals.parenTuples { parenCounts[tuple, default: 0] += 1 }
+            for tuple in signals.anchorTuples { pageAnchorSeen.insert(tuple) }
+            for tuple in signals.parenTuples { pageParenSeen.insert(tuple) }
+            for tuple in signals.familyTuples {
+                pageFamilySeen.insert(tuple)
+                // Sentence-level count is NOT deduped by page — only within the sentence itself
+                // (familyTuples is already a per-sentence Set).
+                familySentenceCounts[tuple, default: 0] += 1
+            }
             progress.tick(logger: logger)
         }
+        flushPage()
 
         stats.elapsedSec = Date().timeIntervalSince(start)
         try writeSortedCounts(parenCounts, to: Paths.countsURL(part: part, signal: "paren", smoke: smoke))
         try writeSortedCounts(anchorCounts, to: Paths.countsURL(part: part, signal: "anchor", smoke: smoke))
+        try writeSortedCounts(familyDocCounts, to: Paths.countsURL(part: part, signal: "family-doc", smoke: smoke))
+        try writeSortedCounts(familySentenceCounts, to: Paths.countsURL(part: part, signal: "family-sentence", smoke: smoke))
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(stats).write(to: Paths.statsURL(part: part, smoke: smoke))
@@ -475,6 +534,8 @@ func runCollect(parts requestedParts: [Int], workers requestedWorkers: Int, limi
         if !smoke,
            FileManager.default.fileExists(atPath: Paths.countsURL(part: part, signal: "paren", smoke: false).path),
            FileManager.default.fileExists(atPath: Paths.countsURL(part: part, signal: "anchor", smoke: false).path),
+           FileManager.default.fileExists(atPath: Paths.countsURL(part: part, signal: "family-doc", smoke: false).path),
+           FileManager.default.fileExists(atPath: Paths.countsURL(part: part, signal: "family-sentence", smoke: false).path),
            FileManager.default.fileExists(atPath: Paths.statsURL(part: part, smoke: false).path) {
             logger.log("part \(part) already collected — skipping (delete counts/part-\(String(format: "%04d", part)).* to redo)")
             continue
@@ -641,9 +702,46 @@ func mergeSignal(_ signal: String, partURLs: [URL], output: URL) throws -> (tupl
     return (distinctTuples, totalCount)
 }
 
+/// Combines the merged family-doc/family-sentence count files (both keyed by
+/// "target\thanja\tanchorReading", LC_ALL=C sorted) into the observation-only family axis
+/// output `표적읽기<TAB>후보한자<TAB>앵커읽기<TAB>doc_count<TAB>sentence_count` (단계 0b — no
+/// cap applied this stage). A 2-way streaming merge-join over the same key ordering as
+/// `mergeSignal`; a key present in only one file gets 0 for the other column.
+func writeFamilyStatsFile(logger: Logger) throws {
+    let docURL = Paths.countsDir.appendingPathComponent("family-doc-counts.tsv")
+    let sentURL = Paths.countsDir.appendingPathComponent("family-sentence-counts.tsv")
+    let docReader = try TSVMergeReader(url: docURL)
+    let sentReader = try TSVMergeReader(url: sentURL)
+    let output = Paths.countsDir.appendingPathComponent("anchor-family-stats.tsv")
+    let writer = try LineWriter(url: output)
+    var rows = 0
+    while docReader.currentKey != nil || sentReader.currentKey != nil {
+        let minKey: String
+        if let dk = docReader.currentKey, let sk = sentReader.currentKey {
+            minKey = cOrderLess(dk, sk) ? dk : sk
+        } else {
+            minKey = docReader.currentKey ?? sentReader.currentKey!
+        }
+        var docCount = 0
+        var sentCount = 0
+        if docReader.currentKey == minKey {
+            docCount = docReader.currentCount
+            docReader.advance()
+        }
+        if sentReader.currentKey == minKey {
+            sentCount = sentReader.currentCount
+            sentReader.advance()
+        }
+        writer.write(minKey + "\t" + String(docCount) + "\t" + String(sentCount))
+        rows += 1
+    }
+    writer.close()
+    logger.log("MERGE family: -> \(output.lastPathComponent) rows=\(rows)")
+}
+
 func runMerge() throws {
     let logger = Logger(url: Paths.countsDir.appendingPathComponent("collect.log"))
-    for signal in ["paren", "anchor"] {
+    for signal in ["paren", "anchor", "family-doc", "family-sentence"] {
         let fileManager = FileManager.default
         let all = try fileManager.contentsOfDirectory(at: Paths.countsDir, includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasSuffix(".\(signal).tsv") && $0.lastPathComponent.hasPrefix("part-") }
@@ -653,6 +751,7 @@ func runMerge() throws {
         let (tuples, total) = try mergeSignal(signal, partURLs: all, output: output)
         logger.log("MERGE \(signal): \(all.count) part files -> \(output.lastPathComponent) distinctTuples=\(tuples) totalCount=\(total)")
     }
+    try writeFamilyStatsFile(logger: logger)
 }
 
 // MARK: - dump-tokens
