@@ -240,12 +240,21 @@ func hideWarmUpPanelIfNeeded() {
         resetHanjaUsageData()
     }
 
-    func analyzeRealtimeClause(_ clause: String, composingTailStart: Int? = nil) -> [HanjaSegment] {
+    func analyzeRealtimeClause(
+        _ clause: String,
+        composingTailStart: Int? = nil,
+        sessionInputs: HanjaSessionScoringInputs? = nil
+    ) -> RealtimeClauseAnalysis {
         guard kiwiService.isAvailable, hanjaService.isAvailable else {
-            return []
+            return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
         }
 
-        return kiwiService.analyzeClause(clause, hanjaService: hanjaService, composingTailStart: composingTailStart)
+        return kiwiService.analyzeClauseDetailed(
+            clause,
+            hanjaService: hanjaService,
+            composingTailStart: composingTailStart,
+            sessionInputs: sessionInputs
+        )
     }
 
     /// 사용자가 조정한 경계(`boundaries`)로 소스를 분할해 분절을 만든다(Kiwi 미사용, 사전만 사용).
@@ -316,7 +325,7 @@ func hideWarmUpPanelIfNeeded() {
         )
     }
 
-    func realtimeCandidates(for segment: HanjaSegment) -> [HanjaCandidate] {
+    func realtimeCandidates(for segment: HanjaSegment, sessionInputs: HanjaSessionScoringInputs? = nil) -> [HanjaCandidate] {
         let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
         if !numericCandidates.isEmpty {
             return numericCandidates
@@ -324,6 +333,7 @@ func hideWarmUpPanelIfNeeded() {
 
         let candidates = hanjaService.exactCandidates(for: segment.normalizedLookupKey)
         guard !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
+            || !(sessionInputs?.isEmpty ?? true)
         else {
             return candidates
         }
@@ -337,12 +347,28 @@ func hideWarmUpPanelIfNeeded() {
             )
             : [:]
 
+        // R1a (docs/plans/hanja-context-scaling-plan.md §6): keep the candidate-panel order
+        // consistent with the inline preview by folding the same session boosts in here.
+        let sessionAssociationLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
+            ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
+            : nil
+        let sessionBoosts = sessionInputs.map {
+            sessionContextBoosts(
+                for: candidates,
+                reading: segment.normalizedLookupKey,
+                session: $0,
+                lookup: sessionAssociationLookup,
+                weights: .default
+            )
+        } ?? [:]
+
         return rankWithContext(
             candidates: candidates,
             contextDominantHanja: segment.contextDominantHanja,
             associationScores: scores,
             weights: .default,
-            segmentTag: segment.tag
+            segmentTag: segment.tag,
+            sessionBoosts: sessionBoosts
         )
     }
 

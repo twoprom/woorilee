@@ -328,6 +328,11 @@ struct RealtimeClauseState: Equatable {
     var lockedCandidates: [SegmentLockKey: HanjaCandidate] = [:]
     var hangulLockedSegments: Set<SegmentLockKey> = []
     var pendingUsageEvents: [PendingHanjaUsageEvent] = []
+    /// Stable content-morpheme features for the whole clause (R1a — docs/plans/
+    /// hanja-context-scaling-plan.md §6), carried alongside `segments` so the commit path can hand
+    /// it to the session buffer without re-running Kiwi. Set by `updateAnalysis(segments:
+    /// clauseContentFeatures:)`; untouched (keeps its last value) when that argument is nil.
+    var clauseContentFeatures: [String] = []
 
     /// 수동 경계 조정(일본어 IME식 문절 신축)이 활성일 때 소스(rawClauseText + tailPreedit)에 대한
     /// 내부 분할 지점들. UTF-16 오프셋, 오름차순, 0 < bᵢ < N. nil이면 Kiwi 자동 분절.
@@ -352,10 +357,14 @@ struct RealtimeClauseState: Equatable {
             pendingUsageEvents = []
             manualBoundaries = nil
             focusedSpanStart = nil
+            clauseContentFeatures = []
         }
     }
 
-    mutating func updateAnalysis(segments analyzedSegments: [HanjaSegment]) {
+    mutating func updateAnalysis(segments analyzedSegments: [HanjaSegment], clauseContentFeatures: [String]? = nil) {
+        if let clauseContentFeatures {
+            self.clauseContentFeatures = clauseContentFeatures
+        }
         let sourceText = rawClauseText + tailPreedit
         let previousSelectedKey = selectedSegmentIndex.flatMap { index in
             segments.indices.contains(index) ? SegmentLockKey(segment: segments[index]) : nil

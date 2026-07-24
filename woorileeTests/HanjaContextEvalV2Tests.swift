@@ -353,6 +353,96 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         }
     }
 
+    /// R1a (docs/plans/hanja-context-scaling-plan.md §6) variant of the above: same representative
+    /// clause, but with a session buffer populated at the plan's caps (20 sentences x 20 features
+    /// = 400 morphemes, plus 1 selection prior) so the session-boost axis is actually exercised.
+    /// Informational only (no assertion) — reports both XCTest's own `measure{}` average AND a
+    /// same-clause session-ON vs session-OFF mach-clock A/B (see `timeMicroseconds` below), since
+    /// `measure{}` alone carries enough per-invocation harness overhead in this environment that
+    /// session-on and session-off land on the same ~2ms floor regardless of the session axis's
+    /// actual marginal cost — the mach-clock delta isolates that marginal cost precisely.
+    func testApplyContextRerankingLatencyWithPopulatedSession() throws {
+        guard Self.kiwiModelsAvailable, let kiwi = Self.kiwi, Self.hanjaTable != nil else {
+            print("Kiwi model directory not found, skipping latency measurement.")
+            return
+        }
+        XCTAssertFalse(Self.associationTable.isEmpty)
+
+        let clause = "정수 필터를 새로 달았더니 수도에서 나오는 물이 훨씬 깨끗해지고 냄새도 사라졌다."
+        let results = try kiwi.analyze(clause, topN: 1, options: KiwiAnalysisService.realtimeAnalysisMatchOptions)
+        let (segments, winningTokens) = KiwiAnalysisService.bestRealtimeSegmentsWithWinningTokens(
+            from: results, in: clause, candidateLookup: Self.candidateLookup, hangulUsageLookup: { _ in 0 })
+
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            Self.associationTable[reading]?[hanja]
+        }
+
+        var populatedContext = HanjaSessionContext()
+        for sentenceIndex in 0..<HanjaSessionContext.maxSentences {
+            let sentenceFeatures = (0..<20).map { "세션형태소\(sentenceIndex)_\($0)/NNG" }
+            populatedContext.recordCommittedClause(features: sentenceFeatures, selections: [])
+        }
+        populatedContext.recordManualSelection(reading: "수도", value: "水道")
+        let sessionInputs = populatedContext.scoringInputs
+        XCTAssertFalse(sessionInputs.isEmpty)
+
+        func rerankOn() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap,
+                candidateLookup: Self.candidateLookup, winningTokens: winningTokens,
+                associationFeatureLookup: associationLookup, sessionInputs: sessionInputs
+            )
+        }
+        func rerankOff() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap,
+                candidateLookup: Self.candidateLookup, winningTokens: winningTokens,
+                associationFeatureLookup: associationLookup, sessionInputs: nil
+            )
+        }
+
+        // Force both paths to materialize once before either measurement below.
+        rerankOn()
+        rerankOff()
+
+        // XCTest's own [Time, seconds] measurement, directly comparable to
+        // testApplyContextRerankingLatency's session-off number (same clause/candidates).
+        measure {
+            rerankOn()
+        }
+
+        // Mach-clock manual A/B loop (조율자 요청, R1a 세션 perf 수정 §3): measure{}'s XCTest
+        // harness overhead and noise make it hard to read a precise average (both configs land
+        // around the same ~2ms floor under `measure{}` in this environment), so this loop times
+        // both the session-ON and session-OFF calls directly with mach_absolute_time on the SAME
+        // clause/segments — 50-iteration warmup each, then 1000 timed iterations each, reporting
+        // average/max in microseconds for both plus the on-off delta.
+        var timebaseInfo = mach_timebase_info_data_t()
+        mach_timebase_info(&timebaseInfo)
+        let ticksToNanoseconds = { (ticks: UInt64) -> Double in
+            Double(ticks) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom)
+        }
+
+        func timeMicroseconds(warmup: Int, iterations: Int, _ block: () -> Void) -> (average: Double, max: Double) {
+            for _ in 0..<warmup { block() }
+            var totalNanoseconds = 0.0
+            var maxNanoseconds = 0.0
+            for _ in 0..<iterations {
+                let startTicks = mach_absolute_time()
+                block()
+                let elapsedNanoseconds = ticksToNanoseconds(mach_absolute_time() - startTicks)
+                totalNanoseconds += elapsedNanoseconds
+                maxNanoseconds = max(maxNanoseconds, elapsedNanoseconds)
+            }
+            return (totalNanoseconds / Double(iterations) / 1000.0, maxNanoseconds / 1000.0)
+        }
+
+        let onStats = timeMicroseconds(warmup: 50, iterations: 1000, rerankOn)
+        let offStats = timeMicroseconds(warmup: 50, iterations: 1000, rerankOff)
+
+        print("EVAL5D|sessionLatency on_average_us=\(String(format: "%.2f", onStats.average)) on_max_us=\(String(format: "%.2f", onStats.max)) off_average_us=\(String(format: "%.2f", offStats.average)) off_max_us=\(String(format: "%.2f", offStats.max)) delta_average_us=\(String(format: "%.2f", onStats.average - offStats.average)) iterations=1000")
+    }
+
     /// Confirms applyContextReranking scales roughly linearly in CONTEXT SIZE (the "문맥 형태소 수"
     /// axis of the plan's O(후보 K × 문맥 형태소 수) requirement): with the segment list, clause,
     /// and candidate sets held CONSTANT, doubling only the context-token count must roughly double

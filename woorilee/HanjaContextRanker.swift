@@ -33,6 +33,10 @@ struct HanjaContextRankingWeights {
     /// `HanjaContextEvidence` — the gazette is a prior, not context evidence, so it never
     /// promotes an `awaitsContextEvidence` segment by itself.
     var nnpGazetteBonus: Int = 100
+    /// Session vocabulary association scale (docs/plans/hanja-context-scaling-plan.md §6 R1a
+    /// initial value): the session buffer's matched-feature weight counts at this fraction of the
+    /// in-clause association weight — session evidence is real but weaker than the current clause.
+    var sessionAssociationScale: Double = 0.5
     static let `default` = HanjaContextRankingWeights(containment: 10_000_000, charShare: 0, association: 300)
 }
 
@@ -145,6 +149,73 @@ struct HanjaContextEvidence {
     }
 }
 
+/// Session vocabulary axis score, direction-reversed from `associationScores` (docs/plans/
+/// hanja-context-scaling-plan.md §6 R1a perf fix): iterates each candidate's association PROFILE
+/// (~40 entries on average — 827,380 entries / ~22,600 profiles) and sums the entries whose
+/// feature is a member of `vocabulary`, instead of probing the (up to 400-entry) session
+/// vocabulary set against each candidate's profile dict. Same "sum > 0 → record" contract as
+/// `associationScores`. Cheaper by roughly the profile/vocabulary size ratio because the smaller
+/// side drives the iteration.
+func sessionAssociationScores(
+    for candidates: [HanjaCandidate],
+    vocabulary: Set<String>,
+    lookup: (String, String) -> [String: Double]?
+) -> [String: Double] {
+    guard !vocabulary.isEmpty else {
+        return [:]
+    }
+
+    var scores: [String: Double] = [:]
+    for candidate in candidates {
+        guard let features = lookup(candidate.reading, candidate.value) else { continue }
+        var sum = 0.0
+        for (feature, weight) in features where vocabulary.contains(feature) {
+            sum += weight
+        }
+        if sum > 0 {
+            scores[candidate.value] = sum
+        }
+    }
+    return scores
+}
+
+/// Session-context boost per candidate value (docs/plans/hanja-context-scaling-plan.md §6 R1a):
+/// the session vocabulary axis (`sessionAssociationScores`, scaled by
+/// `weights.sessionAssociationScale`) plus the last-selection-prior axis (`containment × decay`
+/// for the reading's most recent confirmed value). Deliberately does NOT exclude features already
+/// counted by the in-clause association axis — a morpheme present in both the current clause and
+/// the session buffer is counted twice (clause 1.0× + session 0.5× = 1.5× ceiling for that
+/// feature), which is accepted for direction/simplicity: it only ever strengthens an
+/// already-positive signal and never overturns containment. Deliberately NOT folded into
+/// `HanjaContextEvidence` / `contextEvidence` — session boosts affect ranking only, never the
+/// `awaitsContextEvidence` promotion gate (auto-convert safety invariant). Empty session ⇒ `[:]`.
+func sessionContextBoosts(
+    for candidates: [HanjaCandidate],
+    reading: String,
+    session: HanjaSessionScoringInputs,
+    lookup: ((String, String) -> [String: Double]?)?,
+    weights: HanjaContextRankingWeights
+) -> [String: Double] {
+    guard !session.isEmpty else {
+        return [:]
+    }
+
+    var boosts: [String: Double] = [:]
+
+    if let lookup {
+        let scores = sessionAssociationScores(for: candidates, vocabulary: session.vocabularyFeatures, lookup: lookup)
+        for (value, score) in scores {
+            boosts[value, default: 0] += score * Double(weights.association) * weights.sessionAssociationScale
+        }
+    }
+
+    if let prior = session.selectionPriors[reading] {
+        boosts[prior.value, default: 0] += Double(weights.containment) * prior.decay
+    }
+
+    return boosts
+}
+
 /// Computes `candidate`'s `HanjaContextEvidence` against `contextDominantHanja` /
 /// `associationScores` — the same per-candidate quantities `rankWithContext` folds into its boost.
 func contextEvidence(
@@ -179,7 +250,8 @@ func rankWithContext(
     contextDominantHanja: [String],
     associationScores: [String: Double] = [:],
     weights: HanjaContextRankingWeights,
-    segmentTag: POSTag? = nil
+    segmentTag: POSTag? = nil,
+    sessionBoosts: [String: Double] = [:]
 ) -> [HanjaCandidate] {
     let boosted: [(candidate: HanjaCandidate, boost: Double)] = candidates.map { candidate in
         let evidence = contextEvidence(
@@ -192,6 +264,7 @@ func rankWithContext(
         if segmentTag == .nnp, !candidate.comment.isEmpty {
             boost += Double(weights.nnpGazetteBonus * weights.association)
         }
+        boost += sessionBoosts[candidate.value] ?? 0
         return (candidate, boost)
     }
 

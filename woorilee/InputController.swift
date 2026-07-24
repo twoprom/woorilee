@@ -62,7 +62,7 @@ final class InputController: IMKInputSessionController {
         InputCompositionEngine(
             client: client,
             session: session,
-            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0, composingTailStart: $1) },
+            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0, composingTailStart: $1, sessionInputs: $2) },
             analyzeManualClause: { self.hanjaServices.manualSegments(for: $0, boundaries: $1) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
             updateComposition: { self.updateComposition() },
@@ -906,7 +906,7 @@ final class InputController: IMKInputSessionController {
             return nil
         }
 
-        let candidates = hanjaServices.realtimeCandidates(for: segment)
+        let candidates = hanjaServices.realtimeCandidates(for: segment, sessionInputs: session.sessionScoringInputs)
         let previousState = session.realtimeCandidateState
         let preservesPreviousState = previousState?.mode.realtimeSegmentIndex == selectedIndex
         let highlightedIndex: Int
@@ -1337,6 +1337,7 @@ final class InputController: IMKInputSessionController {
 
         client.insertText(candidate.value, replacementRange: replacementRange)
         hanjaServices.recordSelection(lookupKey: lookupKey, value: candidate.value)
+        session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: candidate.value)
         session.reset()
     }
 
@@ -1411,6 +1412,7 @@ final class InputController: IMKInputSessionController {
             hanjaServices.recordHangulSelection(lookupKey: lookupKey)
         } else {
             hanjaServices.recordSelection(lookupKey: lookupKey, value: applied)
+            session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: applied)
         }
         hanjaServices.hideManualCandidatePanel()
         session.reset()

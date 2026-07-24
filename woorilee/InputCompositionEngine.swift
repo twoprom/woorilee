@@ -37,7 +37,7 @@ func inputRealtimeMarkedAttributedString(_ state: RealtimeClauseState) -> NSAttr
 struct InputCompositionEngine {
     let client: any IMKTextInput
     let session: InputSession
-    let analyzeRealtimeClause: (String, Int) -> [HanjaSegment]
+    let analyzeRealtimeClause: (String, Int, HanjaSessionScoringInputs?) -> RealtimeClauseAnalysis
     let analyzeManualClause: (String, [Int]) -> [HanjaSegment]
     let flushRealtimeUsageEvents: ([PendingHanjaUsageEvent]) -> Void
     let updateComposition: () -> Void
@@ -217,6 +217,9 @@ struct InputCompositionEngine {
             "commitRealtime text=\(textToCommit) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
         )
         client.insertText(textToCommit, replacementRange: replacementRange)
+        // R1a (docs/plans/hanja-context-scaling-plan.md §6): must run BEFORE session.reset() below
+        // — it reads realtimeClauseState, which reset() clears.
+        session.recordRealtimeCommitToSessionContext()
         flushRealtimeUsageEvents(session.drainPendingRealtimeUsageEvents())
         session.reset()
     }
@@ -229,16 +232,16 @@ struct InputCompositionEngine {
         }
 
         // 수동 경계 오버레이가 있으면 재분석이 그것을 존중한다(Kiwi 재분절 중단).
-        let segments: [HanjaSegment]
         if let boundaries = state.manualBoundaries {
-            segments = analyzeManualClause(sourceText, boundaries)
+            let segments = analyzeManualClause(sourceText, boundaries)
+            session.updateRealtimeAnalysis(segments: segments)
         } else {
             // tailPreedit is still-composing (uncommitted) — its offset is passed through so the
             // context-feature axis can ignore tokens overlapping it (see KiwiAnalysisService.
             // analyzeClause's composingTailStart doc). Segmentation still uses the full sourceText.
             let composingTailStart = inputUTF16Length(of: state.rawClauseText)
-            segments = analyzeRealtimeClause(sourceText, composingTailStart)
+            let analysis = analyzeRealtimeClause(sourceText, composingTailStart, session.sessionScoringInputs)
+            session.updateRealtimeAnalysis(segments: analysis.segments, clauseContentFeatures: analysis.clauseContentFeatures)
         }
-        session.updateRealtimeAnalysis(segments: segments)
     }
 }

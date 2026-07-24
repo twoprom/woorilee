@@ -168,6 +168,10 @@ final class InputSession {
     private(set) var pendingManualHanjaTrigger: PendingManualHanjaTrigger?
     private(set) var pendingManualHanjaNewlineSuppressionUptime: TimeInterval?
     private var manualHanjaNewlineSuppressionGeneration = 0
+    /// R1a session vocabulary/selection-prior buffer (docs/plans/hanja-context-scaling-plan.md §6)
+    /// — memory-only, survives across `reset()` (see `reset()`'s comment), never persisted or
+    /// logged.
+    private(set) var hanjaSessionContext = HanjaSessionContext()
 
     var preeditText: String {
         inputUCSCharsToString(hangul.getPreeditString())
@@ -227,6 +231,13 @@ final class InputSession {
 
     var selectedRealtimeSegment: HanjaSegment? {
         realtimeClauseState.selectedSegment
+    }
+
+    /// Immutable snapshot for the ranker (R1a — docs/plans/hanja-context-scaling-plan.md §6).
+    /// `nil` whenever the session buffer is empty, so every caller's existing `?? [:]` / `.map`
+    /// fallback reproduces pre-R1a behavior exactly.
+    var sessionScoringInputs: HanjaSessionScoringInputs? {
+        hanjaSessionContext.isEmpty ? nil : hanjaSessionContext.scoringInputs
     }
 
     func process(_ char: Character) -> Bool {
@@ -295,12 +306,35 @@ final class InputSession {
         refreshRealtimePreviewText()
     }
 
-    func updateRealtimeAnalysis(segments: [HanjaSegment]) {
+    func updateRealtimeAnalysis(segments: [HanjaSegment], clauseContentFeatures: [String]? = nil) {
         guard compositionMode == .realtimeHanja else {
             return
         }
 
-        realtimeClauseState.updateAnalysis(segments: segments)
+        realtimeClauseState.updateAnalysis(segments: segments, clauseContentFeatures: clauseContentFeatures)
+    }
+
+    /// R1a commit hook (docs/plans/hanja-context-scaling-plan.md §6): records the just-committed
+    /// clause's stable content-morpheme features and its resolved (auto-converted or
+    /// user-selected) candidates into the session buffer. Must be called BEFORE `reset()` — it
+    /// reads `realtimeClauseState`, which `reset()` clears.
+    func recordRealtimeCommitToSessionContext() {
+        guard compositionMode == .realtimeHanja else {
+            return
+        }
+
+        let features = realtimeClauseState.clauseContentFeatures
+        let selections = realtimeClauseState.segments.compactMap { segment in
+            segment.previewCandidate.map { (reading: segment.normalizedLookupKey, value: $0.value) }
+        }
+        hanjaSessionContext.recordCommittedClause(features: features, selections: selections)
+    }
+
+    /// R1a manual-panel selection hook: records a single manual Hanja candidate pick (or ignores a
+    /// hangul-kept selection — see `HanjaSessionContext.recordManualSelection`) into the session
+    /// buffer.
+    func recordManualHanjaSelectionToSessionContext(reading: String, value: String) {
+        hanjaSessionContext.recordManualSelection(reading: reading, value: value)
     }
 
     @discardableResult
@@ -553,6 +587,9 @@ final class InputSession {
         clearManualPanelState()
         clearManualHanjaTrigger()
         clearManualHanjaNewlineSuppression()
+        // hanjaSessionContext is intentionally NOT reset here: reset() runs on every commit, but
+        // the R1a session vocabulary/selection buffer must survive across clauses for the whole
+        // client session (docs/plans/hanja-context-scaling-plan.md §6).
     }
 
     private func refreshRealtimePreviewText() {

@@ -4,6 +4,18 @@
 import Foundation
 import Kiwi
 
+/// Bundles the winning realtime segmentation with the clause-wide content-morpheme features the
+/// session buffer needs at commit time (docs/plans/hanja-context-scaling-plan.md §6 R1a) — computed
+/// once per analysis pass so `InputSession.recordRealtimeCommitToSessionContext()` never has to
+/// re-run Kiwi.
+struct RealtimeClauseAnalysis {
+    let segments: [HanjaSegment]
+    /// Stable content-morpheme features ("form/TAG") for the WHOLE clause (no self-exclusion),
+    /// computed regardless of association-table availability — this is the commit-time buffer
+    /// input, not a reranking signal. Empty for a failed/empty clause.
+    let clauseContentFeatures: [String]
+}
+
 @MainActor
 final class KiwiAnalysisService {
     private static let realtimeAnalysisCandidateCount = 3
@@ -162,8 +174,22 @@ final class KiwiAnalysisService {
         hanjaService: HanjaDictionaryService,
         composingTailStart: Int? = nil
     ) -> [HanjaSegment] {
+        analyzeClauseDetailed(clause, hanjaService: hanjaService, composingTailStart: composingTailStart).segments
+    }
+
+    /// Same analysis as `analyzeClause`, plus the clause-wide content-morpheme features the R1a
+    /// session buffer needs (see `RealtimeClauseAnalysis`).
+    /// - Parameter sessionInputs: session vocabulary/selection-prior snapshot (docs/plans/
+    ///   hanja-context-scaling-plan.md §6 R1a), forwarded to `applyContextReranking`. `nil` (the
+    ///   default) disables the session boost axis entirely, reproducing pre-R1a behavior exactly.
+    func analyzeClauseDetailed(
+        _ clause: String,
+        hanjaService: HanjaDictionaryService,
+        composingTailStart: Int? = nil,
+        sessionInputs: HanjaSessionScoringInputs? = nil
+    ) -> RealtimeClauseAnalysis {
         guard !clause.isEmpty, let kiwi else {
-            return []
+            return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
         }
 
         let candidateLookup: (String) -> [HanjaCandidate] = { key in
@@ -199,10 +225,16 @@ final class KiwiAnalysisService {
                 nativeHomographLookup: nativeHomographLookup
             )
 
+            let stableTokens = Self.stableWinningTokens(from: best.winningTokens, composingTailStart: composingTailStart)
+            // R1a (docs/plans/hanja-context-scaling-plan.md §6): the commit-time session buffer
+            // needs the clause's content-morpheme features regardless of association-table
+            // availability, so — unlike the reranking pass below — this is computed unconditionally.
+            let clauseContentFeatures = Self.clauseContentFeatures(from: stableTokens, excludingRangeOverlapping: nil)
+
             guard let dominantMap = hanjaService.dominantHanjaMap,
                   !dominantMap.isEmpty
             else {
-                return best.segments
+                return RealtimeClauseAnalysis(segments: best.segments, clauseContentFeatures: clauseContentFeatures)
             }
 
             // Step 5c — corpus association scoring (docs/plans/context-aware-hanja-conversion.md
@@ -213,17 +245,19 @@ final class KiwiAnalysisService {
                 ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
                 : nil
 
-            return Self.applyContextReranking(
+            let segments = Self.applyContextReranking(
                 to: best.segments,
                 clause: clause,
                 dominantMap: dominantMap,
                 candidateLookup: candidateLookup,
-                winningTokens: Self.stableWinningTokens(from: best.winningTokens, composingTailStart: composingTailStart),
+                winningTokens: stableTokens,
                 associationFeatureLookup: associationFeatureLookup,
-                autoConvertGate: autoConvertGate
+                autoConvertGate: autoConvertGate,
+                sessionInputs: sessionInputs
             )
+            return RealtimeClauseAnalysis(segments: segments, clauseContentFeatures: clauseContentFeatures)
         } catch {
-            return []
+            return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
         }
     }
 
@@ -303,7 +337,8 @@ final class KiwiAnalysisService {
         winningTokens: [Token] = [],
         associationFeatureLookup: ((String, String) -> [String: Double]?)? = nil,
         weights: HanjaContextRankingWeights = .default,
-        autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil
+        autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil,
+        sessionInputs: HanjaSessionScoringInputs? = nil
     ) -> [HanjaSegment] {
         guard !segments.isEmpty else {
             return segments
@@ -314,7 +349,10 @@ final class KiwiAnalysisService {
             ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: nil)
             : []
 
-        guard !context.isEmpty || !clauseFeatures.isEmpty else {
+        // R1a (docs/plans/hanja-context-scaling-plan.md §6): a non-empty session snapshot keeps
+        // reranking running even when this clause alone has no context/association evidence —
+        // otherwise a session-only boost could never surface for a clause with no other signal.
+        guard !context.isEmpty || !clauseFeatures.isEmpty || !(sessionInputs?.isEmpty ?? true) else {
             return segments
         }
 
@@ -338,12 +376,26 @@ final class KiwiAnalysisService {
                 associationScores(for: candidates, contextFeatures: segmentFeatures, lookup: $0)
             } ?? [:]
 
+            // R1a: session boosts are computed per-segment and folded into ranking only — never
+            // into `contextEvidence`/the promotion gate below. Deliberately does not exclude
+            // segmentFeatures already counted by the clause axis (see sessionContextBoosts doc).
+            let sessionBoosts = sessionInputs.map {
+                sessionContextBoosts(
+                    for: candidates,
+                    reading: segment.normalizedLookupKey,
+                    session: $0,
+                    lookup: associationFeatureLookup,
+                    weights: weights
+                )
+            } ?? [:]
+
             let reranked = rankWithContext(
                 candidates: candidates,
                 contextDominantHanja: context,
                 associationScores: scores,
                 weights: weights,
-                segmentTag: segment.tag
+                segmentTag: segment.tag,
+                sessionBoosts: sessionBoosts
             )
 
             let previewCandidate: HanjaCandidate?
