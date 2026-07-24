@@ -15,7 +15,7 @@ Current runtime resources:
 - `Contents/Resources/data/hanja/hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanjaeo.txt`
-- `Contents/Resources/data/hanja/hanja-context.txt`
+- `Contents/Resources/data/hanja/hanja-context.bin`
 - `Contents/Resources/data/hanja/hanja-native-homograph.txt`
 - `Contents/Resources/KiwiModels/combiningRule.txt`
 - `Contents/Resources/KiwiModels/cong.mdl`
@@ -43,7 +43,8 @@ Live source paths used by the app target:
 - `woorilee/data/hanja/hanja.txt`
 - `woorilee/data/hanja/freq-hanja.txt`
 - `woorilee/data/hanja/freq-hanjaeo.txt`
-- `woorilee/data/hanja/hanja-context.txt`
+- `woorilee/data/hanja/hanja-context.bin` (bundled artifact; the sibling `hanja-context.txt` stays
+  in the repo for tests/diff but is not bundled — see docs/plans/hanja-context-scaling-plan.md §5)
 - `woorilee/data/hanja/hanja-native-homograph.txt`
 - `woorilee/KiwiModels/*`
 - `woorilee/en.lproj/InfoPlist.strings`

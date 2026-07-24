@@ -59,7 +59,7 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
         )
     }()
 
-    private static let associationTable: [String: [String: [String: UInt8]]] = {
+    private static let associationTable: [String: [String: [String: Double]]] = {
         let root = repoRoot()
         guard let contents = try? String(
             contentsOf: root.appendingPathComponent("woorilee/data/hanja/hanja-context.txt"), encoding: .utf8)
@@ -91,7 +91,7 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
     private func sudoPreview(
         clause: String,
         composingTailStart: Int?,
-        associationLookup: ((String, String) -> [String: UInt8]?)? = nil
+        associationLookup: ((String, String) -> [String: Double]?)? = nil
     ) throws -> String? {
         let kiwi = try XCTUnwrap(Self.kiwi)
         let results = try kiwi.analyze(clause, topN: 3, options: KiwiAnalysisService.realtimeAnalysisMatchOptions)
@@ -101,7 +101,7 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
         let stableTokens = KiwiAnalysisService.stableWinningTokens(
             from: best.winningTokens, composingTailStart: composingTailStart
         )
-        let lookup: (String, String) -> [String: UInt8]? = associationLookup ?? { reading, hanja in
+        let lookup: (String, String) -> [String: Double]? = associationLookup ?? { reading, hanja in
             Self.associationTable[reading]?[hanja]
         }
         let reranked = KiwiAnalysisService.applyContextReranking(
@@ -135,17 +135,10 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
         for tail in composingTails {
             let clause = rawClauseText + tail
             let preview = try sudoPreview(clause: clause, composingTailStart: composingTailStart)
-            XCTExpectFailure(
-                "A0 공정화 baseline: 수도:水道 집/NNG evidence fell below the uniform M=100 cut when "
-                    + "the eval-27 floor was removed (단계 0a). Expected to be restored by 0b document "
-                    + "dedup / 0c M expansion — this marker must be removed when the behavior returns "
-                    + "(strict = unexpected pass will fail)."
-            ) {
-                XCTAssertEqual(
-                    preview, "水道",
-                    "composing tail \"\(tail)\" (clause=\"\(clause)\") must not flip the settled 수도 preview"
-                )
-            }
+            XCTAssertEqual(
+                preview, "水道",
+                "composing tail \"\(tail)\" (clause=\"\(clause)\") must not flip the settled 수도 preview"
+            )
         }
     }
 
@@ -169,18 +162,11 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
         let clause = "우리 집 수도가 고장났다"
 
         let preview = try sudoPreview(clause: clause, composingTailStart: nil)
-        XCTExpectFailure(
-            "A0 공정화 baseline: 수도:水道 집/NNG evidence fell below the uniform M=100 cut when "
-                + "the eval-27 floor was removed (단계 0a). Expected to be restored by 0b document "
-                + "dedup / 0c M expansion — this marker must be removed when the behavior returns "
-                + "(strict = unexpected pass will fail)."
-        ) {
-            XCTAssertEqual(
-                preview, "水道",
-                "fully committed \"우리 집 수도가 고장났다\" (no composing tail) must preview 水道 — "
-                    + "나/VV is a banned ubiquitous feature now, not a legitimate 修道 signal"
-            )
-        }
+        XCTAssertEqual(
+            preview, "水道",
+            "fully committed \"우리 집 수도가 고장났다\" (no composing tail) must preview 水道 — "
+                + "나/VV is a banned ubiquitous feature now, not a legitimate 修道 signal"
+        )
     }
 
     /// Sanity check that the composingTailStart plumbing IS the mechanism preventing the flip —
@@ -202,7 +188,7 @@ final class HanjaContextComposingStabilityTests: XCTestCase {
 
         // Synthetic association data mirroring the historical defect (pre-ubiquity-filter table):
         // 나/VV=40 under 修道 out-voted 집/NNG=37 under 水道.
-        let stubbedLookup: (String, String) -> [String: UInt8]? = { reading, hanja in
+        let stubbedLookup: (String, String) -> [String: Double]? = { reading, hanja in
             guard reading == "수도" else { return nil }
             switch hanja {
             case "修道": return ["나/VV": 40]

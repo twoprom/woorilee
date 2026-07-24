@@ -52,7 +52,7 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
         )
     }()
 
-    private static let associationTable: [String: [String: [String: UInt8]]] = {
+    private static let associationTable: [String: [String: [String: Double]]] = {
         let root = repoRoot()
         guard let contents = try? String(
             contentsOf: root.appendingPathComponent("woorilee/data/hanja/hanja-context.txt"), encoding: .utf8)
@@ -152,14 +152,7 @@ final class HanjaContextNativeHomographIntegrationTests: XCTestCase {
         let segments = try finalSegments(for: clause)
 
         let sudo = try XCTUnwrap(segment(segments, reading: "수도"))
-        XCTExpectFailure(
-            "A0 공정화 baseline: 수도:水道 집/NNG evidence fell below the uniform M=100 cut when "
-                + "the eval-27 floor was removed (단계 0a). Expected to be restored by 0b document "
-                + "dedup / 0c M expansion — this marker must be removed when the behavior returns "
-                + "(strict = unexpected pass will fail)."
-        ) {
-            XCTAssertEqual(sudo.previewCandidate?.value, "水道", "수도 must preview 水道")
-        }
+        XCTAssertEqual(sudo.previewCandidate?.value, "水道", "수도 must preview 水道")
 
         let gojang = try XCTUnwrap(segment(segments, reading: "고장"))
         XCTAssertEqual(

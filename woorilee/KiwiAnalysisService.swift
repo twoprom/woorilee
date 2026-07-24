@@ -209,7 +209,7 @@ final class KiwiAnalysisService {
             // §7 5c). Passed only when the store finished loading; nil otherwise keeps this
             // identical to step 4b's containment-only reranking.
             let associationStore = HanjaContextAssociationStore.shared
-            let associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = associationStore.isAvailable
+            let associationFeatureLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
                 ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
                 : nil
 
@@ -279,7 +279,7 @@ final class KiwiAnalysisService {
         dominantMap: [String: String],
         candidateLookup: (String) -> [HanjaCandidate],
         winningTokens: [Token] = [],
-        associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = nil,
+        associationFeatureLookup: ((String, String) -> [String: Double]?)? = nil,
         weights: HanjaContextRankingWeights = .default,
         autoConvertGate: @escaping (HanjaCandidate) -> Bool
     ) -> [HanjaSegment] {
@@ -301,7 +301,7 @@ final class KiwiAnalysisService {
         dominantMap: [String: String],
         candidateLookup: (String) -> [HanjaCandidate],
         winningTokens: [Token] = [],
-        associationFeatureLookup: ((String, String) -> [String: UInt8]?)? = nil,
+        associationFeatureLookup: ((String, String) -> [String: Double]?)? = nil,
         weights: HanjaContextRankingWeights = .default,
         autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil
     ) -> [HanjaSegment] {

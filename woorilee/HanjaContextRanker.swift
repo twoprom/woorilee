@@ -38,23 +38,25 @@ struct HanjaContextRankingWeights {
 
 /// Sums matched-feature weights from `lookup(candidate.reading, candidate.value)` against
 /// `contextFeatures`, for every candidate — O(candidates × contextFeatures), precomputed once by
-/// the caller and fed into `rankWithContext`'s `associationScores`.
+/// the caller and fed into `rankWithContext`'s `associationScores`. Feature values are `Double`
+/// (step 0c — docs/plans/hanja-context-scaling-plan.md §5): the binary loader's per-reading
+/// quantization no longer lands on exact integers, so the sum is a Double too.
 func associationScores(
     for candidates: [HanjaCandidate],
     contextFeatures: [String],
-    lookup: (String, String) -> [String: UInt8]?
-) -> [String: Int] {
+    lookup: (String, String) -> [String: Double]?
+) -> [String: Double] {
     guard !contextFeatures.isEmpty else {
         return [:]
     }
 
-    var scores: [String: Int] = [:]
+    var scores: [String: Double] = [:]
     for candidate in candidates {
         guard let features = lookup(candidate.reading, candidate.value) else { continue }
-        var sum = 0
+        var sum = 0.0
         for feature in contextFeatures {
             if let weight = features[feature] {
-                sum += Int(weight)
+                sum += weight
             }
         }
         if sum > 0 {
@@ -131,8 +133,10 @@ func sharedHanjaCharCount(_ candidate: String, _ contextHanja: String) -> Int {
 struct HanjaContextEvidence {
     /// Step-4 axis: containment count × `weights.containment` + char-share count × `weights.charShare`.
     let dictionaryBoost: Int
-    /// Step-5 axis: raw (unweighted) matched association score for this candidate.
-    let associationScore: Int
+    /// Step-5 axis: raw (unweighted) matched association score for this candidate. `Double` since
+    /// step 0c (docs/plans/hanja-context-scaling-plan.md §5) — the binary-loaded feature values are
+    /// no longer exact integers.
+    let associationScore: Double
 
     /// Step 7's promotion condition: containment/dominance contributed something, OR the
     /// association table scored this candidate above zero.
@@ -146,7 +150,7 @@ struct HanjaContextEvidence {
 func contextEvidence(
     for candidate: HanjaCandidate,
     contextDominantHanja: [String],
-    associationScores: [String: Int] = [:],
+    associationScores: [String: Double] = [:],
     weights: HanjaContextRankingWeights
 ) -> HanjaContextEvidence {
     var dictionaryBoost = 0
@@ -173,20 +177,20 @@ func contextEvidence(
 func rankWithContext(
     candidates: [HanjaCandidate],
     contextDominantHanja: [String],
-    associationScores: [String: Int] = [:],
+    associationScores: [String: Double] = [:],
     weights: HanjaContextRankingWeights,
     segmentTag: POSTag? = nil
 ) -> [HanjaCandidate] {
-    let boosted: [(candidate: HanjaCandidate, boost: Int)] = candidates.map { candidate in
+    let boosted: [(candidate: HanjaCandidate, boost: Double)] = candidates.map { candidate in
         let evidence = contextEvidence(
             for: candidate,
             contextDominantHanja: contextDominantHanja,
             associationScores: associationScores,
             weights: weights
         )
-        var boost = evidence.dictionaryBoost + evidence.associationScore * weights.association
+        var boost = Double(evidence.dictionaryBoost) + evidence.associationScore * Double(weights.association)
         if segmentTag == .nnp, !candidate.comment.isEmpty {
-            boost += weights.nnpGazetteBonus * weights.association
+            boost += Double(weights.nnpGazetteBonus * weights.association)
         }
         return (candidate, boost)
     }

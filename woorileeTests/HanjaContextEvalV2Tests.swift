@@ -15,11 +15,26 @@
 // Self-skips (prints and returns) if the Kiwi model directory is missing, mirroring the pattern in
 // KiwiOfflinePipelineConsistencyTests.
 
+import Darwin
 import Foundation
 import Kiwi
 import LibHangul
 import XCTest
 @testable import woorilee
+
+/// Process resident memory (mach_task_basic_info.resident_size), used only as a coarse
+/// before/after delta around loading the association table — see
+/// testAssociationStoreParseBinaryMemoryFootprint.
+private func residentMemoryBytes() -> UInt64 {
+    var info = mach_task_basic_info()
+    var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
+    let result = withUnsafeMutablePointer(to: &info) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+            task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+        }
+    }
+    return result == KERN_SUCCESS ? info.resident_size : 0
+}
 
 @MainActor
 final class HanjaContextEvalV2Tests: XCTestCase {
@@ -85,7 +100,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
     /// Association table parsed directly from the repo file via the nonisolated static parser —
     /// deliberately NOT HanjaContextAssociationStore.shared, so this test never depends on the
     /// app's warm-up sequence.
-    private static let associationTable: [String: [String: [String: UInt8]]] = {
+    private static let associationTable: [String: [String: [String: Double]]] = {
         let root = repoRoot()
         guard let contents = try? String(
             contentsOf: root.appendingPathComponent("woorilee/data/hanja/hanja-context.txt"), encoding: .utf8)
@@ -162,7 +177,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         var outcome = EvalOutcome()
         guard let kiwi else { return outcome }
 
-        let associationLookup: ((String, String) -> [String: UInt8]?)? = useAssociation
+        let associationLookup: ((String, String) -> [String: Double]?)? = useAssociation
             ? { reading, hanja in associationTable[reading]?[hanja] }
             : nil
 
@@ -294,14 +309,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         )
 
         // Gate 3 — flagship: 水道 must rank first under association ON.
-        XCTExpectFailure(
-            "A0 공정화 baseline: 수도:水道 집/NNG evidence fell below the uniform M=100 cut when "
-                + "the eval-27 floor was removed (단계 0a). Expected to be restored by 0b document "
-                + "dedup / 0c M expansion — this marker must be removed when the behavior returns "
-                + "(strict = unexpected pass will fail)."
-        ) {
-            XCTAssertEqual(onV2.flagshipRank, 1, "\"우리 집 수도가 얼었다\" must rank 水道 first under association ON")
-        }
+        XCTAssertEqual(onV2.flagshipRank, 1, "\"우리 집 수도가 얼었다\" must rank 水道 first under association ON")
     }
 
     // MARK: - Task 3: latency + warmup
@@ -324,7 +332,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
             "representative clause must have 2-3 convertible segments"
         )
 
-        let associationLookup: (String, String) -> [String: UInt8]? = { reading, hanja in
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
             Self.associationTable[reading]?[hanja]
         }
 
@@ -362,7 +370,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         let results = try kiwi.analyze(clause, topN: 1, options: KiwiAnalysisService.realtimeAnalysisMatchOptions)
         let (segments, realTokens) = KiwiAnalysisService.bestRealtimeSegmentsWithWinningTokens(
             from: results, in: clause, candidateLookup: Self.candidateLookup, hangulUsageLookup: { _ in 0 })
-        let associationLookup: (String, String) -> [String: UInt8]? = { reading, hanja in
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
             Self.associationTable[reading]?[hanja]
         }
 
@@ -421,5 +429,55 @@ final class HanjaContextEvalV2Tests: XCTestCase {
 
         XCTAssertFalse(table.isEmpty)
         print("EVAL5D|warmup parse_seconds=\(String(format: "%.3f", elapsed)) readings=\(table.count)")
+    }
+
+    /// Step 0c warm-up cost comparison: HanjaContextAssociationStore.parseBinary on the real
+    /// bundled .bin (this is what production warmUp actually loads since step 0c — the text parse
+    /// above is comparison-only, no longer on the production warm-up path).
+    func testAssociationStoreParseBinaryWarmUpDuration() throws {
+        let path = Self.repoRoot().appendingPathComponent("woorilee/data/hanja/hanja-context.bin")
+        guard let data = try? Data(contentsOf: path) else {
+            XCTFail("hanja-context.bin missing at \(path.path)")
+            return
+        }
+
+        let start = Date()
+        let table = HanjaContextAssociationStore.parseBinary(data: data)
+        let elapsed = Date().timeIntervalSince(start)
+
+        XCTAssertNotNil(table)
+        XCTAssertFalse(table?.isEmpty ?? true)
+        print("EVAL5D|warmup parseBinary_seconds=\(String(format: "%.3f", elapsed)) readings=\(table?.count ?? 0) bytes=\(data.count)")
+    }
+
+    /// Coarse resident-memory estimate for the loaded association table: process resident size
+    /// (mach_task_basic_info) sampled immediately before and after `parseBinary`, kept alive via
+    /// an explicit reference until the second sample. This is a best-effort delta, not an exact
+    /// allocation count — ARC/malloc arena growth, page-granularity rounding, and any concurrent
+    /// background activity all add noise — but it's a real measurement of the whole loaded
+    /// structure ([String: [String: [String: Double]]], ~827k feature entries at the shipped M),
+    /// not a guess.
+    func testAssociationStoreParseBinaryMemoryFootprint() throws {
+        let path = Self.repoRoot().appendingPathComponent("woorilee/data/hanja/hanja-context.bin")
+        guard let data = try? Data(contentsOf: path) else {
+            XCTFail("hanja-context.bin missing at \(path.path)")
+            return
+        }
+
+        // Settle allocator state from prior test-file setup before sampling the baseline.
+        for _ in 0..<3 { autoreleasepool {} }
+        let before = residentMemoryBytes()
+        let table = HanjaContextAssociationStore.parseBinary(data: data)
+        let after = residentMemoryBytes()
+
+        XCTAssertNotNil(table)
+        let entryCount = table?.values.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } } ?? 0
+        let deltaBytes = after >= before ? after - before : 0
+        print(
+            "EVAL5D|memory resident_delta_bytes=\(deltaBytes) resident_delta_mb="
+                + "\(String(format: "%.2f", Double(deltaBytes) / 1_048_576)) "
+                + "readings=\(table?.count ?? 0) feature_entries=\(entryCount) source_bytes=\(data.count)"
+        )
+        withExtendedLifetime(table) {}
     }
 }
