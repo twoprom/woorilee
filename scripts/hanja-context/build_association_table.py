@@ -102,7 +102,9 @@ import argparse
 import json
 import math
 import re
+import struct
 import sys
+import zlib
 from collections import defaultdict
 from datetime import datetime, timezone
 from itertools import groupby
@@ -118,8 +120,15 @@ PAREN_TSV = COUNTS_DIR / "paren-counts.tsv"
 DICT_TSV = COUNTS_DIR / "dict-counts.tsv"
 
 OUTPUT_TXT = WOORILEE_ROOT / "woorilee/data/hanja/hanja-context.txt"
+OUTPUT_BIN = WOORILEE_ROOT / "woorilee/data/hanja/hanja-context.bin"
 STATS_JSON = COUNTS_DIR / "association-stats.json"
 CURATED_OVERRIDES_TXT = Path(__file__).resolve().with_name("curated-association-overrides.txt")
+
+# Step 0c binary format (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): magic +
+# version pinned here so the writer and scripts/hanja-context/verify_binary_roundtrip.py agree.
+BINARY_MAGIC = b"HJC2"
+BINARY_VERSION = 2
+BINARY_HEADER_SIZE = 32
 
 SIZE_CAP_BYTES = 8 * 1024 * 1024
 ALPHA = 0.5
@@ -147,6 +156,34 @@ ESCAPE_RE = re.compile("[%:,=]")
 
 def escape_feature(feature: str) -> str:
     return ESCAPE_RE.sub(lambda m: ESCAPE_MAP[m.group()], feature)
+
+
+def unescape_feature(escaped: str) -> str:
+    """Reverse of `escape_feature` — same decode order as
+    HanjaContextAssociationStore.percentDecodeFeature (Swift): '%3A'/'%2C'/'%3D' first, '%25'
+    last, so a literal '%' that only exists because of decoding '%25' never gets misread as the
+    start of another escape token. Used when re-deriving RAW (unescaped) feature text from the
+    already-escaped `hanja-context.txt` lines for the binary format's feature string table (§1
+    of the format spec stores raw text — no percent-escaping needed since it's length-prefixed)."""
+    if "%" not in escaped:
+        return escaped
+    decoded = escaped
+    decoded = decoded.replace("%3A", ":")
+    decoded = decoded.replace("%2C", ",")
+    decoded = decoded.replace("%3D", "=")
+    decoded = decoded.replace("%25", "%")
+    return decoded
+
+
+def parse_association_line(line: str) -> tuple[str, str, list[tuple[str, int]]]:
+    """Parse one `읽기:한자:형태소=가중치,...` line (as emitted by `render`/`merge_curated_overrides`)
+    into (reading, hanja, [(raw_unescaped_feature, weight), ...])."""
+    reading, hanja, feature_list = line.split(":", 2)
+    features: list[tuple[str, int]] = []
+    for entry in feature_list.split(","):
+        feature_escaped, weight_s = entry.rsplit("=", 1)
+        features.append((unescape_feature(feature_escaped), int(weight_s)))
+    return reading, hanja, features
 
 
 def merge_curated_overrides(lines: list[str], path: Path = CURATED_OVERRIDES_TXT) -> list[str]:
@@ -392,7 +429,13 @@ def build_master(w_paren: int, w_dict: int, min_anchor: int, alpha: float,
 def render(master, n_c_all, targets, m, min_total_weighted, freq_cutoff):
     """Assemble final (reading, hanja, feature, score) entries under the
     given cap-tightening params, quantize over the fresh global max, and
-    return (lines, global_max, stats) or (None, None, stats) if empty."""
+    return (lines, global_max, stats, entries) or (None, None, stats, [])
+    if empty. `entries` is the pre-quantization (reading, hanja, feature,
+    raw_score) list (raw_score = the true float log-odds contrast score,
+    BEFORE the 1..255 global quantization) — kept for the step-0c binary
+    writer (`encode_binary`), which re-quantizes per reading instead of
+    globally and needs the un-quantized score to do that without stacking
+    quantization error on top of quantization error."""
     entries: list[tuple[str, str, str, float]] = []
     kept_readings: set[str] = set()
     kept_pairs: set[tuple[str, str]] = set()
@@ -415,7 +458,7 @@ def render(master, n_c_all, targets, m, min_total_weighted, freq_cutoff):
             kept_readings.add(reading)
 
     if not entries:
-        return None, None, {"readings": 0, "candidates": 0, "features": 0}
+        return None, None, {"readings": 0, "candidates": 0, "features": 0}, []
 
     global_max = max(e[3] for e in entries)
     lines_map: dict[tuple[str, str], list[tuple[str, int]]] = defaultdict(list)
@@ -443,7 +486,115 @@ def render(master, n_c_all, targets, m, min_total_weighted, freq_cutoff):
         "features": n_features,
         "dropped_zero_quant": dropped_zero_quant,
     }
-    return lines, global_max, stats
+    return lines, global_max, stats, entries
+
+
+def pack_string(s: str) -> bytes:
+    """UInt16 length + UTF-8 bytes, little-endian — the binary format's string encoding
+    (§0c format spec: 'UInt16 길이 + UTF-8 바이트')."""
+    raw = s.encode("utf-8")
+    if len(raw) > 0xFFFF:
+        raise ValueError(f"string too long for UInt16 length prefix: {s!r} ({len(raw)} bytes)")
+    return struct.pack("<H", len(raw)) + raw
+
+
+def encode_binary(lines_pre_curated: list[str], lines_final: list[str], global_max: float,
+                  entries: list[tuple[str, str, str, float]]) -> bytes:
+    """Builds the step-0c binary artifact (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
+    명세") from the SAME final (reading, hanja, feature, weight) entry set as `lines_final` (the
+    text output after `merge_curated_overrides`) — guaranteeing entry-set equality with the text
+    file by construction (verify_binary_roundtrip.py check 1).
+
+    Per-entry raw (un-quantized) score, needed for the finer READING-LOCAL quantization (vs.
+    text's single GLOBAL 1..255 grid): looked up from `entries` (render()'s pre-quantization
+    float scores) when the entry's final weight is unchanged from the pre-curated-merge text
+    weight (i.e. the corpus score, not a curated override, produced it) — otherwise (a curated
+    override added or raised the weight) synthesized as `weight/255*global_max`, since curated
+    rows only exist as already-quantized 1..255 integers (no backing float score) and the
+    override's whole point is that the FINAL (possibly curated-raised) weight is authoritative.
+    """
+    entries_score: dict[tuple[str, str, str], float] = {
+        (reading, hanja, feature): score for reading, hanja, feature, score in entries
+    }
+
+    pre_curated_weight: dict[tuple[str, str, str], int] = {}
+    for line in lines_pre_curated:
+        reading, hanja, feats = parse_association_line(line)
+        for feature, weight in feats:
+            pre_curated_weight[(reading, hanja, feature)] = weight
+
+    # reading -> hanja -> [(feature, weight, raw_score)], reading/hanja order preserved from
+    # lines_final (already sorted by (reading, hanja) — see render()/merge_curated_overrides).
+    by_reading: dict[str, list[tuple[str, list[tuple[str, int, float]]]]] = {}
+    reading_order: list[str] = []
+    all_features: set[str] = set()
+    for line in lines_final:
+        reading, hanja, feats = parse_association_line(line)
+        if reading not in by_reading:
+            by_reading[reading] = []
+            reading_order.append(reading)
+        resolved: list[tuple[str, int, float]] = []
+        for feature, weight in feats:
+            key = (reading, hanja, feature)
+            if pre_curated_weight.get(key) == weight and key in entries_score:
+                raw_score = entries_score[key]
+            else:
+                raw_score = weight / 255 * global_max
+            resolved.append((feature, weight, raw_score))
+            all_features.add(feature)
+        by_reading[reading].append((hanja, resolved))
+
+    feature_ids = {feature: i for i, feature in enumerate(sorted(all_features))}
+
+    section1 = b"".join(pack_string(f) for f in sorted(all_features))
+
+    section2 = bytearray()
+    section3 = bytearray()
+    candidate_profile_count = 0
+    feature_entry_count = 0
+    for reading in reading_order:
+        candidates = by_reading[reading]
+        max_abs = max(
+            (abs(raw_score) for _, feats in candidates for _, _, raw_score in feats),
+            default=0.0,
+        )
+        reading_scale_nats = max_abs / 127 if max_abs > 0 else 1.0
+        section2 += pack_string(reading)
+        section2 += struct.pack("<f", reading_scale_nats)
+        section2 += struct.pack("<H", len(candidates))
+
+        for hanja, feats in candidates:
+            feats_sorted = sorted(feats, key=lambda item: feature_ids[item[0]])
+            section3 += pack_string(hanja)
+            section3 += struct.pack("<f", 0.0)  # bias — D3 slot, unused in 0c
+            section3 += struct.pack("<I", len(feats_sorted))
+            for feature, _weight, raw_score in feats_sorted:
+                section3 += struct.pack("<I", feature_ids[feature])
+            for _feature, _weight, raw_score in feats_sorted:
+                qw = round(raw_score / reading_scale_nats)
+                qw = max(1, min(127, qw))
+                section3 += struct.pack("<b", qw)
+            candidate_profile_count += 1
+            feature_entry_count += len(feats_sorted)
+
+    payload = bytes(section1) + bytes(section2) + bytes(section3)
+    payload_crc32 = zlib.crc32(payload) & 0xFFFFFFFF
+
+    header = struct.pack(
+        "<4sHHIIIIIf",
+        BINARY_MAGIC,
+        BINARY_VERSION,
+        0,  # flags, reserved
+        payload_crc32,
+        len(all_features),
+        len(reading_order),
+        candidate_profile_count,
+        feature_entry_count,
+        global_max / 255,  # globalScaleNats
+    )
+    assert len(header) == BINARY_HEADER_SIZE, f"header size drifted: {len(header)} != {BINARY_HEADER_SIZE}"
+
+    return header + payload
 
 
 def build_header(params: dict, global_max: float, generated_at: str) -> list[str]:
@@ -484,7 +635,13 @@ def build_header(params: dict, global_max: float, generated_at: str) -> list[str
         f"quantization of score to 1..255 over the GLOBAL max score in this table "
         f"(global_max={global_max:.6f} nats); quantized values of 0 are dropped (not clamped to 1).",
         f"# Cap-tightening applied (if any): min_total_weighted_count={params['min_total_weighted']}"
-        f", total_freq cutoff={params['freq_cutoff']} (applies uniformly to all readings).",
+        f", total_freq cutoff={params['freq_cutoff']} (applies uniformly to all readings). Since "
+        "step 0c the ladder is judged against woorilee/data/hanja/hanja-context.bin's size, not "
+        "this text file's — this .txt is diagnostic/test-only and may exceed 8MB. The .bin (magic "
+        "HJC2, version 2 — see scripts/hanja-context/build_association_table.py's encode_binary / "
+        "docs/plans/hanja-context-scaling-plan.md §5 '0c 포맷 명세') is the ONLY artifact the app "
+        "bundles; it re-quantizes each entry's score to signed Int8 on a PER-READING scale "
+        "instead of this file's single GLOBAL 1..255 scale, which is strictly finer-grained.",
         f"# Ubiquity (IDF-style) filter: VV/VA(-I)-tagged features with ABSOLUTE profile document "
         f"frequency >= {params['max_feature_df_count']} (out of {params['total_profiles']} "
         f"post-survival pre-prune candidate profiles) are banned globally before scoring "
@@ -522,8 +679,18 @@ def main() -> int:
     parser.add_argument("--print-feature-df", type=int, default=0,
                         help="if >0, print the top-N features by profile DF (for threshold "
                              "tuning) to stderr and exit without writing any output")
-    parser.add_argument("--size-cap-bytes", type=int, default=SIZE_CAP_BYTES)
+    parser.add_argument("--size-cap-bytes", type=int, default=SIZE_CAP_BYTES,
+                        help="judged against the BINARY artifact's size (step 0c) — the text "
+                             "output is diagnostic-only and may exceed this.")
     parser.add_argument("--output", type=Path, default=OUTPUT_TXT)
+    parser.add_argument("--output-bin", type=Path, default=OUTPUT_BIN)
+    parser.add_argument("--force-m", type=int, default=None,
+                        help="skip the cap-tightening ladder and render exactly this M "
+                             "(min_total_weighted=0, freq_cutoff=0), writing text+binary "
+                             "regardless of whether the binary exceeds --size-cap-bytes (a "
+                             "warning is printed if it does). For the step-0c M-experiment "
+                             "(one-off 100/200/300 comparison) — production regeneration should "
+                             "omit this and let the ladder pick.")
     parser.add_argument("--stats-output", type=Path, default=STATS_JSON)
     parser.add_argument("--colloc-counts", type=Path, default=COUNTS_DIR / "collocation-counts.tsv",
                         help="4th signal: NIKL derived-verb collocation counts "
@@ -585,59 +752,113 @@ def main() -> int:
         file=sys.stderr,
     )
 
-    # Cap-tightening ladder: M 300 -> 200 -> 100, then min-total-weighted-count,
-    # then ascending total_freq cutoff (applies uniformly to all readings).
-    tightening_log = []
-    attempts = [
-        {"m": args.top_m, "min_total_weighted": 0, "freq_cutoff": 0},
-        {"m": 200, "min_total_weighted": 0, "freq_cutoff": 0},
-        {"m": 100, "min_total_weighted": 0, "freq_cutoff": 0},
-        {"m": 100, "min_total_weighted": 3, "freq_cutoff": 0},
-    ]
-    chosen = None
-    lines = global_max = stats = None
-    for params in attempts:
-        lines, global_max, stats = render(
-            master, n_c_all, targets, params["m"], params["min_total_weighted"],
-            params["freq_cutoff"],
+    def render_attempt(m: int, min_total_weighted: int, freq_cutoff: int):
+        """One cap-tightening attempt: render -> merge curated overrides -> encode the step-0c
+        binary. Returns None if render() produced no entries at all (attempt is empty), else a
+        dict with the merged text lines, the encoded binary bytes, and both artifacts' sizes —
+        everything main() needs to log/gate/write this attempt. The binary size (not the text
+        size) is what the cap-tightening ladder judges against (step 0c — the text output is
+        diagnostic-only and may exceed the cap)."""
+        lines_pre_curated, global_max, stats, entries = render(
+            master, n_c_all, targets, m, min_total_weighted, freq_cutoff
         )
-        lines = merge_curated_overrides(lines)
-        size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
-        tightening_log.append({**params, "size_bytes": size})
-        print(f"try M={params['m']} min_total_weighted={params['min_total_weighted']} "
-              f"freq_cutoff={params['freq_cutoff']} -> size={size} bytes", file=sys.stderr)
-        if size <= args.size_cap_bytes:
-            chosen = params
-            break
+        if lines_pre_curated is None:
+            return None
+        lines_merged = merge_curated_overrides(lines_pre_curated)
+        text_size = sum(len(line.encode("utf-8")) + 1 for line in lines_merged)
+        binary_bytes = encode_binary(lines_pre_curated, lines_merged, global_max, entries)
+        return {
+            "lines": lines_merged,
+            "global_max": global_max,
+            "stats": stats,
+            "text_size": text_size,
+            "binary_bytes": binary_bytes,
+            "binary_size": len(binary_bytes),
+        }
 
-    if chosen is None:
-        # Ascending total_freq cutoff, binary search over distinct total_freq
-        # thresholds until under cap.
-        base_params = attempts[-1]
-        all_freqs = sorted({targets[r][0] for r in master})
-        lo, hi = 0, len(all_freqs)
-        best = None
-        while lo < hi:
-            mid = (lo + hi) // 2
-            cutoff = all_freqs[mid] + 1
-            lines, global_max, stats = render(
-                master, n_c_all, targets, base_params["m"],
-                base_params["min_total_weighted"], cutoff,
-            )
-            lines = merge_curated_overrides(lines)
-            size = sum(len(line.encode("utf-8")) + 1 for line in lines) if lines else 0
-            if size <= args.size_cap_bytes:
-                best = (cutoff, lines, global_max, stats, size)
-                hi = mid
-            else:
-                lo = mid + 1
-        if best is None:
-            print("STOP: cap unreachable even after all tightening steps "
-                  "(M->100, min_total_weighted>=3, dropping ALL readings).", file=sys.stderr)
+    tightening_log = []
+    chosen = None
+    attempt = None
+
+    if args.force_m is not None:
+        # Step-0c M-experiment mode: skip the ladder, render exactly this M, write regardless of
+        # the cap (with a warning if it's exceeded) — not for production regeneration.
+        attempt = render_attempt(args.force_m, 0, 0)
+        if attempt is None:
+            print(f"STOP: --force-m {args.force_m} produced an empty table.", file=sys.stderr)
             return 1
-        cutoff, lines, global_max, stats, size = best
-        chosen = {**base_params, "freq_cutoff": cutoff}
-        tightening_log.append({**chosen, "size_bytes": size, "binary_search": True})
+        chosen = {"m": args.force_m, "min_total_weighted": 0, "freq_cutoff": 0}
+        tightening_log.append({
+            **chosen, "size_bytes": attempt["text_size"], "binary_size_bytes": attempt["binary_size"],
+        })
+        print(
+            f"force M={args.force_m} -> text_size={attempt['text_size']} "
+            f"binary_size={attempt['binary_size']} bytes (cap={args.size_cap_bytes})",
+            file=sys.stderr,
+        )
+        if attempt["binary_size"] > args.size_cap_bytes:
+            print(
+                f"WARNING: --force-m {args.force_m} binary size {attempt['binary_size']} exceeds "
+                f"the {args.size_cap_bytes}-byte cap — writing anyway (force-m is an experimental "
+                "comparison mode; production regeneration should omit --force-m and let the "
+                "ladder pick).",
+                file=sys.stderr,
+            )
+    else:
+        # Cap-tightening ladder: M 300 -> 200 -> 100, then min-total-weighted-count, then
+        # ascending total_freq cutoff (applies uniformly to all readings) — judged by BINARY size.
+        attempts = [
+            {"m": args.top_m, "min_total_weighted": 0, "freq_cutoff": 0},
+            {"m": 200, "min_total_weighted": 0, "freq_cutoff": 0},
+            {"m": 100, "min_total_weighted": 0, "freq_cutoff": 0},
+            {"m": 100, "min_total_weighted": 3, "freq_cutoff": 0},
+        ]
+        for params in attempts:
+            attempt = render_attempt(params["m"], params["min_total_weighted"], params["freq_cutoff"])
+            text_size = attempt["text_size"] if attempt else 0
+            binary_size = attempt["binary_size"] if attempt else 0
+            tightening_log.append({**params, "size_bytes": text_size, "binary_size_bytes": binary_size})
+            print(f"try M={params['m']} min_total_weighted={params['min_total_weighted']} "
+                  f"freq_cutoff={params['freq_cutoff']} -> text_size={text_size} "
+                  f"binary_size={binary_size} bytes", file=sys.stderr)
+            if attempt is not None and binary_size <= args.size_cap_bytes:
+                chosen = params
+                break
+
+        if chosen is None:
+            # Ascending total_freq cutoff, binary search over distinct total_freq
+            # thresholds until the BINARY artifact is under cap.
+            base_params = attempts[-1]
+            all_freqs = sorted({targets[r][0] for r in master})
+            lo, hi = 0, len(all_freqs)
+            best = None
+            while lo < hi:
+                mid = (lo + hi) // 2
+                cutoff = all_freqs[mid] + 1
+                candidate_attempt = render_attempt(
+                    base_params["m"], base_params["min_total_weighted"], cutoff
+                )
+                binary_size = candidate_attempt["binary_size"] if candidate_attempt else 0
+                if candidate_attempt is not None and binary_size <= args.size_cap_bytes:
+                    best = (cutoff, candidate_attempt)
+                    hi = mid
+                else:
+                    lo = mid + 1
+            if best is None:
+                print("STOP: cap unreachable even after all tightening steps "
+                      "(M->100, min_total_weighted>=3, dropping ALL readings).", file=sys.stderr)
+                return 1
+            cutoff, attempt = best
+            chosen = {**base_params, "freq_cutoff": cutoff}
+            tightening_log.append({
+                **chosen, "size_bytes": attempt["text_size"],
+                "binary_size_bytes": attempt["binary_size"], "binary_search": True,
+            })
+
+    lines = attempt["lines"]
+    global_max = attempt["global_max"]
+    stats = attempt["stats"]
+    binary_bytes = attempt["binary_bytes"]
 
     stats["readings"] = len({line.split(":", 1)[0] for line in lines})
     stats["candidates"] = len(lines)
@@ -665,6 +886,12 @@ def main() -> int:
     actual_size = args.output.stat().st_size
     print(f"wrote {args.output} size={actual_size} bytes params={chosen}", file=sys.stderr)
 
+    args.output_bin.parent.mkdir(parents=True, exist_ok=True)
+    args.output_bin.write_bytes(binary_bytes)
+    actual_binary_size = args.output_bin.stat().st_size
+    print(f"wrote {args.output_bin} size={actual_binary_size} bytes (bundled artifact — judged "
+          f"against the {args.size_cap_bytes}-byte cap)", file=sys.stderr)
+
     stats_out = {
         "generated_at": generated_at,
         "params": {
@@ -690,6 +917,8 @@ def main() -> int:
             "banned_feature_count": len(banned_features),
         },
         "size_bytes": actual_size,
+        "binary_size_bytes": actual_binary_size,
+        "binary_format_version": BINARY_VERSION,
         "size_cap_bytes": args.size_cap_bytes,
         "readings_kept": stats["readings"],
         "candidates_kept": stats["candidates"],
