@@ -49,7 +49,12 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
         let contents = try String(contentsOf: url, encoding: .utf8)
         let table = HanjaContextAssociationStore.parse(contents: contents)
 
-        XCTAssertEqual(table["수도"]?["水道"]?["집/NNG"], 38)
+        // 집/NNG=38 (house — the word that disambiguates "우리 집 수도") is no longer in the fair
+        // A0 table: it fell below the uniform M=100 cut once the eval-27 evidence floor that used
+        // to rescue it was removed (단계 0a, docs/plans/hanja-context-scaling-plan.md). Spot-check
+        // against a feature that survives the M=100 cut instead — 수돗물/NNG (tap water) is 水道's
+        // top feature by selection utility in the regenerated table.
+        XCTAssertEqual(table["수도"]?["水道"]?["수돗물/NNG"], 184)
         XCTAssertEqual(table["수도"]?["修道"]?["기도/NNG"], 122)
         XCTAssertEqual(table["수도"]?["首都"]?["서울/NNP"], 74)
     }
