@@ -353,6 +353,15 @@ final class KiwiAnalysisService {
         )
     }
 
+    /// R2 (docs/plans/hanja-context-scaling-plan.md §7): this function now runs in three passes —
+    /// PASS 1 is the same per-segment computation as before R2 (unchanged), PASS 2 is a new
+    /// clause-global joint candidate search across segments with ≥2 candidates (see
+    /// HanjaClauseJointSelection.swift), PASS 3 is the same gate/promotion logic as before R2
+    /// (unchanged), fed PASS 2's re-ordered candidate list. When PASS 2 doesn't run (fewer than
+    /// two eligible segments, no association table, or more eligible segments than
+    /// `HanjaJointSelectionLimits.maxSegments`) every segment's `jointBoosts` stays `[:]` and the
+    /// result is byte-for-byte identical to R1 — pinned by
+    /// `RealtimeContextRankingTests`/`HanjaClauseJointSelectionTests`.
     static func applyContextReranking(
         to segments: [HanjaSegment],
         clause: String,
@@ -380,7 +389,11 @@ final class KiwiAnalysisService {
             return segments
         }
 
-        return segments.map { segment in
+        // PASS 1 (분절별, R1과 완전히 동일한 계산): segmentFeatures / candidates / association
+        // scores / session boosts / rankWithContextScored. `scores`는 PASS 3의 승격 게이트
+        // (`contextEvidence`)가 그대로 다시 읽는다 — 결합 보너스는 거기 절대 섞이지 않는다(R2
+        // 승격 게이트 불변, docs/plans/hanja-context-scaling-plan.md §7).
+        var perSegment: [PerSegmentJointRerankState] = segments.map { segment in
             // Self-exclusion (mirrors the offline collector's span exclusion): the segment's own
             // surface must not vote for its own candidates.
             let segmentFeatures = associationFeatureLookup != nil
@@ -392,7 +405,7 @@ final class KiwiAnalysisService {
             // reranking run so a positive-evidence top candidate can be promoted below. Segments
             // nil for any OTHER reason (tag-ineligible / preferHangul / step-6 gate) stay nil.
             guard segment.previewCandidate != nil || segment.awaitsContextEvidence else {
-                return segment.replacingContext(context, features: segmentFeatures, previewCandidate: nil)
+                return PerSegmentJointRerankState(segmentFeatures: segmentFeatures, scores: [:], ranked: [], jointEligible: false)
             }
 
             let candidates = candidateLookup(segment.normalizedLookupKey)
@@ -413,7 +426,7 @@ final class KiwiAnalysisService {
                 )
             } ?? [:]
 
-            let reranked = rankWithContext(
+            let ranked = rankWithContextScored(
                 candidates: candidates,
                 contextDominantHanja: context,
                 associationScores: scores,
@@ -421,6 +434,103 @@ final class KiwiAnalysisService {
                 segmentTag: segment.tag,
                 sessionBoosts: sessionBoosts
             )
+
+            // R2 결합 참여 자격 (docs/plans/hanja-context-scaling-plan.md §7): 재랭킹 대상이면서
+            // 후보가 2개 이상이고 숫자 분절이 아닌 것. 숫자 분절은 previewCandidate가 애초에
+            // 별도 경로(makeNumericSegments)로 결정되므로 결합 탐색에 끼워도 의미가 없다.
+            let isNumericSegment = NumericHanjaCandidateGenerator.normalizedDigits(from: segment.surface) != nil
+            let jointEligible = candidates.count >= 2 && !isNumericSegment
+
+            return PerSegmentJointRerankState(segmentFeatures: segmentFeatures, scores: scores, ranked: ranked, jointEligible: jointEligible)
+        }
+
+        // PASS 2 (클로즈 전역, R2 신규 — docs/plans/hanja-context-scaling-plan.md §7): 참여
+        // 분절이 2개 이상이고 연관표가 탑재됐고 참여 분절 수가 상한 이내일 때만 돈다. 그 외에는
+        // 이 블록 전체가 no-op이라 PASS 3은 PASS 1이 만든 `ranked` 순서를 그대로 보고, 모든
+        // `jointBoosts`가 `[:]`로 남아 R1과 완전히 동일한 결과가 나온다(동일성 불변식 —
+        // RealtimeContextRankingTests/HanjaClauseJointSelectionTests가 고정).
+        let participatingIndices = perSegment.indices.filter { perSegment[$0].jointEligible }
+        if let associationFeatureLookup,
+           participatingIndices.count >= 2,
+           participatingIndices.count <= HanjaJointSelectionLimits.maxSegments {
+            let topK = HanjaJointSelectionLimits.candidatesPerSegment
+            let topKPerParticipant: [[(candidate: HanjaCandidate, boost: Double)]] = participatingIndices.map {
+                Array(perSegment[$0].ranked.prefix(topK))
+            }
+            let jointInputs: [HanjaJointSegmentInput] = topKPerParticipant.map { entries in
+                HanjaJointSegmentInput(
+                    boosts: entries.map(\.boost),
+                    profiles: entries.map { associationFeatureLookup($0.candidate.reading, $0.candidate.value) ?? [:] }
+                )
+            }
+
+            // 참여 분절 쌍(i < j)의 상위 후보 조합별 프로필 유사도를 한 번씩만 계산해 메모이즈
+            // 한다(참여 분절 ≤5, 분절당 후보 ≤3이라 최대 90쌍 — 계획 §7-1 "가독성 우선" 권고).
+            var similarity = [[[[Double]]]](repeating: [], count: jointInputs.count)
+            for i in 0..<jointInputs.count {
+                var rowsForI = [[[Double]]](repeating: [], count: jointInputs.count)
+                for j in (i + 1)..<jointInputs.count {
+                    var row = [[Double]](
+                        repeating: [Double](repeating: 0, count: jointInputs[j].profiles.count),
+                        count: jointInputs[i].profiles.count
+                    )
+                    for candidateI in 0..<jointInputs[i].profiles.count {
+                        for candidateJ in 0..<jointInputs[j].profiles.count {
+                            row[candidateI][candidateJ] = associationProfileSimilarity(
+                                jointInputs[i].profiles[candidateI], jointInputs[j].profiles[candidateJ]
+                            )
+                        }
+                    }
+                    rowsForI[j] = row
+                }
+                similarity[i] = rowsForI
+            }
+
+            let pairBonusScale = weights.jointDomainConsistency * Double(weights.association)
+            let pairBonus: (Int, Int, Int, Int) -> Double = { i, candidateI, j, candidateJ in
+                guard i != j else { return 0 }
+                let (lower, higher, lowerCandidate, higherCandidate) = i < j
+                    ? (i, j, candidateI, candidateJ)
+                    : (j, i, candidateJ, candidateI)
+                return similarity[lower][higher][lowerCandidate][higherCandidate] * pairBonusScale
+            }
+
+            let chosen = selectJointAssignment(segments: jointInputs, pairBonus: pairBonus)
+
+            for (position, segmentIndex) in participatingIndices.enumerated() {
+                let entries = topKPerParticipant[position]
+                var jointBoosts: [String: Double] = [:]
+                for candidateIndex in 0..<entries.count {
+                    var sum = 0.0
+                    for otherPosition in 0..<participatingIndices.count where otherPosition != position {
+                        sum += pairBonus(position, candidateIndex, otherPosition, chosen[otherPosition])
+                    }
+                    if sum > 0 {
+                        jointBoosts[entries[candidateIndex].candidate.value] = sum
+                    }
+                }
+
+                // 선택 후보를 맨 앞으로, 나머지는 기존 순서 유지 (계획 §7-1의 결합 탐색 결과를
+                // PASS 3의 게이트/승격 로직이 그대로 소비할 수 있는 형태로 반영).
+                let chosenIndex = chosen[position]
+                var reordered = perSegment[segmentIndex].ranked
+                if chosenIndex > 0, chosenIndex < entries.count {
+                    let winner = reordered.remove(at: chosenIndex)
+                    reordered.insert(winner, at: 0)
+                }
+
+                perSegment[segmentIndex].ranked = reordered
+                perSegment[segmentIndex].jointBoosts = jointBoosts
+            }
+        }
+
+        // PASS 3 (분절별, R1과 완전히 동일한 게이트/승격 로직 — 입력만 PASS 2가 재정렬한 ranked).
+        return zip(segments, perSegment).map { segment, state in
+            guard segment.previewCandidate != nil || segment.awaitsContextEvidence else {
+                return segment.replacingContext(context, features: state.segmentFeatures, previewCandidate: nil)
+            }
+
+            let reranked = state.ranked.map(\.candidate)
 
             let previewCandidate: HanjaCandidate?
             if segment.awaitsContextEvidence {
@@ -433,10 +543,12 @@ final class KiwiAnalysisService {
                 // (realtimeCandidates(for:)) is untouched. The chosen candidate must then carry
                 // positive context evidence OF ITS OWN (step-4 containment/dominance axis or
                 // step-5 association axis > 0) — a skipped candidate's evidence never transfers.
-                // No such candidate => stay hangul (safe default).
+                // R2's joint bonus is deliberately excluded from this check (`state.scores` is
+                // PASS 1's un-joint-boosted association scores) — joint boosts affect ranking
+                // only, never the promotion gate. No such candidate => stay hangul (safe default).
                 let promotable = reranked.first { !failsAutoConvertGate($0, tag: segment.tag, gate: autoConvertGate) }
                 if let promotable,
-                   contextEvidence(for: promotable, contextDominantHanja: context, associationScores: scores, weights: weights).hasPositiveEvidence {
+                   contextEvidence(for: promotable, contextDominantHanja: context, associationScores: state.scores, weights: weights).hasPositiveEvidence {
                     previewCandidate = promotable
                 } else {
                     previewCandidate = nil
@@ -450,8 +562,20 @@ final class KiwiAnalysisService {
                     ? reranked.first
                     : nil
             }
-            return segment.replacingContext(context, features: segmentFeatures, previewCandidate: previewCandidate)
+            return segment.replacingContext(context, features: state.segmentFeatures, previewCandidate: previewCandidate, jointBoosts: state.jointBoosts)
         }
+    }
+
+    /// PASS 1↔2↔3 통신용 스크래치 상태 (R2, docs/plans/hanja-context-scaling-plan.md §7): 순수
+    /// 튜플 대신 이름 붙인 구조체로 둔 이유는 필드가 5개라 위치 인자로는 가독성이 떨어져서다.
+    private struct PerSegmentJointRerankState {
+        let segmentFeatures: [String]
+        /// PASS 1의 연관 축 원점수 — PASS 3의 승격 게이트가 그대로 다시 읽는다(결합 보너스가
+        /// 섞이지 않도록, R2 승격 게이트 불변).
+        let scores: [String: Double]
+        var ranked: [(candidate: HanjaCandidate, boost: Double)]
+        let jointEligible: Bool
+        var jointBoosts: [String: Double] = [:]
     }
 
     /// Whether `candidate` should be blocked from becoming a `previewCandidate` by the step-6

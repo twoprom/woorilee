@@ -57,6 +57,11 @@ struct HanjaSegment: Equatable, Identifiable {
     /// Carried through the same copy helpers as `contextDominantHanja` so the panel path can
     /// re-derive the same association scoring without recomputing it.
     let contextFeatures: [String]
+    /// R2 (docs/plans/hanja-context-scaling-plan.md §7): 결합 선택이 이 분절의 상위 후보들에게
+    /// 매긴 도메인 일관성 가점(후보 값 → 가점). 승리 배치에서 **다른 분절의 확정 후보를 고정**한
+    /// 채 계산하므로, 패널이 이 값을 그대로 더하면 인라인 프리뷰와 같은 순서가 나온다.
+    /// 결합 단계가 돌지 않았으면 빈 사전 — 그때는 R1 동작과 완전 동일.
+    let jointBoosts: [String: Double]
 
     init(
         id: UUID = UUID(),
@@ -68,7 +73,8 @@ struct HanjaSegment: Equatable, Identifiable {
         previewCandidate: HanjaCandidate?,
         awaitsContextEvidence: Bool = false,
         contextDominantHanja: [String] = [],
-        contextFeatures: [String] = []
+        contextFeatures: [String] = [],
+        jointBoosts: [String: Double] = [:]
     ) {
         self.id = id
         self.sourceRange = sourceRange
@@ -80,6 +86,7 @@ struct HanjaSegment: Equatable, Identifiable {
         self.awaitsContextEvidence = awaitsContextEvidence
         self.contextDominantHanja = contextDominantHanja
         self.contextFeatures = contextFeatures
+        self.jointBoosts = jointBoosts
     }
 
     func replacingPreviewCandidate(_ candidate: HanjaCandidate?) -> HanjaSegment {
@@ -93,11 +100,17 @@ struct HanjaSegment: Equatable, Identifiable {
             previewCandidate: candidate,
             awaitsContextEvidence: awaitsContextEvidence,
             contextDominantHanja: contextDominantHanja,
-            contextFeatures: contextFeatures
+            contextFeatures: contextFeatures,
+            jointBoosts: jointBoosts
         )
     }
 
-    func replacingContext(_ context: [String], features: [String] = [], previewCandidate: HanjaCandidate?) -> HanjaSegment {
+    func replacingContext(
+        _ context: [String],
+        features: [String] = [],
+        previewCandidate: HanjaCandidate?,
+        jointBoosts: [String: Double] = [:]
+    ) -> HanjaSegment {
         HanjaSegment(
             id: id,
             sourceRange: sourceRange,
@@ -108,7 +121,8 @@ struct HanjaSegment: Equatable, Identifiable {
             previewCandidate: previewCandidate,
             awaitsContextEvidence: awaitsContextEvidence,
             contextDominantHanja: context,
-            contextFeatures: features
+            contextFeatures: features,
+            jointBoosts: jointBoosts
         )
     }
 }

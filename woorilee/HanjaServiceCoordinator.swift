@@ -345,7 +345,7 @@ func hideWarmUpPanelIfNeeded() {
 
         let candidates = hanjaService.exactCandidates(for: segment.normalizedLookupKey)
         guard !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
-            || !(sessionInputs?.isEmpty ?? true)
+            || !(sessionInputs?.isEmpty ?? true) || !segment.jointBoosts.isEmpty
         else {
             return candidates
         }
@@ -364,7 +364,7 @@ func hideWarmUpPanelIfNeeded() {
         let sessionAssociationLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
             ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
             : nil
-        let sessionBoosts = sessionInputs.map {
+        var sessionBoosts = sessionInputs.map {
             sessionContextBoosts(
                 for: candidates,
                 reading: segment.normalizedLookupKey,
@@ -373,6 +373,14 @@ func hideWarmUpPanelIfNeeded() {
                 weights: .default
             )
         } ?? [:]
+
+        // R2 (docs/plans/hanja-context-scaling-plan.md §7): fold the segment's joint-selection
+        // domain-consistency bonus in right after the session boosts, same map (same keying by
+        // candidate value, summed on collision) — keeps the candidate-panel order consistent
+        // with the inline preview, which already baked this bonus into its ranking.
+        for (value, boost) in segment.jointBoosts {
+            sessionBoosts[value, default: 0] += boost
+        }
 
         return rankWithContext(
             candidates: candidates,

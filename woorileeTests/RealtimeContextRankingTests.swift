@@ -97,6 +97,12 @@ final class RealtimeContextRankingTests: XCTestCase {
 
         // Every segment (not just the reranked one) is stamped with the resolved context.
         XCTAssertTrue(reranked.allSatisfy { $0.contextDominantHanja == ["上下水道"] })
+
+        // R2 (docs/plans/hanja-context-scaling-plan.md §7) identity check: this clause has only
+        // ONE target segment ("수도" — "상하"/"막힘" have no candidates via `sudoLookup`), so the
+        // joint stage's ">= 2 participating segments" gate never opens — every segment's
+        // `jointBoosts` must stay empty, reproducing R1 exactly.
+        XCTAssertTrue(reranked.allSatisfy { $0.jointBoosts.isEmpty }, "single-target clause must never populate jointBoosts")
     }
 
     func testApplyContextRerankingLeavesNonPreviewSegmentsNilAndUnaffected() throws {
@@ -249,6 +255,155 @@ final class RealtimeContextRankingTests: XCTestCase {
         // the association lookup happens to score — 집/NNG survives self-exclusion (a different
         // token), 수도/NNG does not (it's the segment's own token).
         XCTAssertEqual(waterPipeSegment.contextFeatures, ["집/NNG"])
+    }
+
+    // MARK: - Step R2 (docs/plans/hanja-context-scaling-plan.md §7): joint selection wiring
+
+    /// Self-exclusion interaction (spec §3.4 test #3): with the R2 joint stage active (two
+    /// participating segments, a strong cross-profile match), each segment's `contextFeatures`
+    /// must still exclude its OWN surface and include only the OTHER segment's — PASS 2 "does not
+    /// touch `segmentFeatures` computation" (spec §3.2's self-exclusion-rule invariant).
+    func testJointSelectionDoesNotDisturbSelfExclusion() throws {
+        let sourceText = "가정 나선"
+        let tokens = [
+            Token(form: "가정", tag: .nng, position: 0, length: 2),
+            Token(form: "나선", tag: .nng, position: 3, length: 2),
+        ]
+        let segmentA = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2), surface: "가정", normalizedLookupKey: "가정",
+            tag: .nng, isConvertible: true, previewCandidate: candidate(reading: "가정", value: "甲", frequency: 100)
+        )
+        let segmentB = HanjaSegment(
+            sourceRange: NSRange(location: 3, length: 2), surface: "나선", normalizedLookupKey: "나선",
+            tag: .nng, isConvertible: true, previewCandidate: candidate(reading: "나선", value: "丙", frequency: 100)
+        )
+
+        let lookup: (String) -> [HanjaCandidate] = { key in
+            switch key {
+            case "가정": return [self.candidate(reading: "가정", value: "甲", frequency: 100), self.candidate(reading: "가정", value: "乙", frequency: 50)]
+            case "나선": return [self.candidate(reading: "나선", value: "丙", frequency: 100), self.candidate(reading: "나선", value: "丁", frequency: 50)]
+            default: return []
+            }
+        }
+        // A strong cross profile match (甲 x 丙) so PASS 2 actually has something to do — the
+        // point of this test is that even so, self-exclusion is untouched.
+        let sharedProfile = ["s1/NNG": 10.0, "s2/NNG": 10.0, "s3/NNG": 10.0, "s4/NNG": 10.0, "s5/NNG": 10.0]
+        let assocLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            switch (reading, hanja) {
+            case ("가정", "甲"), ("나선", "丙"): return sharedProfile
+            default: return [:]
+            }
+        }
+
+        let reranked = KiwiAnalysisService.applyContextReranking(
+            to: [segmentA, segmentB], clause: sourceText, dominantMap: [:], candidateLookup: lookup,
+            winningTokens: tokens, associationFeatureLookup: assocLookup
+        )
+
+        let rerankedA = try XCTUnwrap(reranked.first { $0.surface == "가정" })
+        let rerankedB = try XCTUnwrap(reranked.first { $0.surface == "나선" })
+        XCTAssertEqual(rerankedA.contextFeatures, ["나선/NNG"], "가정's own token must not vote for its own candidates")
+        XCTAssertEqual(rerankedB.contextFeatures, ["가정/NNG"], "나선's own token must not vote for its own candidates")
+    }
+
+    /// Promotion-gate interaction (spec §3.4 test #4): an `awaitsContextEvidence` segment whose
+    /// joint bonus promotes a DIFFERENT top-ranked candidate must still stay hangul if that
+    /// candidate has no context evidence OF ITS OWN — the joint bonus never enters
+    /// `contextEvidence`/the promotion gate (R2 승격 게이트 불변, spec §3.2). Fixture: segment A's
+    /// candidate 乙 (rank 2 by frequency, NOT the frequency leader 甲) shares an identical
+    /// association profile with segment B's already-winning candidate 丙 — cos(乙, 丙) = 1.0, a
+    /// huge joint bonus that flips PASS 2's chosen index for A to 乙. But 乙 has ZERO context
+    /// evidence of its own (`associationScores`/`contextDominantHanja` never point at it, only the
+    /// joint axis does) — so the promotion check must reject it and A stays hangul.
+    func testJointSelectionNeverPromotesAwaitsContextEvidenceThroughJointBonusAlone() throws {
+        let sourceText = "가정 나선"
+        let tokens = [
+            Token(form: "가정", tag: .nng, position: 0, length: 2),
+            Token(form: "나선", tag: .nng, position: 3, length: 2),
+        ]
+        let segmentA = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2), surface: "가정", normalizedLookupKey: "가정",
+            tag: .nng, isConvertible: true, previewCandidate: nil, awaitsContextEvidence: true
+        )
+        let segmentB = HanjaSegment(
+            sourceRange: NSRange(location: 3, length: 2), surface: "나선", normalizedLookupKey: "나선",
+            tag: .nng, isConvertible: true, previewCandidate: candidate(reading: "나선", value: "丙", frequency: 100)
+        )
+
+        let lookup: (String) -> [HanjaCandidate] = { key in
+            switch key {
+            case "가정": return [self.candidate(reading: "가정", value: "甲", frequency: 100), self.candidate(reading: "가정", value: "乙", frequency: 50)]
+            case "나선": return [self.candidate(reading: "나선", value: "丙", frequency: 100), self.candidate(reading: "나선", value: "丁", frequency: 50)]
+            default: return []
+            }
+        }
+        let sharedProfile = ["s1/NNG": 10.0, "s2/NNG": 10.0, "s3/NNG": 10.0, "s4/NNG": 10.0, "s5/NNG": 10.0]
+        // 甲 (the frequency leader, index 0) has an UNRELATED profile — no joint match with 丙.
+        // 乙 (index 1) shares 丙's exact profile — the joint stage will prefer (乙, 丙).
+        let disjointProfile = ["m1/NNG": 1.0, "m2/NNG": 1.0, "m3/NNG": 1.0, "m4/NNG": 1.0, "m5/NNG": 1.0]
+        let assocLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            switch (reading, hanja) {
+            case ("가정", "甲"): return disjointProfile
+            case ("가정", "乙"), ("나선", "丙"): return sharedProfile
+            default: return [:]
+            }
+        }
+
+        let reranked = KiwiAnalysisService.applyContextReranking(
+            to: [segmentA, segmentB], clause: sourceText, dominantMap: [:], candidateLookup: lookup,
+            winningTokens: tokens, associationFeatureLookup: assocLookup
+        )
+
+        let rerankedA = try XCTUnwrap(reranked.first { $0.surface == "가정" })
+        XCTAssertGreaterThan(rerankedA.jointBoosts["乙"] ?? 0, 0, "sanity: 乙 must have received a joint bonus (the joint stage must have promoted it into the reranked order)")
+        XCTAssertNil(rerankedA.previewCandidate, "乙 has no context evidence of its own — the joint bonus alone must not promote it")
+    }
+
+    /// Combination-count cap (spec §3.4 test #5): more than `HanjaJointSelectionLimits.maxSegments`
+    /// participating segments must skip PASS 2 entirely — every segment's `jointBoosts` stays
+    /// empty and the reranked order is untouched, even though a fixture pair (가/나) has a
+    /// deliberately huge joint bonus available (proving the skip, not a coincidental zero score).
+    func testJointSelectionSkipsAboveMaxSegments() throws {
+        let readings = ["가", "나", "다", "라", "마", "바"]
+        XCTAssertGreaterThan(readings.count, HanjaJointSelectionLimits.maxSegments)
+
+        var tokens: [Token] = []
+        var segments: [HanjaSegment] = []
+        var location = 0
+        for reading in readings {
+            tokens.append(Token(form: reading, tag: .nng, position: location, length: 1))
+            segments.append(HanjaSegment(
+                sourceRange: NSRange(location: location, length: 1), surface: reading, normalizedLookupKey: reading,
+                tag: .nng, isConvertible: true, previewCandidate: candidate(reading: reading, value: "\(reading)1", frequency: 100)
+            ))
+            location += 2 // single space between tokens
+        }
+        let sourceText = readings.joined(separator: " ")
+
+        let lookup: (String) -> [HanjaCandidate] = { key in
+            guard readings.contains(key) else { return [] }
+            return [self.candidate(reading: key, value: "\(key)1", frequency: 100), self.candidate(reading: key, value: "\(key)2", frequency: 50)]
+        }
+        // A juicy cross-profile match between 가's and 나's SECOND candidate (index 1, not the
+        // default winner) — if PASS 2 ran, this would flip both. It must never run at all.
+        let sharedProfile = ["s1/NNG": 10.0, "s2/NNG": 10.0, "s3/NNG": 10.0, "s4/NNG": 10.0, "s5/NNG": 10.0]
+        let assocLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            switch (reading, hanja) {
+            case ("가", "가2"), ("나", "나2"): return sharedProfile
+            default: return [:]
+            }
+        }
+
+        let reranked = KiwiAnalysisService.applyContextReranking(
+            to: segments, clause: sourceText, dominantMap: [:], candidateLookup: lookup,
+            winningTokens: tokens, associationFeatureLookup: assocLookup
+        )
+
+        XCTAssertTrue(reranked.allSatisfy { $0.jointBoosts.isEmpty }, "above maxSegments, jointBoosts must stay empty for every segment")
+        // Reranked order/preview must be untouched — PASS 3 alone (frequency leader stays first).
+        for (original, updated) in zip(segments, reranked) {
+            XCTAssertEqual(updated.previewCandidate?.value, original.previewCandidate?.value)
+        }
     }
 
     // MARK: - Test helpers

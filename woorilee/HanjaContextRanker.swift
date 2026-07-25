@@ -37,6 +37,14 @@ struct HanjaContextRankingWeights {
     /// initial value): the session buffer's matched-feature weight counts at this fraction of the
     /// in-clause association weight — session evidence is real but weaker than the current clause.
     var sessionAssociationScale: Double = 0.5
+    /// R2 (docs/plans/hanja-context-scaling-plan.md §7): 결합 선택의 도메인 일관성 보너스 크기를
+    /// 연관 RAW 점수 단위로 표현한다 — 실제 가점은 `cosine × jointDomainConsistency × association`.
+    /// 초기값 20의 근거: 코사인 1.0(현실에서 거의 불가)일 때도 6,000으로, 실측 최약 클로즈 피처
+    /// 1건(raw 39 × 300 = 11,700)보다 작다 → 실재하는 클로즈 증거를 결코 뒤집지 못한다. 반대로
+    /// 양쪽 분절 모두 클로즈 증거가 0인 경우(모든 boost 0)에는 어떤 양수 가점이든 순위를 정하므로
+    /// R2가 노리는 "증거 없는 자리에서 도메인으로 수렴"은 그대로 작동한다. containment(10,000,000)와
+    /// NNP 관보(30,000)는 애초에 넘볼 수 없다.
+    var jointDomainConsistency: Double = 20.0
     static let `default` = HanjaContextRankingWeights(containment: 10_000_000, charShare: 0, association: 300)
 }
 
@@ -235,6 +243,40 @@ func contextEvidence(
     return HanjaContextEvidence(dictionaryBoost: dictionaryBoost, associationScore: associationScore)
 }
 
+/// `rankWithContext`와 동일한 계산·정렬. 결합 선택(R2, docs/plans/hanja-context-scaling-plan.md
+/// §7)이 후보별 boost를 필요로 해서 분리했다. `rankWithContext`는 이 함수의 `.map(\.candidate)`
+/// 래퍼다 — 동작 동일 (`HanjaContextRankerTests`가 두 함수의 산출 순서 동일성을 고정한다).
+func rankWithContextScored(
+    candidates: [HanjaCandidate],
+    contextDominantHanja: [String],
+    associationScores: [String: Double] = [:],
+    weights: HanjaContextRankingWeights,
+    segmentTag: POSTag? = nil,
+    sessionBoosts: [String: Double] = [:]
+) -> [(candidate: HanjaCandidate, boost: Double)] {
+    let boosted: [(candidate: HanjaCandidate, boost: Double)] = candidates.map { candidate in
+        let evidence = contextEvidence(
+            for: candidate,
+            contextDominantHanja: contextDominantHanja,
+            associationScores: associationScores,
+            weights: weights
+        )
+        var boost = Double(evidence.dictionaryBoost) + evidence.associationScore * Double(weights.association)
+        if segmentTag == .nnp, !candidate.comment.isEmpty {
+            boost += Double(weights.nnpGazetteBonus * weights.association)
+        }
+        boost += sessionBoosts[candidate.value] ?? 0
+        return (candidate, boost)
+    }
+
+    return boosted.sorted { lhs, rhs in
+        if lhs.boost != rhs.boost {
+            return lhs.boost > rhs.boost
+        }
+        return compareHanjaCandidate(lhs.candidate, rhs.candidate)
+    }
+}
+
 /// Re-ranks `candidates` context-first: each candidate's total context boost (containment +
 /// char-share + association, plus the NNP gazette bonus when `segmentTag == .nnp` and the
 /// candidate has a hanja.txt comment) is precomputed once — O(K × context) — then candidates are
@@ -253,27 +295,12 @@ func rankWithContext(
     segmentTag: POSTag? = nil,
     sessionBoosts: [String: Double] = [:]
 ) -> [HanjaCandidate] {
-    let boosted: [(candidate: HanjaCandidate, boost: Double)] = candidates.map { candidate in
-        let evidence = contextEvidence(
-            for: candidate,
-            contextDominantHanja: contextDominantHanja,
-            associationScores: associationScores,
-            weights: weights
-        )
-        var boost = Double(evidence.dictionaryBoost) + evidence.associationScore * Double(weights.association)
-        if segmentTag == .nnp, !candidate.comment.isEmpty {
-            boost += Double(weights.nnpGazetteBonus * weights.association)
-        }
-        boost += sessionBoosts[candidate.value] ?? 0
-        return (candidate, boost)
-    }
-
-    return boosted
-        .sorted { lhs, rhs in
-            if lhs.boost != rhs.boost {
-                return lhs.boost > rhs.boost
-            }
-            return compareHanjaCandidate(lhs.candidate, rhs.candidate)
-        }
-        .map(\.candidate)
+    rankWithContextScored(
+        candidates: candidates,
+        contextDominantHanja: contextDominantHanja,
+        associationScores: associationScores,
+        weights: weights,
+        segmentTag: segmentTag,
+        sessionBoosts: sessionBoosts
+    ).map(\.candidate)
 }
