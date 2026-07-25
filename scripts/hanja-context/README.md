@@ -116,6 +116,32 @@ python3 scripts/hanja-context/build_association_table.py
     후 그 뒤로 전진, flashtext 방식).
 - 출력 행: `종류<TAB>문장`, 종류 ∈ `paren` / `anchor` / `both`.
 
+## 단계 D1 — 씨앗 추출과 수확량 측정 (`extract_seeds.py`, `build_seed_coverage.py`)
+
+`docs/plans/hanja-context-scaling-plan.md` §8. 위 5a 파이프라인과 **독립된 별도 패스**다
+(5a는 문맥 신호 후보 문장을 모으고, D1은 `(읽기, 한자)` 정답이 붙은 씨앗을 모은다).
+
+```sh
+python3 scripts/hanja-context/extract_seeds.py        # 전수 ~440초
+python3 scripts/hanja-context/build_seed_coverage.py  # 커버리지 + 200건 검수 시트
+```
+
+- 마크업 제거·문장 분할은 `extract_and_filter.py`에서 **import 재사용**한다 — 재구현하면
+  문장 공간이 갈라져 5a 산출물과 대조가 불가능해진다.
+- 출력 `seeds/part-NNNN.tsv`: `level·source·reading·hanja·page_id·family·span_start·
+  span_len·in_target_inventory·is_ambiguous·residual_hanja·input_sentence·evidence`.
+  `input_sentence`는 **한글 입력형**(병기 제거 / 한자 치환 후)이고 span은 그 문자열
+  기준 오프셋이다 — 전 행에서 `input_sentence[span:span+len] == reading` 불변식을
+  추출 시와 재독 시 두 번 검사한다.
+- token 소스 3종: `paren_strict`(기존 병기 규칙 재현 — 기준선 앵커),
+  `paren_ext`(괄호에 한자 외 내용이 붙은 병기), `standalone`(괄호 밖 독립 한자어).
+  type 소스 4종: `redirect`, `title`, `disambig`, `dislink`.
+- 실측 결론(D1 보고 참조): 게이트 지표 55,514문장 = 145,000의 38.3%로 **미달**.
+  `standalone` 생존율 0.18%, 순수 한자 표제어는 덤프 전체 76건 — 두 소스 모두 kowiki에서
+  성립하지 않음이 확정됐다. 신규 소스의 순증은 +4,293문장(+8.4%).
+- **부분 구간 외삽 금지**: 덤프가 페이지 ID 순이라 앞 500MB의 병기 밀도가 코퍼스 평균의
+  2.35배다(실현/외삽 비 0.430). 구간 실행은 처리율·로직 검증 전용.
+
 ## NIKL 사전 데이터 (보고 전용 — 통합 안 함)
 
 `/Volumes/Workbench/wooriHanjaModel/data/korean-dict-nikl/`(읽기 전용
