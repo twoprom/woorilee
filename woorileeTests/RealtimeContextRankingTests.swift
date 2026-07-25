@@ -259,6 +259,17 @@ final class RealtimeContextRankingTests: XCTestCase {
 
     // MARK: - Step R2 (docs/plans/hanja-context-scaling-plan.md §7): joint selection wiring
 
+    /// The R2 joint axis is parked OFF by default (`HanjaContextRankingWeights.default.
+    /// jointDomainConsistency == 0`, 2026-07-25 user decision — see the doc comment on that
+    /// property). Tests below need PASS 2 to actually run, so they build weights explicitly with
+    /// `jointDomainConsistency: 20` (the value R2's own measurement used) instead of relying on
+    /// `.default`.
+    private func jointOnWeights() -> HanjaContextRankingWeights {
+        var weights = HanjaContextRankingWeights.default
+        weights.jointDomainConsistency = 20
+        return weights
+    }
+
     /// Self-exclusion interaction (spec §3.4 test #3): with the R2 joint stage active (two
     /// participating segments, a strong cross-profile match), each segment's `contextFeatures`
     /// must still exclude its OWN surface and include only the OTHER segment's — PASS 2 "does not
@@ -297,7 +308,7 @@ final class RealtimeContextRankingTests: XCTestCase {
 
         let reranked = KiwiAnalysisService.applyContextReranking(
             to: [segmentA, segmentB], clause: sourceText, dominantMap: [:], candidateLookup: lookup,
-            winningTokens: tokens, associationFeatureLookup: assocLookup
+            winningTokens: tokens, associationFeatureLookup: assocLookup, weights: jointOnWeights()
         )
 
         let rerankedA = try XCTUnwrap(reranked.first { $0.surface == "가정" })
@@ -351,7 +362,7 @@ final class RealtimeContextRankingTests: XCTestCase {
 
         let reranked = KiwiAnalysisService.applyContextReranking(
             to: [segmentA, segmentB], clause: sourceText, dominantMap: [:], candidateLookup: lookup,
-            winningTokens: tokens, associationFeatureLookup: assocLookup
+            winningTokens: tokens, associationFeatureLookup: assocLookup, weights: jointOnWeights()
         )
 
         let rerankedA = try XCTUnwrap(reranked.first { $0.surface == "가정" })
@@ -363,6 +374,10 @@ final class RealtimeContextRankingTests: XCTestCase {
     /// participating segments must skip PASS 2 entirely — every segment's `jointBoosts` stays
     /// empty and the reranked order is untouched, even though a fixture pair (가/나) has a
     /// deliberately huge joint bonus available (proving the skip, not a coincidental zero score).
+    /// Uses `jointOnWeights()` explicitly (not `.default`, now parked at `jointDomainConsistency =
+    /// 0`) so the skip this test pins is actually caused by the `maxSegments` cap, not by the
+    /// parked-off weight's own shallow guard (which would skip PASS 2 for an unrelated reason and
+    /// make this test pass without exercising the cap at all).
     func testJointSelectionSkipsAboveMaxSegments() throws {
         let readings = ["가", "나", "다", "라", "마", "바"]
         XCTAssertGreaterThan(readings.count, HanjaJointSelectionLimits.maxSegments)
@@ -396,7 +411,7 @@ final class RealtimeContextRankingTests: XCTestCase {
 
         let reranked = KiwiAnalysisService.applyContextReranking(
             to: segments, clause: sourceText, dominantMap: [:], candidateLookup: lookup,
-            winningTokens: tokens, associationFeatureLookup: assocLookup
+            winningTokens: tokens, associationFeatureLookup: assocLookup, weights: jointOnWeights()
         )
 
         XCTAssertTrue(reranked.allSatisfy { $0.jointBoosts.isEmpty }, "above maxSegments, jointBoosts must stay empty for every segment")

@@ -200,6 +200,12 @@ final class HanjaContextSessionReplayTests: XCTestCase {
             associationTable[reading]?[hanja]
         }
 
+        // R2 is parked OFF by default (`HanjaContextRankingWeights.default.jointDomainConsistency
+        // == 0`, 2026-07-25 user decision) — this measurement's whole purpose is comparing the
+        // joint axis on vs off, so both sides must be built explicitly rather than relying on
+        // `.default` for either.
+        var jointOnWeights = HanjaContextRankingWeights.default
+        jointOnWeights.jointDomainConsistency = 20
         var jointOffWeights = HanjaContextRankingWeights.default
         jointOffWeights.jointDomainConsistency = 0
 
@@ -239,7 +245,7 @@ final class HanjaContextSessionReplayTests: XCTestCase {
                 let rerankedOn = KiwiAnalysisService.applyContextReranking(
                     to: segments, clause: row.sentence, dominantMap: dominantMap,
                     candidateLookup: candidateLookup, winningTokens: winningTokens,
-                    associationFeatureLookup: associationLookup, weights: .default, sessionInputs: sessionInputs
+                    associationFeatureLookup: associationLookup, weights: jointOnWeights, sessionInputs: sessionInputs
                 )
                 let rerankedOff = KiwiAnalysisService.applyContextReranking(
                     to: segments, clause: row.sentence, dominantMap: dominantMap,

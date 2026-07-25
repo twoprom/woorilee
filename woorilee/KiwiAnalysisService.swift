@@ -445,12 +445,22 @@ final class KiwiAnalysisService {
         }
 
         // PASS 2 (클로즈 전역, R2 신규 — docs/plans/hanja-context-scaling-plan.md §7): 참여
-        // 분절이 2개 이상이고 연관표가 탑재됐고 참여 분절 수가 상한 이내일 때만 돈다. 그 외에는
-        // 이 블록 전체가 no-op이라 PASS 3은 PASS 1이 만든 `ranked` 순서를 그대로 보고, 모든
-        // `jointBoosts`가 `[:]`로 남아 R1과 완전히 동일한 결과가 나온다(동일성 불변식 —
-        // RealtimeContextRankingTests/HanjaClauseJointSelectionTests가 고정).
+        // 분절이 2개 이상이고 연관표가 탑재됐고 참여 분절 수가 상한 이내이고 가중치가 양수일
+        // 때만 돈다. 그 외에는 이 블록 전체가 no-op이라 PASS 3은 PASS 1이 만든 `ranked` 순서를
+        // 그대로 보고, 모든 `jointBoosts`가 `[:]`로 남아 R1과 완전히 동일한 결과가 나온다(동일성
+        // 불변식 — RealtimeContextRankingTests/HanjaClauseJointSelectionTests가 고정).
+        //
+        // `weights.jointDomainConsistency > 0` 가드(2026-07-25, 파킹 결정과 함께 추가): 이게
+        // 없으면 가중치를 0으로 낮춰도 유사도 행렬 구축(최대 90회 코사인)과
+        // `selectJointAssignment`의 3^n 조합 탐색이 그대로 실행된다 — pairBonus가 매번
+        // `similarity × 0 = 0`을 반환할 뿐 계산 자체는 스킵되지 않는다는 것을 R2-3 측정이
+        // 발견했다(docs/plans/hanja-context-eval-baseline.md "R2 클로즈 안 결합 선택 측정" §
+        // TASK 2의 "놀란 점" 문단). 이 가드가 있어야 `HanjaContextRankingWeights.default`의
+        // 파킹(jointDomainConsistency = 0)이 계산 비용까지 0으로 만든다 — maxSegments=5 경계에서
+        // p95 ~3.15ms였던 조합 탐색을 통째로 건너뛴다.
         let participatingIndices = perSegment.indices.filter { perSegment[$0].jointEligible }
-        if let associationFeatureLookup,
+        if weights.jointDomainConsistency > 0,
+           let associationFeatureLookup,
            participatingIndices.count >= 2,
            participatingIndices.count <= HanjaJointSelectionLimits.maxSegments {
             let topK = HanjaJointSelectionLimits.candidatesPerSegment

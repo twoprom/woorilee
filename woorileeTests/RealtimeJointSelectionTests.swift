@@ -156,13 +156,15 @@ final class RealtimeJointSelectionTests: XCTestCase {
 
     // MARK: - Test #2: two-target-segment convergence (핵심 게이트 테스트)
 
-    /// The headline R2 test: with the joint stage OFF (`jointDomainConsistency = 0`), 정류 picks
-    /// 整流 — R1's own association axis, by a 300-unit margin (56 vs 55, × association 300) picks
-    /// the WRONG domain relative to 수도's (untouched, default) 首都. With the joint stage ON
-    /// (default weights), cos(首都, 停留) ≈ 0.1996's bonus (≈ 1197.8) overturns that margin and
-    /// BOTH segments converge onto the real-world capital-transit domain the coordinator's
-    /// association-profile scan predicted (수도(首都) × 정류(停留), 51 shared features, no DIRECT
-    /// 수도/정류 co-occurrence feature between them — see the file-level doc comment).
+    /// The headline R2 test: with the joint stage OFF (`jointDomainConsistency = 0` — also
+    /// `HanjaContextRankingWeights.default` since the 2026-07-25 parking decision, see that
+    /// property's doc comment), 정류 picks 整流 — R1's own association axis, by a 300-unit margin
+    /// (56 vs 55, × association 300) picks the WRONG domain relative to 수도's (untouched, default)
+    /// 首都. With the joint stage ON (`jointDomainConsistency = 20`, explicit — no longer the
+    /// default), cos(首都, 停留) ≈ 0.1996's bonus (≈ 1197.8) overturns that margin and BOTH segments
+    /// converge onto the real-world capital-transit domain the coordinator's association-profile
+    /// scan predicted (수도(首都) × 정류(停留), 51 shared features, no DIRECT 수도/정류
+    /// co-occurrence feature between them — see the file-level doc comment).
     func testJointStageConvergesSudoAndJeongryuOntoSameDomainOnlyWhenEnabled() throws {
         guard Self.kiwiModelsAvailable else {
             print("Kiwi model directory not found at \(Self.modelDir.path), skipping RealtimeJointSelectionTests.")
@@ -172,6 +174,11 @@ final class RealtimeJointSelectionTests: XCTestCase {
 
         let (segments, winningTokens) = try Self.analyzeFixture()
 
+        // R2 is parked OFF by default (`HanjaContextRankingWeights.default.jointDomainConsistency
+        // == 0`, 2026-07-25 user decision) — `jointOnWeights` builds the ON side explicitly at 20
+        // (the value R2's own measurement used) rather than relying on `.default`.
+        var jointOnWeights = HanjaContextRankingWeights.default
+        jointOnWeights.jointDomainConsistency = 20
         var jointOffWeights = HanjaContextRankingWeights.default
         jointOffWeights.jointDomainConsistency = 0
 
@@ -181,7 +188,7 @@ final class RealtimeJointSelectionTests: XCTestCase {
         )
         let rerankedOn = KiwiAnalysisService.applyContextReranking(
             to: segments, clause: Self.fixtureClause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
-            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: .default
+            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: jointOnWeights
         )
 
         let sudoOff = try XCTUnwrap(rerankedOff.first { $0.normalizedLookupKey == "수도" })
@@ -203,6 +210,47 @@ final class RealtimeJointSelectionTests: XCTestCase {
         XCTAssertGreaterThan(jeongryuOn.jointBoosts["停留"] ?? 0, 0)
     }
 
+    /// Pins the 2026-07-25 parking decision (`HanjaContextRankingWeights.default.
+    /// jointDomainConsistency == 0`, see that property's doc comment and
+    /// `docs/plans/hanja-context-eval-baseline.md`'s "R2 클로즈 안 결합 선택 측정" §"파킹 결정"):
+    /// plain `.default` weights must behave exactly like the explicit joint-axis-off path — empty
+    /// `jointBoosts` on every segment, results byte-for-byte identical — even on `fixtureClause`,
+    /// which IS genuinely joint-eligible (two participating segments, 수도/정류) and DOES converge
+    /// onto a different answer when the axis is explicitly turned on (see the test right above).
+    /// Without this test, a future default-value change could silently re-enable PASS 2 for
+    /// production callers (which never pass `weights:` explicitly — see
+    /// `KiwiAnalysisService.analyze`) without any test catching it.
+    func testDefaultWeightsParkJointAxisOffEvenOnAJointEligibleClause() throws {
+        guard Self.kiwiModelsAvailable else {
+            print("Kiwi model directory not found at \(Self.modelDir.path), skipping RealtimeJointSelectionTests.")
+            return
+        }
+        XCTAssertFalse(Self.associationTable.isEmpty, "bundled hanja-context.txt must parse to a non-empty table")
+        XCTAssertEqual(HanjaContextRankingWeights.default.jointDomainConsistency, 0, "sanity: the parked default must be 0")
+
+        let (segments, winningTokens) = try Self.analyzeFixture()
+
+        var jointOffWeights = HanjaContextRankingWeights.default
+        jointOffWeights.jointDomainConsistency = 0
+
+        let rerankedDefault = KiwiAnalysisService.applyContextReranking(
+            to: segments, clause: Self.fixtureClause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
+            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: .default
+        )
+        let rerankedOff = KiwiAnalysisService.applyContextReranking(
+            to: segments, clause: Self.fixtureClause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
+            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: jointOffWeights
+        )
+
+        XCTAssertTrue(rerankedDefault.allSatisfy { $0.jointBoosts.isEmpty }, "parked default must never populate jointBoosts, even on a joint-eligible clause")
+        XCTAssertEqual(rerankedDefault, rerankedOff, "parked default must be byte-for-byte identical to the explicit joint-axis-off path")
+
+        // Sanity: this really is the joint-eligible fixture, not a trivially-ineligible one — R1
+        // alone still picks the non-converging answer (mirrors the OFF assertions above).
+        let jeongryuDefault = try XCTUnwrap(rerankedDefault.first { $0.normalizedLookupKey == "정류" })
+        XCTAssertEqual(jeongryuDefault.previewCandidate?.value, "整流", "sanity: with the parked default, 정류 must still pick R1's non-converging answer")
+    }
+
     // MARK: - Test #6: candidate-panel consistency
 
     /// `HanjaServiceCoordinator.realtimeCandidates(for:)` can't be unit-tested directly (its
@@ -219,9 +267,14 @@ final class RealtimeJointSelectionTests: XCTestCase {
         }
 
         let (segments, winningTokens) = try Self.analyzeFixture()
+        // R2 is parked OFF by default (`HanjaContextRankingWeights.default.jointDomainConsistency
+        // == 0`) — this test is specifically about panel/preview consistency WHILE the joint stage
+        // is active, so it must build weights explicitly rather than rely on `.default`.
+        var jointOnWeights = HanjaContextRankingWeights.default
+        jointOnWeights.jointDomainConsistency = 20
         let rerankedOn = KiwiAnalysisService.applyContextReranking(
             to: segments, clause: Self.fixtureClause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
-            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: .default
+            winningTokens: winningTokens, associationFeatureLookup: Self.associationLookup, weights: jointOnWeights
         )
 
         for segment in rerankedOn where segment.normalizedLookupKey == "수도" || segment.normalizedLookupKey == "정류" {

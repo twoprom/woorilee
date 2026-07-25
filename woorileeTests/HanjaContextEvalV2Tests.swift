@@ -483,9 +483,21 @@ final class HanjaContextEvalV2Tests: XCTestCase {
     /// have >= 2 joint-eligible segments (otherwise PASS 2 never runs and this measures nothing —
     /// see RealtimeJointSelectionTests.swift's file-level doc comment for how this exact fixture
     /// clause was derived: 수도(首都) x 정류(停留), cos 0.1996, the R2-exclusive convergence case).
-    /// Only `jointDomainConsistency` differs between the two weight configs (20 vs 0) — everything
-    /// else (containment/association/nnpGazetteBonus/sessionAssociationScale) is `.default`,
-    /// matching the task's "everything else identical" requirement.
+    /// Only `jointDomainConsistency` differs between the two weight configs (`jointOnWeights` = 20,
+    /// `jointOffWeights` = 0) — everything else (containment/association/nnpGazetteBonus/
+    /// sessionAssociationScale) is `.default`, matching the task's "everything else identical"
+    /// requirement. Neither side relies on `.default` for `jointDomainConsistency` itself: since
+    /// the 2026-07-25 parking decision `.default` IS the off value (0), so leaving the ON side
+    /// implicit would silently stop exercising PASS 2 at all.
+    ///
+    /// 2026-07-25 update (parking decision + PASS 2 shallow guard, see
+    /// `KiwiAnalysisService.applyContextReranking`'s PASS 2 entry condition): this toggle now
+    /// isolates the REAL thing. Before the guard, `jointDomainConsistency = 0` still ran the
+    /// similarity matrix and the 3^n combinatorial search — it just zeroed the bonus — so on/off
+    /// paid the same cost and this test could only measure "cost of applying+reordering by a
+    /// zero-vs-nonzero bonus" (a few µs), not "cost of running PASS 2 at all" (see
+    /// docs/plans/hanja-context-eval-baseline.md's "놀란 점" paragraph). Now `jointOffWeights` (0)
+    /// genuinely skips PASS 2 entirely, so `on_p95 - off_p95` below is PASS 2's true marginal cost.
     ///
     /// Machine-noise note (조율자 2026-07-25): `testApplyContextRerankingLatencyWithPopulatedSession`
     /// once reported off_max=3717µs, clearly noise not signal. Run 3 times, report the spread.
@@ -510,6 +522,8 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
             Self.associationTable[reading]?[hanja]
         }
+        var jointOnWeights = HanjaContextRankingWeights.default
+        jointOnWeights.jointDomainConsistency = 20
         var jointOffWeights = HanjaContextRankingWeights.default
         jointOffWeights.jointDomainConsistency = 0
 
@@ -517,7 +531,7 @@ final class HanjaContextEvalV2Tests: XCTestCase {
             _ = KiwiAnalysisService.applyContextReranking(
                 to: segments, clause: clause, dominantMap: Self.dominantMap,
                 candidateLookup: Self.candidateLookup, winningTokens: winningTokens,
-                associationFeatureLookup: associationLookup, weights: .default
+                associationFeatureLookup: associationLookup, weights: jointOnWeights
             )
         }
         func rerankOff() {
@@ -554,6 +568,16 @@ final class HanjaContextEvalV2Tests: XCTestCase {
     /// never reads `winningTokens`). A hand-built 5-segment list exercises the identical code path
     /// and cost as any real 5-target-segment clause would, without depending on finding one that
     /// exists verbatim in some corpus (not guaranteed).
+    ///
+    /// 2026-07-25 update (parking decision + PASS 2 shallow guard): `jointOnWeights` (20) and
+    /// `jointOffWeights` (0) are now both explicit — `.default` itself is the parked-off value, so
+    /// leaving the ON side implicit would silently stop exercising PASS 2. This also means the
+    /// on/off toggle now isolates the REAL thing: before the guard, weight 0 still ran the full
+    /// 243-combination search (it only zeroed the bonus), so on/off cost was nearly identical and
+    /// this test could not tell PASS 2's own cost apart from the rest of the pipeline. Now
+    /// `rerankOff()` genuinely skips PASS 2 entirely, so `on_p95 - off_p95` is that isolated cost —
+    /// see `KiwiAnalysisService.applyContextReranking`'s PASS 2 entry-condition comment and
+    /// docs/plans/hanja-context-eval-baseline.md's "놀란 점" paragraph for the discovery this fixes.
     func testApplyContextRerankingJointAxisLatencyAtMaxSegmentsBoundary() throws {
         guard Self.kiwiModelsAvailable, Self.hanjaTable != nil else {
             print("Kiwi model directory not found, skipping joint-axis boundary latency measurement.")
@@ -593,23 +617,25 @@ final class HanjaContextEvalV2Tests: XCTestCase {
             Self.associationTable[reading]?[hanja]
         }
 
+        var jointOnWeights = HanjaContextRankingWeights.default
+        jointOnWeights.jointDomainConsistency = 20
+        var jointOffWeights = HanjaContextRankingWeights.default
+        jointOffWeights.jointDomainConsistency = 0
+
         // Sanity: all 5 must actually be joint-eligible (this is what makes it the boundary shape —
         // exactly maxSegments, not fewer). Informational only below (segmentsWithPositiveBonus):
         // PASS 2's cost is paid for the full 243-combination search regardless of whether any pair
         // ends up with a positive bonus, so a zero count here would NOT invalidate the measurement.
         let probe = KiwiAnalysisService.applyContextReranking(
             to: segments, clause: clause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
-            winningTokens: [], associationFeatureLookup: associationLookup, weights: .default
+            winningTokens: [], associationFeatureLookup: associationLookup, weights: jointOnWeights
         )
         print("EVAL5D|jointBoundaryLatency segmentsWithPositiveBonus=\(probe.filter { !$0.jointBoosts.isEmpty }.count)/5")
-
-        var jointOffWeights = HanjaContextRankingWeights.default
-        jointOffWeights.jointDomainConsistency = 0
 
         func rerankOn() {
             _ = KiwiAnalysisService.applyContextReranking(
                 to: segments, clause: clause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
-                winningTokens: [], associationFeatureLookup: associationLookup, weights: .default
+                winningTokens: [], associationFeatureLookup: associationLookup, weights: jointOnWeights
             )
         }
         func rerankOff() {
