@@ -169,6 +169,41 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         b == 0 ? "0%" : String(format: "%.1f%%", 100.0 * Double(a) / Double(b))
     }
 
+    /// Nearest-rank percentile over an already-sorted sample — used by the R2 joint-axis latency
+    /// tests below (mirrors HanjaContextSessionReplayTests.percentile exactly; duplicated rather
+    /// than shared per this file's standalone-`-only-testing` convention).
+    private static func percentile(_ sortedValues: [Double], _ fraction: Double) -> Double {
+        guard !sortedValues.isEmpty else { return 0 }
+        let index = Int((Double(sortedValues.count - 1) * fraction).rounded())
+        return sortedValues[min(max(index, 0), sortedValues.count - 1)]
+    }
+
+    /// mach_absolute_time-based average/max/p95 timer (µs), warmup then N timed iterations.
+    /// Mirrors HanjaContextEvalV2Tests's existing `timeMicroseconds`/R1c's
+    /// `HanjaContextSessionReplayTests.replay`'s inline timing pattern, generalized with p95 since
+    /// the R2 latency tests below need it and the pre-existing helper doesn't compute it.
+    private static func timeMicrosecondsWithPercentile(
+        warmup: Int, iterations: Int, _ block: () -> Void
+    ) -> (average: Double, max: Double, p95: Double) {
+        var timebaseInfo = mach_timebase_info_data_t()
+        mach_timebase_info(&timebaseInfo)
+        let ticksToMicroseconds = { (ticks: UInt64) -> Double in
+            Double(ticks) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom) / 1000.0
+        }
+
+        for _ in 0..<warmup { block() }
+        var samples: [Double] = []
+        samples.reserveCapacity(iterations)
+        for _ in 0..<iterations {
+            let startTicks = mach_absolute_time()
+            block()
+            samples.append(ticksToMicroseconds(mach_absolute_time() - startTicks))
+        }
+        let sorted = samples.sorted()
+        let average = samples.reduce(0, +) / Double(samples.count)
+        return (average, sorted.last ?? 0, percentile(sorted, 0.95))
+    }
+
     /// Runs the production realtime pipeline (Kiwi analysis -> bestRealtimeSegmentsWithWinningTokens
     /// -> applyContextReranking) over `rows`, then computes the PANEL ordering for the segment
     /// matching each row's target reading exactly as HanjaServiceCoordinator.realtimeCandidates(for:)
@@ -441,6 +476,171 @@ final class HanjaContextEvalV2Tests: XCTestCase {
         let offStats = timeMicroseconds(warmup: 50, iterations: 1000, rerankOff)
 
         print("EVAL5D|sessionLatency on_average_us=\(String(format: "%.2f", onStats.average)) on_max_us=\(String(format: "%.2f", onStats.max)) off_average_us=\(String(format: "%.2f", offStats.average)) off_max_us=\(String(format: "%.2f", offStats.max)) delta_average_us=\(String(format: "%.2f", onStats.average - offStats.average)) iterations=1000")
+    }
+
+    /// Task 2 (R2-3, docs/plans/hanja-context-scaling-plan.md §7): isolates PASS 2's (R2's) OWN
+    /// marginal cost from R1's session/association pipeline cost, on a clause verified to actually
+    /// have >= 2 joint-eligible segments (otherwise PASS 2 never runs and this measures nothing —
+    /// see RealtimeJointSelectionTests.swift's file-level doc comment for how this exact fixture
+    /// clause was derived: 수도(首都) x 정류(停留), cos 0.1996, the R2-exclusive convergence case).
+    /// Only `jointDomainConsistency` differs between the two weight configs (20 vs 0) — everything
+    /// else (containment/association/nnpGazetteBonus/sessionAssociationScale) is `.default`,
+    /// matching the task's "everything else identical" requirement.
+    ///
+    /// Machine-noise note (조율자 2026-07-25): `testApplyContextRerankingLatencyWithPopulatedSession`
+    /// once reported off_max=3717µs, clearly noise not signal. Run 3 times, report the spread.
+    func testApplyContextRerankingJointAxisIsolatedLatency() throws {
+        guard Self.kiwiModelsAvailable, let kiwi = Self.kiwi, Self.hanjaTable != nil else {
+            print("Kiwi model directory not found, skipping joint-axis latency measurement.")
+            return
+        }
+        XCTAssertFalse(Self.associationTable.isEmpty)
+
+        // Same fixture clause as RealtimeJointSelectionTests.swift (redefined locally, not shared,
+        // per this file's own standalone-`-only-testing` convention) — verified there to produce
+        // exactly 2 joint-eligible target segments (수도, 정류) where R2 actually changes the
+        // winning candidate (정류: 整流 off -> 停留 on), so PASS 2 is genuinely exercised here.
+        let clause = "수도의 정류 에너지 아래"
+        let results = try kiwi.analyze(clause, topN: 1, options: KiwiAnalysisService.realtimeAnalysisMatchOptions)
+        let (segments, winningTokens) = KiwiAnalysisService.bestRealtimeSegmentsWithWinningTokens(
+            from: results, in: clause, candidateLookup: Self.candidateLookup, hangulUsageLookup: { _ in 0 })
+        XCTAssertNotNil(segments.first { $0.normalizedLookupKey == "수도" }, "fixture precondition: 수도 segment must be reached")
+        XCTAssertNotNil(segments.first { $0.normalizedLookupKey == "정류" }, "fixture precondition: 정류 segment must be reached")
+
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            Self.associationTable[reading]?[hanja]
+        }
+        var jointOffWeights = HanjaContextRankingWeights.default
+        jointOffWeights.jointDomainConsistency = 0
+
+        func rerankOn() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap,
+                candidateLookup: Self.candidateLookup, winningTokens: winningTokens,
+                associationFeatureLookup: associationLookup, weights: .default
+            )
+        }
+        func rerankOff() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap,
+                candidateLookup: Self.candidateLookup, winningTokens: winningTokens,
+                associationFeatureLookup: associationLookup, weights: jointOffWeights
+            )
+        }
+        rerankOn(); rerankOff()  // materialize lazy statics before timing
+
+        for run in 1...3 {
+            let onStats = Self.timeMicrosecondsWithPercentile(warmup: 50, iterations: 1000, rerankOn)
+            let offStats = Self.timeMicrosecondsWithPercentile(warmup: 50, iterations: 1000, rerankOff)
+            print(
+                "EVAL5D|jointLatency run=\(run) on_avg_us=\(String(format: "%.2f", onStats.average))"
+                    + " on_max_us=\(String(format: "%.2f", onStats.max)) on_p95_us=\(String(format: "%.2f", onStats.p95))"
+                    + " off_avg_us=\(String(format: "%.2f", offStats.average)) off_max_us=\(String(format: "%.2f", offStats.max))"
+                    + " off_p95_us=\(String(format: "%.2f", offStats.p95)) iterations=1000"
+            )
+            XCTAssertLessThan(onStats.p95, 1000, "joint axis p95 must stay <= 1ms (run \(run), got \(onStats.p95)µs)")
+        }
+    }
+
+    /// Task 2 worst-case shape: a clause AT `HanjaJointSelectionLimits.maxSegments` (5) — the
+    /// largest clause PASS 2 will ever search before the cap forces a skip (6+ eligible segments
+    /// fall back to independent argmax with zero joint cost). 5 segments x k=3 candidates each =
+    /// 3^5 = 243 combinations, 10 pairs, up to 10 x 3 x 3 = 90 `associationProfileSimilarity` calls.
+    ///
+    /// Hand-built rather than mined from a real sentence: PASS 2's cost model depends only on
+    /// candidate ASSOCIATION PROFILES (looked up by (reading, value) from the real bundled
+    /// association table) and on segment COUNT, not on surrounding context tokens or clause length
+    /// — see KiwiAnalysisService's PASS 2 (`similarity`/`selectJointAssignment` construction, which
+    /// never reads `winningTokens`). A hand-built 5-segment list exercises the identical code path
+    /// and cost as any real 5-target-segment clause would, without depending on finding one that
+    /// exists verbatim in some corpus (not guaranteed).
+    func testApplyContextRerankingJointAxisLatencyAtMaxSegmentsBoundary() throws {
+        guard Self.kiwiModelsAvailable, Self.hanjaTable != nil else {
+            print("Kiwi model directory not found, skipping joint-axis boundary latency measurement.")
+            return
+        }
+        XCTAssertFalse(Self.associationTable.isEmpty)
+
+        // 5 eval-27 series readings, each with >= candidatesPerSegment(=3) real hanja.txt
+        // candidates (docs/plans/hanja-context-eval-baseline.md 계열별 행 수 표: 수도=3, 연기=3,
+        // 공사=3, 의사=4, 전기=4) so `prefix(3)` is fully populated for every segment — the actual
+        // worst case, not a partial one.
+        let readings = ["수도", "연기", "공사", "의사", "전기"]
+        for reading in readings {
+            XCTAssertGreaterThanOrEqual(
+                Self.candidateLookup(reading).count, HanjaJointSelectionLimits.candidatesPerSegment,
+                "\(reading) must have >= \(HanjaJointSelectionLimits.candidatesPerSegment) candidates for the boundary shape to be genuine"
+            )
+        }
+
+        let clause = readings.joined(separator: " ")
+        var location = 0
+        var segments: [HanjaSegment] = []
+        for reading in readings {
+            let length = reading.utf16.count
+            segments.append(HanjaSegment(
+                sourceRange: NSRange(location: location, length: length),
+                surface: reading,
+                normalizedLookupKey: reading,
+                tag: .nng,
+                isConvertible: true,
+                previewCandidate: Self.candidateLookup(reading).first
+            ))
+            location += length + 1
+        }
+
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            Self.associationTable[reading]?[hanja]
+        }
+
+        // Sanity: all 5 must actually be joint-eligible (this is what makes it the boundary shape —
+        // exactly maxSegments, not fewer). Informational only below (segmentsWithPositiveBonus):
+        // PASS 2's cost is paid for the full 243-combination search regardless of whether any pair
+        // ends up with a positive bonus, so a zero count here would NOT invalidate the measurement.
+        let probe = KiwiAnalysisService.applyContextReranking(
+            to: segments, clause: clause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
+            winningTokens: [], associationFeatureLookup: associationLookup, weights: .default
+        )
+        print("EVAL5D|jointBoundaryLatency segmentsWithPositiveBonus=\(probe.filter { !$0.jointBoosts.isEmpty }.count)/5")
+
+        var jointOffWeights = HanjaContextRankingWeights.default
+        jointOffWeights.jointDomainConsistency = 0
+
+        func rerankOn() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
+                winningTokens: [], associationFeatureLookup: associationLookup, weights: .default
+            )
+        }
+        func rerankOff() {
+            _ = KiwiAnalysisService.applyContextReranking(
+                to: segments, clause: clause, dominantMap: Self.dominantMap, candidateLookup: Self.candidateLookup,
+                winningTokens: [], associationFeatureLookup: associationLookup, weights: jointOffWeights
+            )
+        }
+        rerankOn(); rerankOff()
+
+        // NOT gated with XCTAssertLessThan (unlike the isolated 2-segment test above): measured
+        // 2026-07-25 (3 runs) at p95 ≈ 3.0-3.7ms — consistently ~3x over the plan's 1ms budget, not
+        // measurement noise (the isolated test's own p95 is a steady ~254µs by comparison). This is
+        // a genuine, reportable finding about the maxSegments=5 worst case, not something to hide by
+        // loosening the threshold or tuning `HanjaJointSelectionLimits`/`jointDomainConsistency` —
+        // this task is measurement-only. Whether 5 SIMULTANEOUS ambiguous target segments with
+        // populated association profiles ever occurs in real typed text (the replay corpus in
+        // HanjaContextSessionReplayTests saw `pass2Ran` clauses mostly stay well under this bound —
+        // see that test's `twoPlusEligible`/`pass2Ran` counts) is a separate question left to the
+        // coordinator's report.
+        for run in 1...3 {
+            let onStats = Self.timeMicrosecondsWithPercentile(warmup: 50, iterations: 1000, rerankOn)
+            let offStats = Self.timeMicrosecondsWithPercentile(warmup: 50, iterations: 1000, rerankOff)
+            let verdict = onStats.p95 <= 1000 ? "PASS" : "EXCEEDS-1ms-BUDGET"
+            print(
+                "EVAL5D|jointBoundaryLatency run=\(run) on_avg_us=\(String(format: "%.2f", onStats.average))"
+                    + " on_max_us=\(String(format: "%.2f", onStats.max)) on_p95_us=\(String(format: "%.2f", onStats.p95))"
+                    + " off_avg_us=\(String(format: "%.2f", offStats.average)) off_max_us=\(String(format: "%.2f", offStats.max))"
+                    + " off_p95_us=\(String(format: "%.2f", offStats.p95)) iterations=1000 verdict=\(verdict)"
+            )
+        }
     }
 
     /// Confirms applyContextReranking scales roughly linearly in CONTEXT SIZE (the "문맥 형태소 수"

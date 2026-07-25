@@ -129,6 +129,244 @@ final class HanjaContextSessionReplayTests: XCTestCase {
         }
     }
 
+    // MARK: - Task R2-3 (docs/plans/hanja-context-scaling-plan.md §7): joint-axis firing/impact
+    // measurement. Reuses the SAME replay corpus and document/session mechanics as `replay()`
+    // above, but toggles `HanjaContextRankingWeights.jointDomainConsistency` (20 vs 0) instead of
+    // the session axis — session stays ON (evolving normally, `first`-role sentences still commit
+    // the GOLD answer as the simulated selection per `replay()`'s documented simplification) in
+    // BOTH branches, since the point is isolating R2's marginal contribution on top of R1, not
+    // re-measuring R1 itself. The eval-4종/R1c numbers being byte-identical to R1 (2026-07-25
+    // coordinator re-run) says R2 doesn't regress anything; it says nothing about whether R2 ever
+    // FIRES. This measurement answers that.
+
+    /// One segment-level top-1 change between joint-on and joint-off, kept for the coordinator to
+    /// eyeball (capped at 20 in `replayJointAxis`). `gold` is non-nil only when this segment IS a
+    /// `first`/`later` row's own target reading — the replay fixture tracks exactly one target
+    /// reading per document (see the TSV header), so every OTHER joint-eligible segment in the same
+    /// clause (most of them — context rows are the bulk of the corpus, 11,372/12,855) has no gold
+    /// to compare against but is still worth eyeballing for plausibility.
+    private struct ChangedSegmentExample {
+        let sentence: String
+        let reading: String
+        let offTop1: String
+        let onTop1: String
+        let gold: String?
+    }
+
+    /// Firing/impact counters: how often PASS 2 even gets a chance to run (≥2 joint-eligible
+    /// segments), how often it actually changes a segment's top-1 candidate, and — for the subset
+    /// with a gold answer available — whether that change helped or hurt.
+    private struct JointFiringStats {
+        var clausesAnalyzed = 0
+        var clausesWithTwoPlusEligible = 0
+        var clausesPass2Ran = 0
+        var clausesWithAnyChange = 0
+        var changedSegmentsTotal = 0
+        var changedSegmentsWithGold = 0
+        var wrongToRight = 0
+        var rightToWrong = 0
+        var wrongToWrongDifferent = 0
+        var examples: [ChangedSegmentExample] = []
+    }
+
+    /// Same top1/top3 aggregate shape `ReplayResult` reports for `first`/`later` (capped and
+    /// uncapped) — kept as its own smaller type rather than reusing `ReplayResult` because the
+    /// vocabOnly/normal split there is specifically about whether a SESSION selection prior exists,
+    /// which isn't the axis under test here (session is ON in both joint-on and joint-off branches,
+    /// so that split would carry no meaning and would mislead a future reader).
+    private struct JointTop1Result {
+        var docCount = 0
+        var totalSentences = 0
+        var firstSegMiss = 0
+        var laterSegMiss = 0
+        var answerMiss = 0
+        var firstOutcome = RankPairOutcome()
+        var laterCapped = RankPairOutcome()
+        var laterUncapped = RankPairOutcome()
+    }
+
+    /// See the MARK comment above for the axis-under-test rationale. `panelValues`/`panelTop1`
+    /// (local funcs, redefined per-segment like `replay()`'s `timedOn`/`timedOff`) reproduce
+    /// `HanjaServiceCoordinator.realtimeCandidates(for:)`'s documented algorithm exactly: fold
+    /// `segment.jointBoosts` into the `sessionBoosts` map passed to `rankWithContext` (same-key
+    /// sums) — this is what makes the PANEL top-1 (not `previewCandidate`, which is gate-filtered)
+    /// the right thing to diff between joint-on and joint-off.
+    private static func replayJointAxis(_ rows: [ReplayRow]) -> (top1: JointTop1Result, firing: JointFiringStats) {
+        var top1 = JointTop1Result()
+        var firing = JointFiringStats()
+        guard let kiwi else { return (top1, firing) }
+
+        let associationLookup: (String, String) -> [String: Double]? = { reading, hanja in
+            associationTable[reading]?[hanja]
+        }
+
+        var jointOffWeights = HanjaContextRankingWeights.default
+        jointOffWeights.jointDomainConsistency = 0
+
+        let documents = groupIntoDocuments(rows)
+        top1.docCount = documents.count
+
+        for docRows in documents {
+            var session = HanjaSessionContext()
+            var laterCountForReading: [String: Int] = [:]
+
+            for row in docRows {
+                top1.totalSentences += 1
+
+                var clauseFeatures: [String] = []
+                var selections: [(reading: String, value: String)] = []
+
+                guard let analysisResults = try? kiwi.analyze(
+                    row.sentence, topN: 1, options: KiwiAnalysisService.realtimeAnalysisMatchOptions
+                ) else {
+                    if row.role == "first" {
+                        top1.firstSegMiss += 1
+                    } else if row.role == "later" {
+                        top1.laterSegMiss += 1
+                    }
+                    session.recordCommittedClause(features: clauseFeatures, selections: selections)
+                    continue
+                }
+
+                firing.clausesAnalyzed += 1
+
+                let (segments, winningTokens) = KiwiAnalysisService.bestRealtimeSegmentsWithWinningTokens(
+                    from: analysisResults, in: row.sentence, candidateLookup: candidateLookup, hangulUsageLookup: { _ in 0 })
+                clauseFeatures = stableClauseContentFeatures(from: winningTokens)
+
+                let sessionInputs = session.scoringInputs
+
+                let rerankedOn = KiwiAnalysisService.applyContextReranking(
+                    to: segments, clause: row.sentence, dominantMap: dominantMap,
+                    candidateLookup: candidateLookup, winningTokens: winningTokens,
+                    associationFeatureLookup: associationLookup, weights: .default, sessionInputs: sessionInputs
+                )
+                let rerankedOff = KiwiAnalysisService.applyContextReranking(
+                    to: segments, clause: row.sentence, dominantMap: dominantMap,
+                    candidateLookup: candidateLookup, winningTokens: winningTokens,
+                    associationFeatureLookup: associationLookup, weights: jointOffWeights, sessionInputs: sessionInputs
+                )
+
+                // Joint eligibility from the PRE-rerank INPUT segments — mirrors PASS 1's gate in
+                // KiwiAnalysisService.applyContextReranking exactly (candidates.count >= 2,
+                // non-numeric, previewCandidate != nil || awaitsContextEvidence). previewCandidate/
+                // awaitsContextEvidence are already set on `segments` before reranking runs.
+                let eligibleIndices = segments.indices.filter { i in
+                    let segment = segments[i]
+                    guard segment.previewCandidate != nil || segment.awaitsContextEvidence else { return false }
+                    let candidates = candidateLookup(segment.normalizedLookupKey)
+                    guard candidates.count >= 2 else { return false }
+                    return NumericHanjaCandidateGenerator.normalizedDigits(from: segment.surface) == nil
+                }
+                if eligibleIndices.count >= 2 {
+                    firing.clausesWithTwoPlusEligible += 1
+                }
+                let pass2Ran = eligibleIndices.count >= 2 && eligibleIndices.count <= HanjaJointSelectionLimits.maxSegments
+                if pass2Ran {
+                    firing.clausesPass2Ran += 1
+                    var clauseHasChange = false
+
+                    for idx in eligibleIndices {
+                        let segOn = rerankedOn[idx]
+                        let segOff = rerankedOff[idx]
+                        let candidates = candidateLookup(segOn.normalizedLookupKey)
+
+                        func panelTop1(_ segment: HanjaSegment) -> String? {
+                            let scores = associationScores(for: candidates, contextFeatures: segment.contextFeatures, lookup: associationLookup)
+                            var boosts = sessionContextBoosts(
+                                for: candidates, reading: segment.normalizedLookupKey, session: sessionInputs,
+                                lookup: associationLookup, weights: .default)
+                            for (value, boost) in segment.jointBoosts { boosts[value, default: 0] += boost }
+                            return rankWithContext(
+                                candidates: candidates, contextDominantHanja: segment.contextDominantHanja,
+                                associationScores: scores, weights: .default, segmentTag: segment.tag,
+                                sessionBoosts: boosts
+                            ).first?.value
+                        }
+
+                        guard let onTop1 = panelTop1(segOn), let offTop1 = panelTop1(segOff), onTop1 != offTop1 else { continue }
+
+                        clauseHasChange = true
+                        firing.changedSegmentsTotal += 1
+
+                        let isTargetWithGold = (row.role == "first" || row.role == "later")
+                            && segOn.normalizedLookupKey == row.reading && !row.answer.isEmpty
+                        let gold = isTargetWithGold ? row.answer : nil
+                        if let gold {
+                            firing.changedSegmentsWithGold += 1
+                            let offRight = offTop1 == gold
+                            let onRight = onTop1 == gold
+                            if !offRight, onRight { firing.wrongToRight += 1 }
+                            else if offRight, !onRight { firing.rightToWrong += 1 }
+                            else { firing.wrongToWrongDifferent += 1 }
+                        }
+                        if firing.examples.count < 20 {
+                            firing.examples.append(ChangedSegmentExample(
+                                sentence: row.sentence, reading: segOn.normalizedLookupKey,
+                                offTop1: offTop1, onTop1: onTop1, gold: gold))
+                        }
+                    }
+
+                    if clauseHasChange { firing.clausesWithAnyChange += 1 }
+                }
+
+                // Target-segment top1/top3 aggregate — same first/later(capped)/later(uncapped)
+                // shape `replay()` reports, joint-on vs joint-off instead of session-on vs off.
+                if row.role == "first" || row.role == "later" {
+                    guard let segmentIndex = segments.firstIndex(where: { $0.normalizedLookupKey == row.reading }) else {
+                        if row.role == "first" {
+                            top1.firstSegMiss += 1
+                        } else {
+                            top1.laterSegMiss += 1
+                        }
+                        session.recordCommittedClause(features: clauseFeatures, selections: selections)
+                        continue
+                    }
+
+                    let segOn = rerankedOn[segmentIndex]
+                    let segOff = rerankedOff[segmentIndex]
+                    let candidates = candidateLookup(segOn.normalizedLookupKey)
+
+                    func panelValues(_ segment: HanjaSegment) -> [String] {
+                        let scores = associationScores(for: candidates, contextFeatures: segment.contextFeatures, lookup: associationLookup)
+                        var boosts = sessionContextBoosts(
+                            for: candidates, reading: segment.normalizedLookupKey, session: sessionInputs,
+                            lookup: associationLookup, weights: .default)
+                        for (value, boost) in segment.jointBoosts { boosts[value, default: 0] += boost }
+                        return rankWithContext(
+                            candidates: candidates, contextDominantHanja: segment.contextDominantHanja,
+                            associationScores: scores, weights: .default, segmentTag: segment.tag,
+                            sessionBoosts: boosts
+                        ).map(\.value)
+                    }
+
+                    let rankedOnValues = panelValues(segOn)
+                    let rankedOffValues = panelValues(segOff)
+                    let rankOn = rankedOnValues.firstIndex(of: row.answer).map { $0 + 1 }
+                    let rankOff = rankedOffValues.firstIndex(of: row.answer).map { $0 + 1 }
+
+                    if rankOn == nil || rankOff == nil {
+                        top1.answerMiss += 1
+                    } else if row.role == "first" {
+                        top1.firstOutcome.record(rankOn: rankOn, rankOff: rankOff)
+                        selections = [(reading: row.reading, value: row.answer)]
+                    } else {
+                        let count = laterCountForReading[row.reading, default: 0]
+                        laterCountForReading[row.reading] = count + 1
+                        top1.laterUncapped.record(rankOn: rankOn, rankOff: rankOff)
+                        if count < laterCapPerDocumentReading {
+                            top1.laterCapped.record(rankOn: rankOn, rankOff: rankOff)
+                        }
+                    }
+                }
+
+                session.recordCommittedClause(features: clauseFeatures, selections: selections)
+            }
+        }
+
+        return (top1, firing)
+    }
+
     // MARK: - Shared fixtures (mirrors HanjaContextEvalV2Tests exactly — separate static
     // properties, deliberately NOT shared across files, since each test file must be able to run
     // standalone via `-only-testing`)
@@ -512,6 +750,78 @@ final class HanjaContextSessionReplayTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(
             combinedTop1On, combinedTop1Off,
             "session ON must not regress later top1 vs OFF (on=\(combinedTop1On) off=\(combinedTop1Off))"
+        )
+    }
+
+    // MARK: - Task R2-3: joint-axis firing/impact over the document-replay corpus
+
+    /// Answers "does R2 ever fire, and does it change anything" — a question the 258-row eval and
+    /// the R1c replay metrics (byte-identical to R1, confirmed by 3 coordinator re-runs before this
+    /// test existed) cannot answer, because they never toggle the joint axis. See `replayJointAxis`'s
+    /// doc comment for the measurement design.
+    func testJointAxisFiringAndImpactOverReplayCorpus() throws {
+        guard Self.kiwiModelsAvailable else {
+            print("Kiwi model directory not found at \(Self.modelDir.path), skipping HanjaContextSessionReplayTests.")
+            return
+        }
+        guard Self.kiwi != nil else {
+            XCTFail("Kiwi failed to build from bundled models at \(Self.modelDir.path)")
+            return
+        }
+        guard Self.hanjaTable != nil else {
+            XCTFail("hanja.txt failed to load")
+            return
+        }
+        XCTAssertFalse(Self.associationTable.isEmpty, "bundled hanja-context.txt must parse to a non-empty table")
+
+        guard !Self.replayRows.isEmpty else {
+            print("Session replay fixture not found or empty at eval/hanja-context-session-replay.tsv, skipping.")
+            return
+        }
+
+        let (top1, firing) = Self.replayJointAxis(Self.replayRows)
+
+        print(
+            "REPLAY|r2 clausesAnalyzed=\(firing.clausesAnalyzed) twoPlusEligible=\(firing.clausesWithTwoPlusEligible)"
+                + " pass2Ran=\(firing.clausesPass2Ran) clausesWithAnyChange=\(firing.clausesWithAnyChange)"
+        )
+        print(
+            "REPLAY|r2 segments changedTotal=\(firing.changedSegmentsTotal) changedWithGold=\(firing.changedSegmentsWithGold)"
+                + " wrongToRight=\(firing.wrongToRight) rightToWrong=\(firing.rightToWrong) wrongToWrongDifferent=\(firing.wrongToWrongDifferent)"
+        )
+        print(
+            "REPLAY|r2 first on: top1 \(top1.firstOutcome.top1On)/\(top1.firstOutcome.n), top3 \(top1.firstOutcome.top3On)/\(top1.firstOutcome.n)"
+                + " — off: top1 \(top1.firstOutcome.top1Off)/\(top1.firstOutcome.n), top3 \(top1.firstOutcome.top3Off)/\(top1.firstOutcome.n)"
+        )
+        print(
+            "REPLAY|r2 later on: top1 \(top1.laterCapped.top1On)/\(top1.laterCapped.n), top3 \(top1.laterCapped.top3On)/\(top1.laterCapped.n)"
+                + " — off: top1 \(top1.laterCapped.top1Off)/\(top1.laterCapped.n), top3 \(top1.laterCapped.top3Off)/\(top1.laterCapped.n)"
+                + " (capped=\(Self.laterCapPerDocumentReading)/doc·reading)"
+        )
+        print(
+            "REPLAY|r2 later uncapped on: top1 \(top1.laterUncapped.top1On)/\(top1.laterUncapped.n), top3 \(top1.laterUncapped.top3On)/\(top1.laterUncapped.n)"
+                + " — off: top1 \(top1.laterUncapped.top1Off)/\(top1.laterUncapped.n), top3 \(top1.laterUncapped.top3Off)/\(top1.laterUncapped.n)"
+        )
+        print(
+            "REPLAY|r2 segMiss=\(top1.firstSegMiss + top1.laterSegMiss) (first=\(top1.firstSegMiss) later=\(top1.laterSegMiss))"
+                + " answerMiss=\(top1.answerMiss) docs=\(top1.docCount) sentences=\(top1.totalSentences)"
+        )
+        for example in firing.examples {
+            let goldText = example.gold ?? "n/a"
+            print(
+                "REPLAY|r2 example reading=\(example.reading) off=\(example.offTop1) -> on=\(example.onTop1)"
+                    + " gold=\(goldText) :: \(example.sentence)"
+            )
+        }
+
+        // Non-regression, mirroring `testSessionReplaySimulation`'s assert (b): the joint axis must
+        // not HURT the target-segment later-top1 metric even though (per the report handed to the
+        // coordinator) it may very plausibly move it by exactly 0 — this is deliberately NOT a
+        // "must fire" assertion. A flat 0 is a legitimate, reportable outcome (see this file's task
+        // instructions), not a bug to work around.
+        XCTAssertGreaterThanOrEqual(
+            top1.laterCapped.top1On, top1.laterCapped.top1Off,
+            "joint axis must not regress later top1 vs joint-off (on=\(top1.laterCapped.top1On) off=\(top1.laterCapped.top1Off))"
         )
     }
 }
