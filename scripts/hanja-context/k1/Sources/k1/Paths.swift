@@ -25,7 +25,10 @@ enum Paths {
     static let inventoryDir = hanjaContextWorkDir.appendingPathComponent("inventory")
     static let seedsDir = hanjaContextWorkDir.appendingPathComponent("seeds")
     static let niklDefsTSV = hanjaContextWorkDir.appendingPathComponent("nikl/definitions.tsv")
+    static let filteredDir = hanjaContextWorkDir.appendingPathComponent("filtered")
     static let outDir = hanjaContextWorkDir.appendingPathComponent("k1")
+    // K1b (§12 K1b) — coordinator-built measurement set, already on disk; K1b only reads it.
+    static let measureDir = outDir.appendingPathComponent("measure")
 }
 
 func dataLines(of url: URL) throws -> [Substring] {
