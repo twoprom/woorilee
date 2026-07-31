@@ -113,6 +113,29 @@ func computeBaselines(
     return (baselines, verified, total)
 }
 
+/// Reloads a PREVIOUSLY-WRITTEN baseline-occurrences.tsv (columns: reading, page_id, position,
+/// sentence — the RAW pre-verification manifest `collectBaselineOccurrences` wrote), restricted to
+/// `onlyReadings` and capped at `capPerReading` per reading (first-N in the file's own scan order —
+/// deterministic, no re-scan of the corpus). Used for the matched-topN baseline re-estimate
+/// (RunK1bMatched.swift): re-verifying a SMALL, targeted subset of already-collected occurrences at
+/// a higher topN is far cheaper than a fresh corpus scan, and correctness only requires the
+/// occurrence text + position, which this file already has.
+func loadCachedOccurrences(from url: URL, onlyReadings: Set<String>, capPerReading: Int) throws -> [String: [BaselineOccurrence]] {
+    var counts: [String: Int] = [:]
+    var out: [String: [BaselineOccurrence]] = [:]
+    for line in try dataLines(of: url) {
+        let cols = line.split(separator: "\t", maxSplits: 3, omittingEmptySubsequences: false)
+        guard cols.count >= 4 else { continue }
+        let reading = String(cols[0])
+        guard onlyReadings.contains(reading) else { continue }
+        guard (counts[reading] ?? 0) < capPerReading else { continue }
+        guard let position = Int(cols[2]) else { continue }
+        counts[reading, default: 0] += 1
+        out[reading, default: []].append(BaselineOccurrence(pageId: String(cols[1]), sentence: String(cols[3]), position: position))
+    }
+    return out
+}
+
 /// Reloads a PREVIOUSLY-WRITTEN baseline-stats.tsv (columns: reading, candidate, sense_id, source,
 /// source_score, donor, sample_count, baseline_mean) instead of re-scanning the corpus — used by the
 /// gold_surfaced diagnostic (RunK1bDiagnose.swift) so it doesn't have to repeat the ~17-minute

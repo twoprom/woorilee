@@ -27,6 +27,14 @@
 //       baseline-stats.tsv (default: k1/baseline-stats.tsv) instead of re-scanning the corpus, and
 //       only re-scores holdout + the 258-row eval set with an added gold_surfaced field. Writes
 //       diagnose-holdout-scored.tsv / diagnose-eval258-scored.tsv / k1b-gold-surfaced-diagnosis.md.
+//   k1b-sweep [--baseline-stats <path>] [--cap <N>]
+//       topN sweep (30/100/300) on a candidate-count-stratified holdout slice + definitional-subset
+//       split (RunK1bSweep.swift). Reuses cached baseline-stats.tsv. --cap sets rows/bucket for the
+//       stratified slice (default 700). Writes k1b-sweep-report.md / definitional-handcheck-sample.tsv.
+//   k1b-matched [--baseline-stats <path>] [--occurrences <path>] [--cap <N>] [--occurrence-cap <N>]
+//       Decisive matched-topN=300 test (re-estimates baselines at topN=300 for the slice's own
+//       readings from cached baseline-occurrences.tsv, cap ~10-15/reading) + 31-reading
+//       eval-composition subset (RunK1bMatched.swift). Writes k1b-matched-report.md.
 import Foundation
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -37,6 +45,8 @@ guard let mode = arguments.first else {
 var referencePath: String?
 var k1bOptions = K1bOptions()
 var baselineStatsPath: String?
+var occurrencesPath: String?
+var occurrenceCapPerReading = 15
 var index = 1
 while index < arguments.count {
     switch arguments[index] {
@@ -48,6 +58,7 @@ while index < arguments.count {
         index += 1
         guard index < arguments.count, let n = Int(arguments[index]) else { fail("--cap needs an integer value") }
         k1bOptions.capPerReading = n
+        k1bOptions.sweepCapPerBucket = n
     case "--topn":
         index += 1
         guard index < arguments.count, let n = Int32(arguments[index]) else { fail("--topn needs an integer value") }
@@ -58,6 +69,14 @@ while index < arguments.count {
         index += 1
         guard index < arguments.count else { fail("--baseline-stats needs a path") }
         baselineStatsPath = arguments[index]
+    case "--occurrences":
+        index += 1
+        guard index < arguments.count else { fail("--occurrences needs a path") }
+        occurrencesPath = arguments[index]
+    case "--occurrence-cap":
+        index += 1
+        guard index < arguments.count, let n = Int(arguments[index]) else { fail("--occurrence-cap needs an integer value") }
+        occurrenceCapPerReading = n
     default:
         fail("unknown argument: \(arguments[index])")
     }
@@ -78,6 +97,13 @@ case "k1b":
 case "k1b-diagnose":
     let path = baselineStatsPath ?? Paths.outDir.appendingPathComponent("baseline-stats.tsv").path
     try runK1bDiagnose(baselineStatsPath: path, topN: k1bOptions.topN)
+case "k1b-sweep":
+    let path = baselineStatsPath ?? Paths.outDir.appendingPathComponent("baseline-stats.tsv").path
+    try runK1bSweep(baselineStatsPath: path, capPerBucket: k1bOptions.sweepCapPerBucket, probeSize: 150)
+case "k1b-matched":
+    let path = baselineStatsPath ?? Paths.outDir.appendingPathComponent("baseline-stats.tsv").path
+    let occPath = occurrencesPath ?? Paths.outDir.appendingPathComponent("baseline-occurrences.tsv").path
+    try runK1bMatched(baselineStatsPath: path, occurrencesPath: occPath, capPerBucket: k1bOptions.sweepCapPerBucket, occurrenceCapPerReading: occurrenceCapPerReading)
 default:
-    fail("unknown mode: \(mode) (expected verify-contract|replicate|register-probe|build-donors|k1b|k1b-diagnose)")
+    fail("unknown mode: \(mode) (expected verify-contract|replicate|register-probe|build-donors|k1b|k1b-diagnose|k1b-sweep|k1b-matched)")
 }

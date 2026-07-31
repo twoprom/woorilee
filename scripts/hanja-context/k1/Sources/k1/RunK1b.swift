@@ -18,6 +18,7 @@ struct K1bOptions {
     var capPerReading = 40
     var topN: Int32 = 30
     var throughputOnly = false
+    var sweepCapPerBucket = 700
 }
 
 func fileSizeBytes(_ url: URL) -> Int {
