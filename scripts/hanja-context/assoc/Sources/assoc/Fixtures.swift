@@ -60,6 +60,32 @@ enum Fixtures {
         return HanjaContextAssociationStore.parseBinary(data: data) ?? [:]
     }()
 
+    /// D2 Task 3 (docs/plans/hanja-context-scaling-plan.md §9): the real bundled resource behind
+    /// `HanjaDictionaryService.isNativeHomographReading` — loaded here directly from disk (not
+    /// through `HanjaDictionaryService.shared.warmUp()`, which needs `Bundle.main`), but parsed by
+    /// the REAL app function `HanjaDictionaryService.parseNativeHomographReadings(contents:)` — no
+    /// gate logic is reimplemented, only the file read is local.
+    static let nativeHomographReadings: Set<String> = {
+        guard let contents = try? String(contentsOf: Paths.hanjaNativeHomograph, encoding: .utf8) else { return [] }
+        return HanjaDictionaryService.parseNativeHomographReadings(contents: contents)
+    }()
+
+    /// D2 Task 3: the real step-6 auto-convert word-evidence gate
+    /// (`KiwiAnalysisService.hasAutoConvertWordEvidence`), closed over this harness's own
+    /// `freqTable` — byte-identical in behavior to `KiwiAnalysisService.analyzeClauseDetailed`'s own
+    /// `autoConvertGate` closure (see that function: `hanjaService.hasWordFrequencyData ? { candidate,
+    /// tag in Self.hasAutoConvertWordEvidence(...) } : nil`), except this harness's word-frequency
+    /// table always has rows (loaded straight from freq-hanjaeo.txt), so the gate is never nil here.
+    static let autoConvertGate: (HanjaCandidate, POSTag) -> Bool = { candidate, tag in
+        KiwiAnalysisService.hasAutoConvertWordEvidence(candidate, tag: tag, wordFrequency: freqTable.wordFrequency(for:))
+    }
+
+    /// D2 Task 3: the real step-7 native-homograph gate
+    /// (`HanjaDictionaryService.isNativeHomographReading`), backed by `nativeHomographReadings` above.
+    static let nativeHomographLookup: (String) -> Bool = { reading in
+        nativeHomographReadings.contains(reading)
+    }
+
     /// Mirrors HanjaContextEvalV2Tests.candidateLookup(_:) / HanjaDictionaryService.exactCandidates
     /// exactly: numeric candidates first, else dictionary lookup merged through the real
     /// mergeHanjaCandidates (app source) with empty user/usage tables (reading-only, no

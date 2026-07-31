@@ -22,8 +22,14 @@ struct AssocMain {
                     }
                     let useBinary = !(args.contains("--table=txt"))
                     try ScoreHoldout.run(inputPath: args[2], outputPath: args[3], useBinaryTable: useBinary)
+                case "d2-verify":
+                    guard args.count > 3 else {
+                        print("usage: assoc d2-verify <mined-sentences.tsv> <out.tsv>")
+                        exit(1)
+                    }
+                    try D2Verify.run(inputPath: args[2], outputPath: args[3])
                 default:
-                    print("usage: assoc <eval-ctx|eval5d|score-holdout> ...")
+                    print("usage: assoc <eval-ctx|eval5d|score-holdout|d2-verify> ...")
                 }
             } catch {
                 print("ERROR: \(error)")

@@ -19,4 +19,5 @@ enum Paths {
     static let assocTxt = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.txt")
     static let assocBin = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.bin")
     static let evalTSV = woorileeRoot.appendingPathComponent("eval/hanja-context-eval-set.tsv")
+    static let hanjaNativeHomograph = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-native-homograph.txt")
 }
