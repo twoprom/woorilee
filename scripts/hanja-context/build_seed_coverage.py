@@ -99,6 +99,21 @@ REVIEW_ALLOCATION = [
 ]
 REDISTRIBUTE_TO = "paren_strict(비표적)"
 
+# D1-prime resample profile (docs/plans/hanja-context-d1-report.md §10.2 —
+# re-review the paren leak-guard fix with a fresh seed and heavier
+# paren_strict/paren_ext weighting). Selected via --review-profile d1prime;
+# the default profile (d1, above) and its output filenames are unchanged.
+REVIEW_SEED_D1PRIME = 20260731
+REVIEW_ALLOCATION_D1PRIME = [
+    ("paren_strict(표적)", "paren_strict", "1", 60),
+    ("paren_strict(비표적)", "paren_strict", "0", 280),
+    ("paren_ext(표적)", "paren_ext", "1", 20),
+    ("paren_ext(비표적)", "paren_ext", "0", 40),
+    ("standalone", "standalone", None, 15),
+    ("disambig", "disambig", None, 15),
+    ("type_pool(dislink+redirect+title)", None, None, 10),
+]
+
 CRITERION_COMMENT = """\
 # 판정 기준 — 각 행에 O / X / ? 중 하나를 적어 주세요.
 # O = 표시된 ⟦span⟧ 자리에 들어갈 정답 한자가 '정답한자' 열의 값이 맞고, 표시문장 안에
@@ -570,8 +585,10 @@ def display_sentence(r: Row) -> str:
     return text
 
 
-def compute_final_quotas(agg: Aggregates) -> dict[str, int]:
-    quotas = {label: quota for label, _s, _t, quota in REVIEW_ALLOCATION}
+def compute_final_quotas(
+    agg: Aggregates, allocation: list[tuple[str, str, str | None, int]] = REVIEW_ALLOCATION
+) -> dict[str, int]:
+    quotas = {label: quota for label, _s, _t, quota in allocation}
     shortfall = 0
     for label in list(quotas):
         available = agg.available_count.get(label, 0)
@@ -583,7 +600,12 @@ def compute_final_quotas(agg: Aggregates) -> dict[str, int]:
     return quotas
 
 
-def sample_review_rows(seeds_dir: Path, quotas: dict[str, int], seed: int) -> list[dict]:
+def sample_review_rows(
+    seeds_dir: Path,
+    quotas: dict[str, int],
+    seed: int,
+    allocation: list[tuple[str, str, str | None, int]] = REVIEW_ALLOCATION,
+) -> list[dict]:
     """Second streaming pass: Algorithm-R reservoir sampling per stratum with
     the FINAL (post-redistribution) quotas fixed for the whole pass — never
     holds more than sum(quotas) (<=200) rows in memory."""
@@ -608,7 +630,7 @@ def sample_review_rows(seeds_dir: Path, quotas: dict[str, int], seed: int) -> li
 
     review_rows: list[dict] = []
     seq = 0
-    for label, _source, _tgt, _quota in REVIEW_ALLOCATION:
+    for label, _source, _tgt, _quota in allocation:
         for r in reservoirs[label]:
             seq += 1
             review_rows.append(dict(
@@ -628,12 +650,18 @@ def sample_review_rows(seeds_dir: Path, quotas: dict[str, int], seed: int) -> li
     return review_rows
 
 
-def write_review_sheet(review_rows: list[dict], quotas: dict[str, int], out_path: Path) -> None:
+def write_review_sheet(
+    review_rows: list[dict],
+    quotas: dict[str, int],
+    out_path: Path,
+    seed: int = REVIEW_SEED,
+    allocation: list[tuple[str, str, str | None, int]] = REVIEW_ALLOCATION,
+) -> None:
     header_cols = ["번호", "판정", "출처", "표적여부", "읽기", "정답한자", "표시문장", "원문근거", "잔여한자수", "페이지ID", "family"]
     with out_path.open("w", encoding="utf-8") as f:
         f.write(CRITERION_COMMENT)
-        alloc_str = " ".join(f"{label}={quotas[label]}" for label, *_ in REVIEW_ALLOCATION)
-        f.write(f"# seed={REVIEW_SEED} 실제 배정: {alloc_str} (총 {len(review_rows)}행)\n")
+        alloc_str = " ".join(f"{label}={quotas[label]}" for label, *_ in allocation)
+        f.write(f"# seed={seed} 실제 배정: {alloc_str} (총 {len(review_rows)}행)\n")
         f.write("\t".join(header_cols) + "\n")
         for row in review_rows:
             values = [str(row[c]) for c in header_cols]
@@ -656,8 +684,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--seeds-dir", type=Path, default=SEEDS_DIR)
     parser.add_argument("--out-dir", type=Path, default=None)
+    parser.add_argument(
+        "--review-profile", choices=["d1", "d1prime"], default="d1",
+        help="d1 (default) reproduces the original 200-row sheet unchanged; "
+             "d1prime resamples with REVIEW_SEED_D1PRIME/REVIEW_ALLOCATION_D1PRIME "
+             "(D1 report §10.2 paren leak-guard re-review) and writes "
+             "seed-review-sheet-d1prime.tsv / seed-coverage-d1prime.md instead.",
+    )
     args = parser.parse_args()
     out_dir = args.out_dir or args.seeds_dir
+
+    if args.review_profile == "d1prime":
+        review_seed = REVIEW_SEED_D1PRIME
+        review_allocation = REVIEW_ALLOCATION_D1PRIME
+        review_sheet_name = "seed-review-sheet-d1prime.tsv"
+        coverage_md_name = "seed-coverage-d1prime.md"
+    else:
+        review_seed = REVIEW_SEED
+        review_allocation = REVIEW_ALLOCATION
+        review_sheet_name = "seed-review-sheet.tsv"
+        coverage_md_name = "seed-coverage.md"
 
     stats_path = args.seeds_dir / "seed-extract-stats.json"
     stats = json.loads(stats_path.read_text(encoding="utf-8"))
@@ -683,11 +729,11 @@ def main() -> int:
     family_md = build_family_section(agg.family_counts)
     reject_md = build_reject_section(stats)
 
-    quotas = compute_final_quotas(agg)
+    quotas = compute_final_quotas(agg, review_allocation)
     print(f"[{time.strftime('%H:%M:%S')}] pass 2/2: streaming reservoir sampling for review sheet "
-          f"(quotas: {quotas}) ...")
-    review_rows = sample_review_rows(args.seeds_dir, quotas, REVIEW_SEED)
-    write_review_sheet(review_rows, quotas, out_dir / "seed-review-sheet.tsv")
+          f"(profile={args.review_profile} quotas: {quotas}) ...")
+    review_rows = sample_review_rows(args.seeds_dir, quotas, review_seed, review_allocation)
+    write_review_sheet(review_rows, quotas, out_dir / review_sheet_name, review_seed, review_allocation)
     print(f"[{time.strftime('%H:%M:%S')}] pass 2/2 done: {len(review_rows)} review rows written "
           f"(peak RSS so far: {peak_rss_mb():.1f} MB)")
 
@@ -714,10 +760,10 @@ def main() -> int:
         identity_md, totals_md, gate_md, extrapolation_md,
         per_reading_md, per_candidate_md, family_md, reject_md, wilson_md, observations_md,
     ]
-    (out_dir / "seed-coverage.md").write_text("\n".join(md_parts), encoding="utf-8")
+    (out_dir / coverage_md_name).write_text("\n".join(md_parts), encoding="utf-8")
 
-    print(f"[{time.strftime('%H:%M:%S')}] wrote {out_dir / 'seed-coverage.md'}")
-    print(f"[{time.strftime('%H:%M:%S')}] wrote {out_dir / 'seed-review-sheet.tsv'} (quotas: {quotas})")
+    print(f"[{time.strftime('%H:%M:%S')}] wrote {out_dir / coverage_md_name}")
+    print(f"[{time.strftime('%H:%M:%S')}] wrote {out_dir / review_sheet_name} (quotas: {quotas})")
     print(f"[{time.strftime('%H:%M:%S')}] FINAL peak RSS: {peak_rss_mb():.1f} MB")
     return 0
 

@@ -20,7 +20,11 @@ extract_and_filter (import is side-effect-free — its main() is guarded).
 Output: seeds/part-NNNN.tsv (rotated every 200,000 data rows). Each part
 starts with a header comment line:
 
-    # format: seeds-v1 level<TAB>source<TAB>reading<TAB>hanja<TAB>page_id<TAB>family<TAB>span_start<TAB>span_len<TAB>in_target_inventory<TAB>is_ambiguous<TAB>residual_hanja<TAB>input_sentence<TAB>evidence
+    # format: seeds-v2 level<TAB>source<TAB>reading<TAB>hanja<TAB>page_id<TAB>family<TAB>span_start<TAB>span_len<TAB>in_target_inventory<TAB>is_ambiguous<TAB>residual_hanja<TAB>input_sentence<TAB>evidence
+
+(seeds-v2: paren_strict/paren_ext rows now apply the same gold-leak-into-
+s_final guard standalone already had, per docs/plans/hanja-context-d1-report.md
+§10.2 — see process_sentence.)
 
 Columns:
     level                token | type
@@ -89,7 +93,7 @@ SAMPLE_SEED = 20260725
 SAMPLE_SIZE = 30
 
 FORMAT_HEADER = (
-    "# format: seeds-v1 level<TAB>source<TAB>reading<TAB>hanja<TAB>page_id<TAB>family<TAB>"
+    "# format: seeds-v2 level<TAB>source<TAB>reading<TAB>hanja<TAB>page_id<TAB>family<TAB>"
     "span_start<TAB>span_len<TAB>in_target_inventory<TAB>is_ambiguous<TAB>residual_hanja<TAB>"
     "input_sentence<TAB>evidence"
 )
@@ -684,11 +688,35 @@ def process_sentence(sentence: str, page_id: str, page_title: str, family: str, 
         chars[c.start:c.end] = list(c.reading)
     s_final = "".join(chars)
 
+    # D1 report §10.2 fix: the 병기 sources (paren_strict/paren_ext) lacked the
+    # gold-leak guard standalone already had — a row was emitted even when its
+    # own answer hanja was still sitting in s_final (paren_ext/paren_strict
+    # dedup deletes the SOURCE match's own parenthetical, but a distinct
+    # occurrence of the same hanja run elsewhere in the sentence, or one
+    # revealed by standalone's own substitutions, can remain). Apply the same
+    # "pm.hanja in s_final" check here, right before emit_token (which
+    # enforces the span invariant and must see only rows we intend to keep).
+    # A same-reading-different-hanja leak is observed but NOT rejected yet.
+    paren_emitted = False
     for source_name, pm in tagged_paren_matches:
+        if pm.hanja in s_final:
+            counters[f"{source_name}_reject_leak_gold"] += 1
+            continue
+        leaked_same_reading = False
+        for hm in HANJA_RUN_RE.finditer(s_final):
+            other_run = hm.group(0)
+            if other_run == pm.hanja:
+                continue
+            if vocab.sub_lexicon.get(other_run) == pm.reading:
+                leaked_same_reading = True
+                break
+        if leaked_same_reading:
+            counters[f"{source_name}_observe_leak_same_reading"] += 1
         emitter.emit_token(
             source_name, pm.reading, pm.hanja, page_id, family,
             map_pos(pm.read_start), len(pm.reading), s_final, pm.evidence,
         )
+        paren_emitted = True
 
     for c in accepted:
         emitter.emit_token(
@@ -697,7 +725,7 @@ def process_sentence(sentence: str, page_id: str, page_title: str, family: str, 
             f"standalone {c.hanja}→{c.reading}",
         )
 
-    counters["sentences_with_any_emit"] += 1 if (tagged_paren_matches or accepted) else 0
+    counters["sentences_with_any_emit"] += 1 if (paren_emitted or accepted) else 0
 
 
 # ---------------------------------------------------------------------------
