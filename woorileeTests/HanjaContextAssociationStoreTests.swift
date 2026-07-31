@@ -36,11 +36,45 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
         // must all be skipped without throwing.
         XCTAssertNil(table["가경"]?["假景"])
 
-        // "가경:私景" has a single feature whose weight (300) exceeds the text format's 1...255
-        // quantization range — the entry is dropped, and since it was the line's only feature,
-        // the whole (reading, hanja) pair is dropped too (a line with zero surviving features is
-        // malformed).
+        // "가경:私景" has a single feature whose weight (300) exceeds the text format's signed
+        // -255...255 quantization range (D3, docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
+        // 명세") — the entry is dropped, and since it was the line's only feature, the whole
+        // (reading, hanja) pair is dropped too (a line with zero surviving features is malformed).
         XCTAssertNil(table["가경"]?["私景"])
+    }
+
+    // MARK: - D3: signed weight range (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세")
+
+    /// A negative weight (the offline export's signed text grid can now emit these) must parse
+    /// exactly like any positive weight — negated.
+    func testParseAcceptsNegativeWeightsWithinTheSignedRange() {
+        let fixture = "가경:私景:정상/NNG=-200"
+
+        let table = HanjaContextAssociationStore.parse(contents: fixture)
+
+        XCTAssertEqual(table["가경"]?["私景"]?["정상/NNG"], -200)
+    }
+
+    /// The widened range is still bounded at ±255 — weights one past either boundary must still
+    /// be dropped (and, per the "zero surviving features ⇒ malformed line" rule, drop the whole
+    /// (reading, hanja) pair when they were its only features).
+    func testParseIgnoresWeightsOutsideTheSignedRange() {
+        let fixture = "가경:私景:정상/NNG=256,반대/NNG=-256"
+
+        let table = HanjaContextAssociationStore.parse(contents: fixture)
+
+        XCTAssertNil(table["가경"]?["私景"])
+    }
+
+    /// The exact boundary values (-255 and 255) must both survive — the range is inclusive on
+    /// both ends.
+    func testParseAcceptsTheSignedRangeBoundaries() {
+        let fixture = "가경:私景:최소/NNG=-255,최대/NNG=255"
+
+        let table = HanjaContextAssociationStore.parse(contents: fixture)
+
+        XCTAssertEqual(table["가경"]?["私景"]?["최소/NNG"], -255)
+        XCTAssertEqual(table["가경"]?["私景"]?["최대/NNG"], 255)
     }
 
     // MARK: - Real bundled file: parser<->artifact agreement spot-checks
@@ -75,7 +109,11 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
     /// readingScaleNats=2.0, globalScaleNats=1.0 -> loader value = qw * 2.0.
     ///   佳景: 정경/NNG qw=50 -> 100.0, 집/NNG qw=100 -> 200.0
     ///   假景: 꾸미/VV qw=10 -> 20.0
-    private static func makeFixtureBinaryData(corruptCRC: Bool = false) -> Data {
+    private static func makeFixtureBinaryData(
+        corruptCRC: Bool = false,
+        biasForJing: Float32 = 0.0,
+        biasForJia: Float32 = 0.0
+    ) -> Data {
         func packString(_ s: String) -> [UInt8] {
             let utf8 = Array(s.utf8)
             let len = UInt16(utf8.count)
@@ -100,13 +138,13 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
         var section3: [UInt8] = []
         // 佳景: 정경/NNG(id=1, qw=50), 집/NNG(id=2, qw=100) — featureIDs ascending.
         section3 += packString("佳景")
-        section3 += packFloat32(0.0) // bias
+        section3 += packFloat32(biasForJing) // bias — D3, defaults to 0.0 (pre-D3 fixture value)
         section3 += packUInt32(2)    // entryCount
         section3 += packUInt32(1) + packUInt32(2)
         section3 += packInt8(50) + packInt8(100)
         // 假景: 꾸미/VV(id=0, qw=10).
         section3 += packString("假景")
-        section3 += packFloat32(0.0)
+        section3 += packFloat32(biasForJia) // bias — D3, defaults to 0.0 (pre-D3 fixture value)
         section3 += packUInt32(1)
         section3 += packUInt32(0)
         section3 += packInt8(10)
@@ -176,6 +214,53 @@ final class HanjaContextAssociationStoreTests: XCTestCase {
 
         let badCRC = Self.makeFixtureBinaryData(corruptCRC: true)
         XCTAssertNil(HanjaContextAssociationStore.parseBinary(data: badCRC), "CRC mismatch must fall back to nil")
+    }
+
+    // MARK: - D3: bias slot (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세" §3)
+
+    /// `parseBinaryWithBias` must surface a distinct bias per candidate, including a candidate
+    /// whose bias is exactly 0.0 (must round-trip as 0.0, not be dropped/confused with "no
+    /// entry" — `bias(reading:hanja:)`'s `nil` is reserved for "pair absent from the table"). The
+    /// feature-weight values (unaffected by this D3 addition) are re-checked here too, to confirm
+    /// the new bias read didn't shift the reader's cursor and corrupt the surrounding parse.
+    func testParseBinaryWithBiasSurfacesNonZeroAndZeroBiasPerCandidate() throws {
+        let data = Self.makeFixtureBinaryData(biasForJing: 12.5, biasForJia: 0.0)
+        let parsed = try XCTUnwrap(HanjaContextAssociationStore.parseBinaryWithBias(data: data))
+
+        XCTAssertEqual(parsed.biases["가경"]?["佳景"] ?? -1, 12.5, accuracy: 0.0001)
+        XCTAssertEqual(
+            parsed.biases["가경"]?["假景"] ?? -1, 0.0, accuracy: 0.0001,
+            "a zero bias entry must round-trip as 0.0, not be dropped/absent"
+        )
+
+        // Feature weights must be untouched by the bias addition.
+        XCTAssertEqual(parsed.features["가경"]?["佳景"]?["정경/NNG"] ?? -1, 100.0, accuracy: 0.0001)
+        XCTAssertEqual(parsed.features["가경"]?["假景"]?["꾸미/VV"] ?? -1, 20.0, accuracy: 0.0001)
+    }
+
+    /// A non-finite bias Float32 (NaN or ±Infinity) must fail the WHOLE parse (fail open, this
+    /// parser's existing convention for every other corruption mode) — not just drop the one
+    /// affected candidate into a partial table.
+    func testParseBinaryWithBiasFailsWholeParseOnNonFiniteBias() {
+        let nanData = Self.makeFixtureBinaryData(biasForJing: Float32.nan, biasForJia: 0.0)
+        XCTAssertNil(
+            HanjaContextAssociationStore.parseBinaryWithBias(data: nanData),
+            "NaN bias must fail the whole parse, not just drop one candidate"
+        )
+
+        let infData = Self.makeFixtureBinaryData(biasForJing: Float32.infinity, biasForJia: 0.0)
+        XCTAssertNil(HanjaContextAssociationStore.parseBinaryWithBias(data: infData), "+Infinity bias must fail the whole parse")
+
+        let negInfData = Self.makeFixtureBinaryData(biasForJing: 0.0, biasForJia: -Float32.infinity)
+        XCTAssertNil(HanjaContextAssociationStore.parseBinaryWithBias(data: negInfData), "-Infinity bias must fail the whole parse")
+    }
+
+    /// `parseBinary` (the thin feature-only wrapper) is defined straight in terms of
+    /// `parseBinaryWithBias` — a non-finite bias must fail through it too, not be silently
+    /// swallowed because the wrapper only looks at `.features`.
+    func testParseBinaryAlsoFailsOnNonFiniteBiasViaTheThinWrapper() {
+        let nanData = Self.makeFixtureBinaryData(biasForJing: Float32.nan, biasForJia: 0.0)
+        XCTAssertNil(HanjaContextAssociationStore.parseBinary(data: nanData))
     }
 
     // MARK: - Real bundled file: text vs binary parser agreement

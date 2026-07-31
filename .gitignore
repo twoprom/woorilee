@@ -43,3 +43,6 @@ CLAUDE.md
 /scripts/hanja-context/collector/.build
 /scripts/hanja-context/__pycache__
 /scripts/hanja-context/__pycache__
+
+# D3 A/B 측정용 사전 D3 연관표 사본 (git 이력으로 복원 가능 — 커밋하지 않는다)
+woorilee/data/hanja/*.d3-backup

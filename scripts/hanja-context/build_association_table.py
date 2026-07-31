@@ -499,7 +499,8 @@ def pack_string(s: str) -> bytes:
 
 
 def encode_binary(lines_pre_curated: list[str], lines_final: list[str], global_max: float,
-                  entries: list[tuple[str, str, str, float]]) -> bytes:
+                  entries: list[tuple[str, str, str, float]],
+                  bias_lookup: dict[tuple[str, str], float] | None = None) -> bytes:
     """Builds the step-0c binary artifact (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
     명세") from the SAME final (reading, hanja, feature, weight) entry set as `lines_final` (the
     text output after `merge_curated_overrides`) — guaranteeing entry-set equality with the text
@@ -512,7 +513,16 @@ def encode_binary(lines_pre_curated: list[str], lines_final: list[str], global_m
     override added or raised the weight) synthesized as `weight/255*global_max`, since curated
     rows only exist as already-quantized 1..255 integers (no backing float score) and the
     override's whole point is that the FINAL (possibly curated-raised) weight is authoritative.
+
+    `bias_lookup` (step D3, docs/plans/hanja-context-scaling-plan.md §10 축소 범위 — added by
+    scripts/hanja-context/build_d3_ranker.py's export step, NOT used by this module's own `main()`
+    call site, which omits it and keeps every candidate's bias at the pre-D3 0.0): optional
+    `(reading, hanja) -> raw bias float` override, already caller-clamped to the format's |bias| <=
+    100 raw-unit bound (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세" — same units as
+    the feature weights, BEFORE the runtime's `weights.association` (300) multiplication). Missing
+    keys default to 0.0, reproducing the pre-D3 behavior exactly for every untouched candidate.
     """
+    bias_lookup = bias_lookup or {}
     entries_score: dict[tuple[str, str, str], float] = {
         (reading, hanja, feature): score for reading, hanja, feature, score in entries
     }
@@ -566,13 +576,24 @@ def encode_binary(lines_pre_curated: list[str], lines_final: list[str], global_m
         for hanja, feats in candidates:
             feats_sorted = sorted(feats, key=lambda item: feature_ids[item[0]])
             section3 += pack_string(hanja)
-            section3 += struct.pack("<f", 0.0)  # bias — D3 slot, unused in 0c
+            section3 += struct.pack("<f", bias_lookup.get((reading, hanja), 0.0))  # bias — D3 slot
             section3 += struct.pack("<I", len(feats_sorted))
             for feature, _weight, raw_score in feats_sorted:
                 section3 += struct.pack("<I", feature_ids[feature])
             for _feature, _weight, raw_score in feats_sorted:
                 qw = round(raw_score / reading_scale_nats)
-                qw = max(1, min(127, qw))
+                # Pre-D3, raw_score is always > 0 (render()'s `score > 0` survival filter), so this
+                # was originally a plain `max(1, min(127, qw))` floor/ceiling. D3 (docs/plans/
+                # hanja-context-scaling-plan.md §10) introduces genuinely NEGATIVE learned raw
+                # scores, so the clamp is now sign-aware: unchanged (`max(1, min(127, qw))`) for
+                # raw_score >= 0 — byte-identical to every pre-D3 build — and its mirror
+                # (`min(-1, max(-127, qw))`) for raw_score < 0, so a small-magnitude negative
+                # weight still survives as -1 instead of being silently forced to +1 by the old
+                # positive-only floor (which would have flipped its sign).
+                if raw_score >= 0:
+                    qw = max(1, min(127, qw))
+                else:
+                    qw = min(-1, max(-127, qw))
                 section3 += struct.pack("<b", qw)
             candidate_profile_count += 1
             feature_entry_count += len(feats_sorted)

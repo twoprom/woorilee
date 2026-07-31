@@ -382,13 +382,27 @@ func hideWarmUpPanelIfNeeded() {
             sessionBoosts[value, default: 0] += boost
         }
 
+        // D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): same reasoning as the
+        // session/joint boosts above — fold in the candidate-profile bias so the candidate PANEL
+        // order matches the inline preview, which already includes it via
+        // `KiwiAnalysisService.applyContextReranking`'s `associationBiasLookup`.
+        var biases: [String: Double] = [:]
+        if associationStore.isAvailable {
+            for candidate in candidates {
+                if let bias = associationStore.bias(reading: candidate.reading, hanja: candidate.value) {
+                    biases[candidate.value] = bias
+                }
+            }
+        }
+
         return rankWithContext(
             candidates: candidates,
             contextDominantHanja: segment.contextDominantHanja,
             associationScores: scores,
             weights: .default,
             segmentTag: segment.tag,
-            sessionBoosts: sessionBoosts
+            sessionBoosts: sessionBoosts,
+            biases: biases
         )
     }
 

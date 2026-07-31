@@ -260,13 +260,27 @@ func contextEvidence(
 /// `rankWithContext`와 동일한 계산·정렬. 결합 선택(R2, docs/plans/hanja-context-scaling-plan.md
 /// §7)이 후보별 boost를 필요로 해서 분리했다. `rankWithContext`는 이 함수의 `.map(\.candidate)`
 /// 래퍼다 — 동작 동일 (`HanjaContextRankerTests`가 두 함수의 산출 순서 동일성을 고정한다).
+/// - Parameter biases: D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세" §3 candidate
+///   profile bias slot), keyed by candidate `value`, raw units (same scale as association feature
+///   weights — the offline export produces both on that scale). Default `[:]` reproduces
+///   pre-D3-runtime behavior exactly for every existing caller/test. Scaled by
+///   `weights.association` (300) like the association axis, so max contribution is
+///   `|bias| × 300`; offline clamps `|bias| ≤ 100`, giving a ±30,000 ceiling — the same order as
+///   the NNP gazette bonus (100 × 300 = 30,000) and far below containment (10,000,000), so a bias
+///   alone can never override a containment hit. Deliberately NOT folded into
+///   `HanjaContextEvidence`/`contextEvidence` — bias is a PRIOR, not context evidence, so it must
+///   never make a zero-matched-feature candidate look like it has context evidence and slip past
+///   step 7's `awaitsContextEvidence` promotion gate. This is exactly the precedent
+///   `sessionContextBoosts` set for session boosts (see that function's doc) — same reasoning,
+///   same separation.
 func rankWithContextScored(
     candidates: [HanjaCandidate],
     contextDominantHanja: [String],
     associationScores: [String: Double] = [:],
     weights: HanjaContextRankingWeights,
     segmentTag: POSTag? = nil,
-    sessionBoosts: [String: Double] = [:]
+    sessionBoosts: [String: Double] = [:],
+    biases: [String: Double] = [:]
 ) -> [(candidate: HanjaCandidate, boost: Double)] {
     let boosted: [(candidate: HanjaCandidate, boost: Double)] = candidates.map { candidate in
         let evidence = contextEvidence(
@@ -280,6 +294,7 @@ func rankWithContextScored(
             boost += Double(weights.nnpGazetteBonus * weights.association)
         }
         boost += sessionBoosts[candidate.value] ?? 0
+        boost += (biases[candidate.value] ?? 0) * Double(weights.association)
         return (candidate, boost)
     }
 
@@ -307,7 +322,8 @@ func rankWithContext(
     associationScores: [String: Double] = [:],
     weights: HanjaContextRankingWeights,
     segmentTag: POSTag? = nil,
-    sessionBoosts: [String: Double] = [:]
+    sessionBoosts: [String: Double] = [:],
+    biases: [String: Double] = [:]
 ) -> [HanjaCandidate] {
     rankWithContextScored(
         candidates: candidates,
@@ -315,6 +331,7 @@ func rankWithContext(
         associationScores: associationScores,
         weights: weights,
         segmentTag: segmentTag,
-        sessionBoosts: sessionBoosts
+        sessionBoosts: sessionBoosts,
+        biases: biases
     ).map(\.candidate)
 }

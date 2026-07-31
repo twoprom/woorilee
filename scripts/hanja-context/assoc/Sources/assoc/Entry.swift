@@ -28,8 +28,14 @@ struct AssocMain {
                         exit(1)
                     }
                     try D2Verify.run(inputPath: args[2], outputPath: args[3])
+                case "d3-features":
+                    guard args.count > 3 else {
+                        print("usage: assoc d3-features <seeds-dir> <out.tsv>")
+                        exit(1)
+                    }
+                    try D3Features.run(seedsDir: args[2], outputPath: args[3])
                 default:
-                    print("usage: assoc <eval-ctx|eval5d|score-holdout|d2-verify> ...")
+                    print("usage: assoc <eval-ctx|eval5d|score-holdout|d2-verify|d3-features> ...")
                 }
             } catch {
                 print("ERROR: \(error)")

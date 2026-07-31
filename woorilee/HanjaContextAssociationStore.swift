@@ -27,6 +27,14 @@ final class HanjaContextAssociationStore {
     /// converts `(qw × readingScaleNats) / globalScaleNats`, which lands in the same range but
     /// with finer (per-reading, not global) quantization precision.
     private var table: [String: [String: [String: Double]]] = [:]
+    /// D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세" §3 candidate-profile bias
+    /// slot): per-(reading, hanja) prior, same raw units as `table`'s feature weights. Kept in a
+    /// SEPARATE table from `table`/`features(reading:hanja:)` on purpose — bias is a prior, not
+    /// context evidence (see `HanjaContextRanker`'s `biases` parameter doc and
+    /// `HanjaContextEvidence`), so no caller can accidentally fold it into the matched-feature
+    /// evidence that step 7's `awaitsContextEvidence` promotion gate reads. Only ever populated by
+    /// `parseBinaryWithBias` (production `warmUp`) — the text format has no bias slot at all.
+    private var biasTable: [String: [String: Double]] = [:]
     private var pendingWarmUpCompletions: [() -> Void] = []
 
     private init() {}
@@ -74,10 +82,12 @@ final class HanjaContextAssociationStore {
 
             let resolvedStatus: Status
             var loadedTable: [String: [String: [String: Double]]] = [:]
+            var loadedBiasTable: [String: [String: Double]] = [:]
 
             if let resourceURL, let data = try? Data(contentsOf: resourceURL) {
-                if let parsed = Self.parseBinary(data: data) {
-                    loadedTable = parsed
+                if let parsed = Self.parseBinaryWithBias(data: data) {
+                    loadedTable = parsed.features
+                    loadedBiasTable = parsed.biases
                     resolvedStatus = .ready
                 } else {
                     resolvedStatus = .unavailable(
@@ -101,6 +111,7 @@ final class HanjaContextAssociationStore {
                     }
 
                     self.table = loadedTable
+                    self.biasTable = loadedBiasTable
                     self.status = resolvedStatus
                     self.drainPendingWarmUpCompletions()
                 }
@@ -114,12 +125,34 @@ final class HanjaContextAssociationStore {
         table[reading]?[hanja]
     }
 
+    /// Per-(reading, hanja) prior bias (D3, docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
+    /// 명세" §3), raw units — same scale as `features(reading:hanja:)`'s weights. `nil` when the
+    /// pair has no bias entry: either it's absent from the binary table, or the store hasn't
+    /// finished `warmUp`, or (see `parse(contents:)`'s doc) the store was populated from the text
+    /// format, which carries no bias slot at all. Not context evidence — see
+    /// `HanjaContextRanker`'s `biases` parameter for why this must only ever affect ranking, never
+    /// the `awaitsContextEvidence` promotion gate.
+    func bias(reading: String, hanja: String) -> Double? {
+        biasTable[reading]?[hanja]
+    }
+
     /// Parses `hanja-context.txt` contents: `읽기:한자:형태소=가중치,형태소=가중치,...` per line, `#`
     /// header/comment lines and malformed lines skipped. Percent-escaped feature text (`%25`→`%`,
     /// `%3A`→`:`, `%2C`→`,`, `%3D`→`=`) is decoded AFTER splitting on the raw `:`/`,`/`=` delimiters,
     /// with `%25` decoded LAST (see scripts/hanja-context/README.md 단계 5b). Weights are the
-    /// integer 1..255 text grid, converted exactly to `Double` — kept for tests/diff against the
-    /// bundled binary (`parseBinary`), not used by production `warmUp` since step 0c.
+    /// integer text grid, converted exactly to `Double` — kept for tests/diff against the bundled
+    /// binary (`parseBinaryWithBias`), not used by production `warmUp` since step 0c.
+    ///
+    /// Range: signed `-255...255` (D3, docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
+    /// 명세") — widened from the original unsigned `0...255` to mirror the offline export's
+    /// signed text grid. Every weight in the repo's current `hanja-context.txt` is still
+    /// positive, so this widening does not change parse results for existing data.
+    ///
+    /// Bias: the text format has NO bias slot (that's a binary-only field — §3's per-candidate
+    /// Float32, see `parseBinaryWithBias`), so a store populated from `parse(contents:)` alone has
+    /// an always-empty bias table: `HanjaContextAssociationStore.bias(reading:hanja:)` returns
+    /// `nil` for every pair in that case. This is expected, not a bug — the text path exists for
+    /// tests/diff only; production `warmUp` never uses it.
     nonisolated static func parse(contents: String) -> [String: [String: [String: Double]]] {
         var result: [String: [String: [String: Double]]] = [:]
         result.reserveCapacity(3_000)
@@ -144,10 +177,11 @@ final class HanjaContextAssociationStore {
                 guard let equalsIndex = entry.lastIndex(of: "="), entry.startIndex < equalsIndex else { continue }
                 let featureRaw = entry[entry.startIndex..<equalsIndex]
                 let weightRaw = entry[entry.index(after: equalsIndex)...]
-                // Same range the text format's quantizer emits (1...255) — matches the old
-                // UInt8(weightRaw) parse's effective range (0...255, only >0 features are ever
-                // emitted) now that the stored value type is Double, not UInt8.
-                guard let weight = Int(weightRaw), (0...255).contains(weight), !featureRaw.isEmpty else { continue }
+                // D3: widened from the original unsigned 0...255 (matching the old
+                // UInt8(weightRaw) parse) to signed -255...255, mirroring the offline export's
+                // signed text grid (see this function's doc). Existing files are all positive, so
+                // this widening is parse-range only, not a behavior change for current data.
+                guard let weight = Int(weightRaw), (-255...255).contains(weight), !featureRaw.isEmpty else { continue }
                 features[percentDecodeFeature(featureRaw)] = Double(weight)
             }
 
@@ -188,7 +222,25 @@ final class HanjaContextAssociationStore {
     /// Per-entry value: `(qw × readingScaleNats) / globalScaleNats` — the loader semantics pinned
     /// by the format spec, landing in the same numeric range as the text parser's Double(UInt8)
     /// values but with finer (per-reading) quantization precision.
+    ///
+    /// Thin wrapper over `parseBinaryWithBias` that drops the bias table — kept so existing
+    /// callers/tests that only care about the feature table (`HanjaContextAssociationStoreTests`'
+    /// text↔binary agreement checks, etc.) don't have to deal with the tuple return.
     nonisolated static func parseBinary(data: Data) -> [String: [String: [String: Double]]]? {
+        parseBinaryWithBias(data: data)?.features
+    }
+
+    /// Same parse as `parseBinary`, but also surfaces §3's per-candidate bias slot (D3, docs/
+    /// plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세") — the Float32 that `parseBinary`
+    /// used to read and discard. Returns `(features, biases)` where `biases` is keyed the same
+    /// way as `features` minus the innermost feature dimension: `[reading: [hanja: rawBias]]`.
+    /// Fails (returns nil) under every condition `parseBinary` already fails under, PLUS a new
+    /// one: any candidate's bias Float32 that is not `.isFinite` (NaN/±Infinity) — same fail-open
+    /// convention as the rest of this parser (a bad resource falls back to an empty table, never
+    /// a partial one).
+    nonisolated static func parseBinaryWithBias(
+        data: Data
+    ) -> (features: [String: [String: [String: Double]]], biases: [String: [String: Double]])? {
         guard data.count >= HanjaContextBinaryFormat.headerSize else { return nil }
 
         var header = HanjaContextBinaryReader(data: data.prefix(HanjaContextBinaryFormat.headerSize))
@@ -231,16 +283,23 @@ final class HanjaContextAssociationStore {
         // §3 — candidate profiles, consumed sequentially in §2's order.
         var result: [String: [String: [String: Double]]] = [:]
         result.reserveCapacity(Int(readingCount))
+        var biasResult: [String: [String: Double]] = [:]
+        biasResult.reserveCapacity(Int(readingCount))
         var candidateProfilesSeen: UInt32 = 0
         var featureEntriesSeen: UInt32 = 0
 
         for (reading, scaleNats, candidateCount) in readingIndex {
             var candidateMap: [String: [String: Double]] = [:]
             candidateMap.reserveCapacity(Int(candidateCount))
+            var candidateBiasMap: [String: Double] = [:]
+            candidateBiasMap.reserveCapacity(Int(candidateCount))
 
             for _ in 0..<candidateCount {
+                // D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): the bias
+                // Float32 must be finite — a NaN/±Infinity value fails the whole parse (fail
+                // open, this parser's existing convention), not just this one candidate.
                 guard let hanja = reader.readLengthPrefixedString(),
-                      reader.readFloat32() != nil, // bias — D3 slot, unused in 0c
+                      let bias = reader.readFloat32(), bias.isFinite,
                       let entryCount = reader.readUInt32()
                 else { return nil }
 
@@ -261,18 +320,20 @@ final class HanjaContextAssociationStore {
                 }
 
                 candidateMap[hanja] = featureMap
+                candidateBiasMap[hanja] = Double(bias)
                 candidateProfilesSeen += 1
                 featureEntriesSeen += UInt32(entryCount)
             }
 
             result[reading] = candidateMap
+            biasResult[reading] = candidateBiasMap
         }
 
         guard reader.isAtEnd else { return nil }
         guard candidateProfilesSeen == candidateProfileCount else { return nil }
         guard featureEntriesSeen == featureEntryCount else { return nil }
 
-        return result
+        return (features: result, biases: biasResult)
     }
 
     private func drainPendingWarmUpCompletions() {

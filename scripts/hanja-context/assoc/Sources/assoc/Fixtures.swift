@@ -60,6 +60,15 @@ enum Fixtures {
         return HanjaContextAssociationStore.parseBinary(data: data) ?? [:]
     }()
 
+    /// D3 (docs/plans/hanja-context-scaling-plan.md §10): the candidate-profile `bias` slot, read
+    /// through the SAME real app parser as the feature table above (`parseBinaryWithBias`), so the
+    /// offline harness scores exactly what production scores. Text tables carry no bias by design,
+    /// so the txt path keeps an empty bias table — that is the correct pre-D3 behavior, not a gap.
+    static let associationBiasFromBinary: [String: [String: Double]] = {
+        guard let data = try? Data(contentsOf: Paths.assocBin) else { return [:] }
+        return HanjaContextAssociationStore.parseBinaryWithBias(data: data)?.biases ?? [:]
+    }()
+
     /// D2 Task 3 (docs/plans/hanja-context-scaling-plan.md §9): the real bundled resource behind
     /// `HanjaDictionaryService.isNativeHomographReading` — loaded here directly from disk (not
     /// through `HanjaDictionaryService.shared.warmUp()`, which needs `Bundle.main`), but parsed by

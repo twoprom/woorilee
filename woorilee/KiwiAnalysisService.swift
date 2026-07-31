@@ -244,6 +244,11 @@ final class KiwiAnalysisService {
             let associationFeatureLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
                 ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
                 : nil
+            // D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): same availability
+            // gate as the feature lookup above — nil when the store hasn't finished warming up.
+            let associationBiasLookup: ((String, String) -> Double?)? = associationStore.isAvailable
+                ? { reading, hanja in associationStore.bias(reading: reading, hanja: hanja) }
+                : nil
 
             let segments = Self.applyContextReranking(
                 to: best.segments,
@@ -252,6 +257,7 @@ final class KiwiAnalysisService {
                 candidateLookup: candidateLookup,
                 winningTokens: stableTokens,
                 associationFeatureLookup: associationFeatureLookup,
+                associationBiasLookup: associationBiasLookup,
                 autoConvertGate: autoConvertGate,
                 sessionInputs: sessionInputs
             )
@@ -362,6 +368,16 @@ final class KiwiAnalysisService {
     /// `HanjaJointSelectionLimits.maxSegments`) every segment's `jointBoosts` stays `[:]` and the
     /// result is byte-for-byte identical to R1 — pinned by
     /// `RealtimeContextRankingTests`/`HanjaClauseJointSelectionTests`.
+    /// - Parameter associationBiasLookup: D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷
+    ///   명세" §3 candidate-profile bias slot), `(reading, hanja) -> raw bias`, backed by
+    ///   `HanjaContextAssociationStore.bias(reading:hanja:)` in production. `nil` (the default) is
+    ///   a full no-op — every existing call site keeps this parameter's default, so this addition
+    ///   is behavior-preserving. When non-nil, PASS 1 builds a per-segment bias dictionary and
+    ///   forwards it to `rankWithContextScored`'s `biases:` — ranking only. PASS 3's promotion
+    ///   gate keeps reading PASS 1's `state.scores` (the association axis alone, no bias mixed in)
+    ///   exactly as before — bias must never make a zero-matched-feature candidate pass the
+    ///   `awaitsContextEvidence` gate (see `HanjaContextRanker.rankWithContextScored`'s `biases`
+    ///   doc for the full invariant rationale).
     static func applyContextReranking(
         to segments: [HanjaSegment],
         clause: String,
@@ -369,6 +385,7 @@ final class KiwiAnalysisService {
         candidateLookup: (String) -> [HanjaCandidate],
         winningTokens: [Token] = [],
         associationFeatureLookup: ((String, String) -> [String: Double]?)? = nil,
+        associationBiasLookup: ((String, String) -> Double?)? = nil,
         weights: HanjaContextRankingWeights = .default,
         autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil,
         sessionInputs: HanjaSessionScoringInputs? = nil
@@ -426,13 +443,26 @@ final class KiwiAnalysisService {
                 )
             } ?? [:]
 
+            // D3: per-candidate bias dictionary, ranking-only (see `associationBiasLookup`'s doc
+            // above and `rankWithContextScored`'s `biases` parameter doc) — never folded into
+            // `scores`, which PASS 3's promotion gate reads unchanged.
+            var biases: [String: Double] = [:]
+            if let associationBiasLookup {
+                for candidate in candidates {
+                    if let bias = associationBiasLookup(candidate.reading, candidate.value) {
+                        biases[candidate.value] = bias
+                    }
+                }
+            }
+
             let ranked = rankWithContextScored(
                 candidates: candidates,
                 contextDominantHanja: context,
                 associationScores: scores,
                 weights: weights,
                 segmentTag: segment.tag,
-                sessionBoosts: sessionBoosts
+                sessionBoosts: sessionBoosts,
+                biases: biases
             )
 
             // R2 결합 참여 자격 (docs/plans/hanja-context-scaling-plan.md §7): 재랭킹 대상이면서

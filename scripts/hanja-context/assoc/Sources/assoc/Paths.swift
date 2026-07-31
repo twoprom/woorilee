@@ -16,8 +16,13 @@ enum Paths {
     static let hanjaTxt = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja.txt")
     static let freqHanja = woorileeRoot.appendingPathComponent("woorilee/data/hanja/freq-hanja.txt")
     static let freqHanjaeo = woorileeRoot.appendingPathComponent("woorilee/data/hanja/freq-hanjaeo.txt")
-    static let assocTxt = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.txt")
-    static let assocBin = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.bin")
+    /// D3 (2026-08-01): overridable so a run can score an ALTERNATE association table without
+    /// swapping the bundled files in place (needed to compare the pre-D3 corpus table against the
+    /// D3 hybrid table on the same holdout). Unset = the bundled paths, i.e. prior behavior.
+    static let assocTxt = ProcessInfo.processInfo.environment["WOORILEE_ASSOC_TXT"].map(URL.init(fileURLWithPath:))
+        ?? woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.txt")
+    static let assocBin = ProcessInfo.processInfo.environment["WOORILEE_ASSOC_BIN"].map(URL.init(fileURLWithPath:))
+        ?? woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-context.bin")
     static let evalTSV = woorileeRoot.appendingPathComponent("eval/hanja-context-eval-set.tsv")
     static let hanjaNativeHomograph = woorileeRoot.appendingPathComponent("woorilee/data/hanja/hanja-native-homograph.txt")
 }
