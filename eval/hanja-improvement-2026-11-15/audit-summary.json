@@ -1,0 +1,24 @@
+{
+  "dictionary_sha256": "dd44dcc856cf542b1022d0f39c2e9b9f8805fdcc5923be80f04849ed97ce0996",
+  "rows": 1105,
+  "app_exact": 936,
+  "legacy_exact": 931,
+  "changed_rows": 67,
+  "label_audit": {
+    "listed": 596,
+    "needs_independent_semantic_review": 63,
+    "hangul_keep_label": 71,
+    "display_truncated": 1
+  },
+  "independent_review_rows": 73,
+  "provisional_AI_labels": {
+    "um_rows": 597,
+    "top1": 410,
+    "top3": 555,
+    "macro_top1": 0.68005698005698,
+    "k_rows": 71,
+    "k_auto": 37
+  },
+  "evaluation_history": "D2 and v1/v2 have already informed error analysis/curated overrides; not unseen generalization data.",
+  "pending": "Independent review must assign ? reasons: insufficient_context, dictionary_missing, display_truncated, normalization, specialist_review."
+}

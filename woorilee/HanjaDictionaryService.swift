@@ -219,7 +219,9 @@ final class HanjaDictionaryService {
     }
 
     func exactCandidates(for key: String) -> [HanjaCandidate] {
-        candidates(for: key) { table in
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("dictionary_lookup", since: start) }
+        return candidates(for: key) { table in
             LibHangul.searchHanja(table: table, key: key)
         }
     }

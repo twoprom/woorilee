@@ -423,7 +423,7 @@ final class SessionHanjaContextTests: XCTestCase {
         return (session, engine, client)
     }
 
-    func testCommitRecordsClauseFeaturesAndAutoConvertedSelectionIntoSessionContext() throws {
+    func testCommitRecordsVocabularyWithoutLearningAutomaticPreview() throws {
         let harness = makeCommitHarness(
             rawText: "한국", previewValue: "韓國", clauseContentFeatures: ["대한/NNP", "국민/NNG"]
         )
@@ -433,8 +433,46 @@ final class SessionHanjaContextTests: XCTestCase {
 
         let scoring = try XCTUnwrap(harness.session.sessionScoringInputs)
         XCTAssertEqual(scoring.vocabularyFeatures, ["대한/NNP", "국민/NNG"])
-        XCTAssertEqual(scoring.selectionPriors["한국"]?.value, "韓國")
-        XCTAssertEqual(scoring.selectionPriors["한국"]?.decay ?? -1, 1.0, accuracy: 1e-9)
+        XCTAssertNil(scoring.selectionPriors["한국"])
+    }
+
+    func testExplicitCorrectionSurvivesAutomaticCommitsWithoutRefreshingPrior() throws {
+        let harness = makeCommitHarness(rawText: "한국", previewValue: "韓國", clauseContentFeatures: ["국민/NNG"])
+        let correction = HanjaCandidate(reading: "한국", value: "漢國", comment: "", source: .system,
+                                        usageCount: 0, frequency: 0, baseRank: 1)
+        XCTAssertTrue(harness.session.applyRealtimeCandidateSelection(correction))
+        harness.engine.commitCurrentComposition()
+        XCTAssertEqual(harness.session.sessionScoringInputs?.selectionPriors["한국"]?.value, "漢國")
+        XCTAssertEqual(harness.client.insertCalls.last?.text, "漢國")
+
+        harness.session.appendCommittedTextToRealtimeClause("한국")
+        harness.engine.commitCurrentComposition()
+        let prior = try XCTUnwrap(harness.session.sessionScoringInputs?.selectionPriors["한국"])
+        XCTAssertEqual(prior.value, "漢國", "an automatic preview must not overwrite a correction")
+        XCTAssertEqual(prior.decay, 0.95, accuracy: 1e-9, "automatic commits must age rather than refresh a prior")
+    }
+
+    func testConfirmedHangulClearsPriorWhileCancelledChoiceDoesNot() {
+        let harness = makeCommitHarness(rawText: "한국", previewValue: "韓國", clauseContentFeatures: ["국민/NNG"])
+        harness.session.recordManualHanjaSelectionToSessionContext(reading: "한국", value: "韓國")
+        XCTAssertTrue(harness.session.applyRealtimeHangulFallbackForSelectedSegment())
+        harness.engine.cancelRealtimeComposition()
+        XCTAssertEqual(harness.session.sessionScoringInputs?.selectionPriors["한국"]?.value, "韓國")
+
+        harness.session.appendCommittedTextToRealtimeClause("한국")
+        harness.session.updateRealtimeAnalysis(segments: [HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2), surface: "한국", normalizedLookupKey: "한국",
+            tag: .nnp, isConvertible: true, previewCandidate: nil)])
+        XCTAssertTrue(harness.session.applyRealtimeHangulFallbackForSelectedSegment())
+        harness.engine.commitCurrentComposition()
+        XCTAssertNil(harness.session.sessionScoringInputs?.selectionPriors["한국"])
+    }
+
+    func testManualHangulChoiceClearsPrior() {
+        var context = HanjaSessionContext()
+        context.recordManualSelection(reading: "수도", value: "水道")
+        context.recordManualSelection(reading: "수도", value: "수도")
+        XCTAssertNil(context.scoringInputs.selectionPriors["수도"])
     }
 
     func testDifferentClientsHaveIsolatedSessionContext() {

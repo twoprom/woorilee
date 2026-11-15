@@ -64,6 +64,7 @@ final class InputController: IMKInputSessionController {
             session: session,
             analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0, composingTailStart: $1, sessionInputs: $2) },
             analyzeManualClause: { self.hanjaServices.manualSegments(for: $0, boundaries: $1) },
+            rankManualClause: { self.hanjaServices.rankManualClause($0, previous: $1, sessionInputs: $2) },
             analyzeDocumentContext: { self.hanjaServices.analyzeDocumentContext($0) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
             updateComposition: { self.updateComposition() },
@@ -76,9 +77,11 @@ final class InputController: IMKInputSessionController {
         let session = inputSession(for: sender)
 
         guard event.type == .keyDown else { return false }
+        let eventStart = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("key_handling", since: eventStart) }
 
         inputLogger.info(
-            "woorilee: handle keyCode=\(event.keyCode, privacy: .public) modifiers=\(event.modifierFlags.rawValue, privacy: .public) chars=\(event.charactersIgnoringModifiers ?? "", privacy: .public)"
+            "woorilee: handle modifiers=\(event.modifierFlags.rawValue, privacy: .public) characterCount=\((event.charactersIgnoringModifiers ?? "").utf16.count, privacy: .public)"
         )
 
         return handleKeyInput(
@@ -99,7 +102,7 @@ final class InputController: IMKInputSessionController {
         let session = inputSession(for: sender)
         let modifiers = NSEvent.ModifierFlags(rawValue: flags)
         inputLogger.info(
-            "woorilee: inputText:key keyCode=\(keyCode, privacy: .public) modifiers=\(flags, privacy: .public) text=\(string, privacy: .public)"
+            "woorilee: inputText:key modifiers=\(flags, privacy: .public) textLength=\(string.utf16.count, privacy: .public)"
         )
 
         return handleKeyInput(
@@ -113,7 +116,7 @@ final class InputController: IMKInputSessionController {
 
     override func inputText(_ string: String, client sender: any IMKTextInput) -> Bool {
         let session = inputSession(for: sender)
-        inputLogger.info("woorilee: inputText text=\(string, privacy: .private)")
+        inputLogger.info("woorilee: inputText textLength=\(string.utf16.count, privacy: .public)")
         let currentModifierFlags = InputEventPolicy.currentSessionModifierFlags()
 
         if isBareNewlineText(string) {
@@ -125,7 +128,7 @@ final class InputController: IMKInputSessionController {
             let consumedTrigger = session.consumeManualHanjaTriggerIfArmedForNewline()
             if consumedTrigger != nil || InputEventPolicy.isManualHanjaTrigger(modifiers: currentModifierFlags) {
                 debugLog(
-                    "manual-hanja trigger text=\(string) trigger=\(consumedTrigger != nil ? "armed" : "modifier") flags=\(currentModifierFlags.rawValue)"
+                    "manual-hanja trigger textLength=\(string.utf16.count) trigger=\(consumedTrigger != nil ? "armed" : "modifier") flags=\(currentModifierFlags.rawValue)"
                 )
                 return handleManualHanjaTrigger(sender, session: session)
             }
@@ -288,7 +291,7 @@ final class InputController: IMKInputSessionController {
         // 새 글자 입력은 소스를 바꿔 수동 경계 오프셋을 무효화하므로 오버레이를 버리고 Kiwi 분절로 복귀한다.
         session.clearManualSegmentation()
         debugLog(
-            "textInput selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(client.markedRange())) preedit=\(session.preeditText) raw=\(characters ?? "")"
+            "textInput selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(client.markedRange())) preeditLength=\(session.preeditText.utf16.count) characterCount=\((characters ?? "").utf16.count)"
         )
 
         guard let char = InputEventPolicy.normalizedASCIICharacter(
@@ -474,7 +477,7 @@ final class InputController: IMKInputSessionController {
 
         if session.hasPendingHangulText {
             debugLog(
-                "didCommand selector=\(NSStringFromSelector(aSelector)) selected=\(inputDebugRangeString(sender.selectedRange())) marked=\(inputDebugRangeString(sender.markedRange())) preedit=\(session.preeditText)"
+                "didCommand selector=\(NSStringFromSelector(aSelector)) selected=\(inputDebugRangeString(sender.selectedRange())) marked=\(inputDebugRangeString(sender.markedRange())) preeditLength=\(session.preeditText.utf16.count)"
             )
             commitCurrentComposition(sender, session: session)
         }
@@ -908,33 +911,9 @@ final class InputController: IMKInputSessionController {
         }
 
         let candidates = hanjaServices.realtimeCandidates(for: segment, sessionInputs: session.sessionScoringInputs)
-        let previousState = session.realtimeCandidateState
-        let preservesPreviousState = previousState?.mode.realtimeSegmentIndex == selectedIndex
-        let highlightedIndex: Int
-        let page: Int
-        let highlightedIsHangul: Bool
-        if preservesPreviousState, let previousState {
-            highlightedIndex = previousState.highlightedIndex
-            page = previousState.page
-            highlightedIsHangul = previousState.highlightedIsHangul
-        } else if let previewValue = segment.previewCandidate?.value,
-                  let currentPreviewIndex = candidates.firstIndex(where: { $0.value == previewValue }) {
-            highlightedIndex = currentPreviewIndex
-            page = currentPreviewIndex / HanjaCandidatePanelState.defaultPageSize
-            highlightedIsHangul = false
-        } else {
-            highlightedIndex = 0
-            page = 0
-            highlightedIsHangul = HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment)
-        }
-
-        return HanjaCandidatePanelState(
-            mode: .realtime(segmentIndex: selectedIndex, segmentSurface: segment.surface),
-            anchorRange: anchorRange,
-            candidates: candidates,
-            highlightedIndex: highlightedIndex,
-            page: page,
-            highlightedIsHangul: highlightedIsHangul
+        return HanjaCandidatePanelState.realtimeState(
+            segment: segment, index: selectedIndex, anchorRange: anchorRange,
+            candidates: candidates, previous: session.realtimeCandidateState
         )
     }
 
@@ -1067,7 +1046,11 @@ final class InputController: IMKInputSessionController {
             return .blockedUnavailable(anchorRange: target.anchorRange, detail: reason)
         }
 
-        let lookup = hanjaServices.manualLookup(for: target)
+        let surroundingContext = manualHanjaSurroundingContext(targetRange: target.replacementRange) {
+            self.manualHanjaString(from: client, proposedRange: $0)
+        }
+        let lookup = hanjaServices.manualLookup(for: target, surroundingContext: surroundingContext,
+                                               sessionInputs: session.sessionScoringInputs)
         return .started(lookup)
     }
 
@@ -1082,7 +1065,7 @@ final class InputController: IMKInputSessionController {
         case .started(let lookup):
             session.setManualCandidateState(lookup.state, lookupKey: lookup.lookupKey)
             showManualCandidatePanel(client: client, session: session)
-            debugLog("manual-hanja started lookupKey=\(lookup.lookupKey)")
+            debugLog("manual-hanja started lookupLength=\(lookup.lookupKey.utf16.count)")
             return true
 
         case .blockedLoading(let anchorRange):
@@ -1104,7 +1087,7 @@ final class InputController: IMKInputSessionController {
             )
             session.setManualNoticeState(notice)
             hanjaServices.showCandidatePanel(content: .notice(notice), client: client)
-            debugLog("manual-hanja blocked unavailable detail=\(detail ?? "")")
+            debugLog("manual-hanja blocked unavailable detailLength=\(detail?.utf16.count ?? 0)")
             return true
 
         case .blockedNoTarget(let anchorRange):
@@ -1175,7 +1158,7 @@ final class InputController: IMKInputSessionController {
         let selectedRange = client.selectedRange()
         let markedRange = client.markedRange()
         debugLog(
-            "manual-hanja document selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") preedit=\(session.preeditText)"
+            "manual-hanja document selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") preeditLength=\(session.preeditText.utf16.count)"
         )
         guard selectedRange.location != NSNotFound else {
             debugLog("manual-hanja document no-target invalid-selection selected=\(inputDebugRangeString(selectedRange))")
@@ -1190,7 +1173,7 @@ final class InputController: IMKInputSessionController {
             }
 
             debugLog(
-                "manual-hanja document selectedTextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target.sourceText) replacement=\(inputDebugRangeString(target.replacementRange))"
+                "manual-hanja document selectedTextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target.sourceText.utf16.count) replacement=\(inputDebugRangeString(target.replacementRange))"
             )
             return target
         }
@@ -1214,7 +1197,7 @@ final class InputController: IMKInputSessionController {
             caretLocation: selectedRange.location
         )
         debugLog(
-            "manual-hanja document contextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+            "manual-hanja document contextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
         )
         return target
     }
@@ -1231,7 +1214,7 @@ final class InputController: IMKInputSessionController {
             preeditText: preeditText
         )
         debugLog(
-            "manual-hanja composition selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) effectiveMarked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") replacement=\(inputDebugRangeString(session.currentReplacementRange)) preedit=\(preeditText)"
+            "manual-hanja composition selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) effectiveMarked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") replacement=\(inputDebugRangeString(session.currentReplacementRange)) preeditLength=\(preeditText.utf16.count)"
         )
         guard !preeditText.isEmpty else {
             debugLog("manual-hanja composition no-target empty-preedit")
@@ -1250,7 +1233,7 @@ final class InputController: IMKInputSessionController {
                 markedRange: markedRange
             )
             debugLog(
-                "manual-hanja composition target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+                "manual-hanja composition targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
             )
             return target
         }
@@ -1270,7 +1253,7 @@ final class InputController: IMKInputSessionController {
             markedRange: markedRange
         )
         debugLog(
-            "manual-hanja composition contextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+            "manual-hanja composition contextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
         )
         return target
     }
@@ -1279,6 +1262,8 @@ final class InputController: IMKInputSessionController {
         from client: any IMKTextInput,
         proposedRange: NSRange
     ) -> (text: String, actualRange: NSRange)? {
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("host_context_fetch", since: start) }
         var actualRange = NSRange(location: NSNotFound, length: 0)
         if let text = client.string(from: proposedRange, actualRange: &actualRange) {
             return (text, actualRange)
@@ -1362,6 +1347,7 @@ final class InputController: IMKInputSessionController {
 
         client.insertText(sourceText, replacementRange: replacementRange)
         hanjaServices.recordHangulSelection(lookupKey: lookupKey)
+        session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: lookupKey)
         session.reset()
     }
 
@@ -1411,6 +1397,7 @@ final class InputController: IMKInputSessionController {
         let lookupKey = session.pendingManualLookupKey ?? sourceText
         if applied == sourceText {
             hanjaServices.recordHangulSelection(lookupKey: lookupKey)
+            session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: lookupKey)
         } else {
             hanjaServices.recordSelection(lookupKey: lookupKey, value: applied)
             session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: applied)

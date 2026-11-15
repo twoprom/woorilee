@@ -4,14 +4,14 @@
 //
 // This package COMPILES THE REAL APP SOURCE via symlinks into Sources/assoc/AppSource/ — it does
 // not reimplement any ranking/segmentation logic. The symlinked files are exactly the
-// Foundation/Kiwi/LibHangul-only subset of woorilee/ needed to call
+// Foundation/OSLog/Kiwi/LibHangul subset of woorilee/ needed to call
 // KiwiAnalysisService.bestRealtimeSegmentsWithWinningTokens + .applyContextReranking +
 // HanjaContextRanker.rankWithContext end to end, with zero AppKit/IMKSwift/SwiftUI dependency:
 //   HanjaContextRanker, HanjaContextAssociationStore, HanjaPersonalizationModels (the three files
 //   whose clean closure the plan's author identified) PLUS KiwiAnalysisService and everything ITS
 //   whole-file compilation transitively requires: HanjaConversionModels, HanjaClauseJointSelection,
 //   SessionHanjaContext, HanjaDictionaryService, AppRuntimePaths, NumericHanjaCandidateGenerator,
-//   UserHanjaStore, HanjaUsageStore, ManualHanjaModels. Every one of those files was individually
+//   UserHanjaStore, HanjaUsageStore, ManualHanjaModels, HanjaPerformance. Every one of those files was individually
 //   confirmed (import-only-Foundation/Kiwi/LibHangul, no transitive reference to a Cocoa-importing
 //   file) before being added — see the K1b Task 1 report for the file-by-file check.
 //

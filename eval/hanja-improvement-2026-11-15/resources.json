@@ -1,0 +1,150 @@
+{
+  "date": "2026-11-15",
+  "git_head": "5810610b00dd30390d1a832ea74fc9993a541147",
+  "kiwi_commit": "93b826ff169cdf7439d5eb6f51c2d7d8ec669515",
+  "resources": {
+    "eval/hanja-context-eval-set.tsv": {
+      "sha256": "ed766848edb59465ce92c7c59a3b2aee44244404df85a03d16e12792d22b4040",
+      "bytes": 22045
+    },
+    "scripts/hanja-context/curated-association-overrides.txt": {
+      "sha256": "d83ad5328f1440b69a3eff43ffb5fa746fb05720f8d1ce240143891ab670af83",
+      "bytes": 8541
+    },
+    "woorilee/KiwiModels/combiningRule.txt": {
+      "sha256": "3d864f76eade67b250d37f4ee83de848b04fb14d0cd6ed36c36d0b210ad38ebc",
+      "bytes": 3584
+    },
+    "woorilee/KiwiModels/cong.mdl": {
+      "sha256": "bd9ca89ee1b72e750c8e2166a17c80a0fe3fabd828c78b1f0928486a6b1833a7",
+      "bytes": 75667563
+    },
+    "woorilee/KiwiModels/default.dict": {
+      "sha256": "d4293e44b2588d0c3aabbce607a0f41ad3534abd31b34139847b127254e01549",
+      "bytes": 3090954
+    },
+    "woorilee/KiwiModels/dialect.dict": {
+      "sha256": "bb6f0ab37dbfcc0fd33dc679121218d24725ae438f31bb362f9b24703e93cda2",
+      "bytes": 644
+    },
+    "woorilee/KiwiModels/extract.mdl": {
+      "sha256": "a0c92ffc051e43ae497845cdb8d4c8b9e2f359893cb55c67279c76d1d531ee17",
+      "bytes": 17370
+    },
+    "woorilee/KiwiModels/multi.dict": {
+      "sha256": "e9eff7712d163b214c750333a5d388ab77b50ec386ae55b360babcd24c0c3195",
+      "bytes": 12064440
+    },
+    "woorilee/KiwiModels/nounchr.mdl": {
+      "sha256": "4b687e36836dd60dcb7addcfcf369ac082b339bab76549574ac1ce2b7ccd6836",
+      "bytes": 9734234
+    },
+    "woorilee/KiwiModels/sj.morph": {
+      "sha256": "5e3dab2def6d2cc079e21d5477bd610a391c69045d08caf1e0bbeabda8db8d1b",
+      "bytes": 8462892
+    },
+    "woorilee/KiwiModels/typo.dict": {
+      "sha256": "aa15e48fcd32886441fc1ff9719a3109d3192e91d4b67efbd64260610d68322d",
+      "bytes": 395
+    },
+    "woorilee/data/hanja/freq-hanja.txt": {
+      "sha256": "9d4cd693131e4707ce980b7c43ce4a628eb470084823debfa2298723a07f5343",
+      "bytes": 194748
+    },
+    "woorilee/data/hanja/freq-hanjaeo.txt": {
+      "sha256": "ddba827ae5aea3b6ee212f8a47b3d64588933a55d7ffe50ec15d1bb813ce0d7a",
+      "bytes": 3938975
+    },
+    "woorilee/data/hanja/hanja-context.bin": {
+      "sha256": "b0d47dd59049d97002026c98db26afe5b97e525b060be9a5bc82db93eb2e1179",
+      "bytes": 5495541
+    },
+    "woorilee/data/hanja/hanja-context.bin.d3-backup": {
+      "sha256": "95e8755d446a6680867b437929a0ecf7d4581bacb7d2af00ef4a5630cca999c2",
+      "bytes": 5494250
+    },
+    "woorilee/data/hanja/hanja-context.txt": {
+      "sha256": "8d3958ad25dad17a8c88b582e01d5490cfed513760145bcab8ad9c288c52d691",
+      "bytes": 12347934
+    },
+    "woorilee/data/hanja/hanja-context.txt.d3-backup": {
+      "sha256": "b7555e72017a926e4106a5bc7a8256b33af352ba546a34c0a36869bb33262239",
+      "bytes": 12344482
+    },
+    "woorilee/data/hanja/hanja-native-homograph.txt": {
+      "sha256": "a9822c9203fd7854918aa95310f2a13ca264ef1ab82f71fde8d7e410011e92f4",
+      "bytes": 4096
+    },
+    "woorilee/data/hanja/hanja.txt": {
+      "sha256": "dd44dcc856cf542b1022d0f39c2e9b9f8805fdcc5923be80f04849ed97ce0996",
+      "bytes": 6452522
+    }
+  },
+  "binary": {
+    "counts": {
+      "feature_string_count": 69141,
+      "reading_count": 3260,
+      "candidate_profile_count": 18126,
+      "feature_entry_count": 827610
+    },
+    "nonzero_bias": 0,
+    "negative_weights": 0
+  },
+  "provenance": "corpus + curated overrides; D3 inactive; generation options retained in external counts/association-stats.json",
+  "package_resolution": {
+    "path": "woorilee.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved",
+    "sha256": "50aa9a2fee1ad1aac23a3ddd71457c4cf475a7892218d2cfbe9f9421f5bbdeb5",
+    "pins": [
+      {
+        "identity": "imkswift",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/vChewing/IMKSwift.git",
+        "state": {
+          "revision": "be4e776cc0b93bda31ce3904005bf4d94526de19",
+          "version": "26.3.7"
+        }
+      },
+      {
+        "identity": "libhangul-swift",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/Meapri/libhangul-swift.git",
+        "state": {
+          "branch": "main",
+          "revision": "d50f34b82deebc3c44a3b0a88ea0849f7230609c"
+        }
+      },
+      {
+        "identity": "sparkle",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/sparkle-project/Sparkle",
+        "state": {
+          "revision": "066e75a8b3e99962685d6a90cdd5293ebffd9261",
+          "version": "2.9.1"
+        }
+      }
+    ]
+  },
+  "association_generation": {
+    "source_stats": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/counts/association-stats.json",
+    "sha256": "cd2085b2be81ea21cc21494b1765540545a6fb3fa16e4e50fb943b5ae2f4220a",
+    "params": {
+      "w_paren": 20,
+      "w_dict": 20,
+      "min_anchor_survival": 5,
+      "alpha": 0.5,
+      "selection_metric": "utility = score * ln(1 + weighted_count)",
+      "max_feature_df_count": 662,
+      "max_feature_df_count_rationale": "absolute cutoff fixed 2026-07-10 (= ceil(0.039 * 16974), the accepted 5b build's effective boundary); fractional cutoff loosened with pool growth and re-admitted 나/VV into 수도:修道",
+      "ubiquity_scoped_tags": "VV, VA, VA-I, VV-I",
+      "colloc_weight": 20,
+      "colloc_counts_file": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/counts/collocation-counts.tsv",
+      "colloc_tuples": 13,
+      "colloc_readings": 12,
+      "colloc_note": "NIKL 파생어 연어 (flagged readings only) — survival-granting, ubiquity-ban exempt per row; NOT in compute_profile_df (banned set independent)",
+      "curated_override_rows": 51,
+      "m": 300,
+      "min_total_weighted": 0,
+      "freq_cutoff": 0
+    }
+  }
+}

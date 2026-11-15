@@ -1,0 +1,732 @@
+id	label_provenance	category	issue	dictionary_count	dictionary_candidates	omitted_from_display	app_candidates
+d2-000001	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		加金,價金,假金,家禽,呵禁,苛禁,哥禁,嘉禽
+d2-000002	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		家禽,加金,價金,假金,呵禁,苛禁,哥禁,嘉禽
+d2-000003	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		加金,價金,假金,家禽,呵禁,苛禁,哥禁,嘉禽
+d2-000005	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		加金,價金,假金,家禽,呵禁,苛禁,哥禁,嘉禽
+d2-000006	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		家禽,加金,價金,假金,呵禁,苛禁,哥禁,嘉禽
+d2-000008	AI_unreviewed	U	listed	8	假金,價金,加金,呵禁,哥禁,嘉禽,家禽,苛禁		加金,價金,假金,家禽,呵禁,苛禁,哥禁,嘉禽
+d2-000009	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	嘉靖	家庭,家政,稼亭,駕丁,假定,家丁,加定,假晶,苛政,柯亭,嘉靖
+d2-000010	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	稼亭	家庭,嘉靖,假定,家政,家丁,加定,駕丁,假晶,苛政,柯亭,稼亭
+d2-000011	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	嘉靖	家政,家庭,假定,家丁,加定,駕丁,假晶,苛政,柯亭,稼亭,嘉靖
+d2-000013	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	嘉靖	假定,家政,家庭,柯亭,稼亭,家丁,加定,駕丁,假晶,苛政,嘉靖
+d2-000014	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	嘉靖	家庭,柯亭,稼亭,假定,家政,家丁,加定,駕丁,假晶,苛政,嘉靖
+d2-000016	AI_unreviewed	U	listed	11	假定,假晶,加定,嘉靖,家丁,家庭,家政,柯亭,稼亭,苛政,駕丁	嘉靖	家庭,假定,家政,家丁,加定,駕丁,假晶,苛政,柯亭,稼亭,嘉靖
+d2-000017	AI_unreviewed	U	listed	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000018	AI_unreviewed	U	listed	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000021	AI_unreviewed	U	listed	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000022	AI_unreviewed	?	needs_independent_semantic_review	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000023	AI_unreviewed	U	listed	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000024	AI_unreviewed	U	listed	3	勘放,坎方,監房		監房,勘放,坎方
+d2-000025	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開國,開局,蓋國,個國
+d2-000027	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開局,開國,蓋國,個國
+d2-000028	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開國,開局,蓋國,個國
+d2-000030	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開國,開局,蓋國,個國
+d2-000031	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開國,開局,蓋國,個國
+d2-000032	AI_unreviewed	U	listed	4	個國,蓋國,開國,開局		開國,開局,蓋國,個國
+d2-000033	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		開陳,改進,開進,開陣,開賑,凱陳,芥塵
+d2-000035	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		改進,開陳,開進,開陣,開賑,凱陳,芥塵
+d2-000036	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		開陳,改進,開進,開陣,開賑,凱陳,芥塵
+d2-000037	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		改進,芥塵,開進,開陣,開賑,凱陳,開陳
+d2-000039	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		開陳,改進,開進,開陣,開賑,凱陳,芥塵
+d2-000040	AI_unreviewed	U	listed	7	凱陳,改進,芥塵,開賑,開進,開陣,開陳		開陳,開賑,改進,開進,開陣,凱陳,芥塵
+d2-000043	AI_unreviewed	U	listed	5	結句,結構,結球,缺口,缺球		結構,缺口,結句,結球,缺球
+d2-000044	AI_unreviewed	U	listed	5	結句,結構,結球,缺口,缺球		缺口,結句,結球,結構,缺球
+d2-000046	AI_unreviewed	U	listed	5	結句,結構,結球,缺口,缺球		結球,缺口,結句,結構,缺球
+d2-000047	AI_unreviewed	?	needs_independent_semantic_review	5	結句,結構,結球,缺口,缺球		缺口,結句,結球,結構,缺球
+d2-000049	AI_unreviewed	?	needs_independent_semantic_review	5	結句,結構,結球,缺口,缺球		結構,缺口,結句,結球,缺球
+d2-000050	AI_unreviewed	?	needs_independent_semantic_review	5	結句,結構,結球,缺口,缺球		缺口,結句,結球,結構,缺球
+d2-000051	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000053	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000055	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000056	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000057	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000058	AI_unreviewed	U	listed	2	決心,結審		決心,結審
+d2-000059	AI_unreviewed	U	listed	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		警衛,京位,經緯,傾危,徑爲,頸圍,涇渭
+d2-000060	AI_unreviewed	U	listed	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		經緯,京位,警衛,傾危,徑爲,頸圍,涇渭
+d2-000061	AI_unreviewed	U	listed	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		京位,經緯,警衛,傾危,徑爲,頸圍,涇渭
+d2-000064	AI_unreviewed	U	listed	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		經緯,京位,警衛,傾危,徑爲,頸圍,涇渭
+d2-000065	AI_unreviewed	?	needs_independent_semantic_review	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		經緯,京位,警衛,傾危,徑爲,頸圍,涇渭
+d2-000066	AI_unreviewed	U	listed	7	京位,傾危,徑爲,涇渭,經緯,警衛,頸圍		京位,經緯,警衛,傾危,徑爲,頸圍,涇渭
+d2-000075	AI_unreviewed	?	needs_independent_semantic_review	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000076	AI_unreviewed	U	listed	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000077	AI_unreviewed	U	listed	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000079	AI_unreviewed	U	listed	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000080	AI_unreviewed	U	listed	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000081	AI_unreviewed	U	listed	7	古戒,告戒,告誡,考啓,苦界,高啓,高階		苦界,高啓,古戒,高階,考啓,告戒,告誡
+d2-000083	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		庫房,古方,故放,故邦,孤芳
+d2-000084	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		古方,故放,故邦,庫房,孤芳
+d2-000085	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		古方,故放,故邦,庫房,孤芳
+d2-000086	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		古方,故放,故邦,庫房,孤芳
+d2-000087	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		古方,故放,故邦,庫房,孤芳
+d2-000088	AI_unreviewed	U	listed	5	古方,孤芳,庫房,故放,故邦		古方,故放,故邦,庫房,孤芳
+d2-000091	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000092	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000094	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000095	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000097	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000098	AI_unreviewed	U	listed	4	菰繩,高僧,高勝,高升		高僧,高勝,高升,菰繩
+d2-000100	AI_unreviewed	K	hangul_keep_label	5	古友,故友,膏雨,苦雨,高郵		故友,古友,苦雨,高郵,膏雨
+d2-000104	AI_unreviewed	K	hangul_keep_label	5	古友,故友,膏雨,苦雨,高郵		古友,苦雨,故友,高郵,膏雨
+d2-000105	AI_unreviewed	K	hangul_keep_label	5	古友,故友,膏雨,苦雨,高郵		故友,古友,苦雨,高郵,膏雨
+d2-000106	AI_unreviewed	K	hangul_keep_label	5	古友,故友,膏雨,苦雨,高郵		故友,古友,苦雨,高郵,膏雨
+d2-000107	AI_unreviewed	U	listed	3	公團,工團,貢緞		工團,貢緞,公團
+d2-000108	AI_unreviewed	U	listed	3	公團,工團,貢緞		公團,工團,貢緞
+d2-000109	AI_unreviewed	U	listed	3	公團,工團,貢緞		工團,貢緞,公團
+d2-000111	AI_unreviewed	U	listed	3	公團,工團,貢緞		工團,貢緞,公團
+d2-000113	AI_unreviewed	U	listed	3	公團,工團,貢緞		公團,工團,貢緞
+d2-000114	AI_unreviewed	U	listed	3	公團,工團,貢緞		工團,貢緞,公團
+d2-000115	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000116	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000117	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000119	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000120	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000122	AI_unreviewed	U	listed	2	攻掠,攻略		攻略,攻掠
+d2-000123	AI_unreviewed	?	needs_independent_semantic_review	7	公序,公書,公署,共棲,功西,孔棲,攻西		公署,功西,公書,公序,攻西,共棲,孔棲
+d2-000126	AI_unreviewed	?	needs_independent_semantic_review	7	公序,公書,公署,共棲,功西,孔棲,攻西		公署,功西,公書,公序,攻西,共棲,孔棲
+d2-000130	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000131	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000132	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000133	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000134	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000137	AI_unreviewed	U	listed	2	公益,共益		公益,共益
+d2-000138	AI_unreviewed	U	listed	2	公衆,空中		空中,公衆
+d2-000140	AI_unreviewed	U	listed	2	公衆,空中		公衆,空中
+d2-000141	AI_unreviewed	U	listed	2	公衆,空中		公衆,空中
+d2-000142	AI_unreviewed	U	listed	2	公衆,空中		空中,公衆
+d2-000143	AI_unreviewed	U	listed	2	公衆,空中		空中,公衆
+d2-000145	AI_unreviewed	U	listed	2	公衆,空中		公衆,空中
+d2-000152	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		過去,科擧,過擧,寡居
+d2-000153	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		過去,科擧,過擧,寡居
+d2-000154	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		科擧,過去,過擧,寡居
+d2-000157	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		過去,科擧,過擧,寡居
+d2-000158	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		過去,科擧,過擧,寡居
+d2-000159	AI_unreviewed	U	listed	4	寡居,科擧,過去,過擧		過去,科擧,過擧,寡居
+d2-000160	AI_unreviewed	U	listed	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		敎徒,敎導,交刀,交道,敎道,橋道,矯導
+d2-000162	AI_unreviewed	U	listed	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		敎導,敎徒,交刀,交道,敎道,橋道,矯導
+d2-000163	AI_unreviewed	U	listed	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		矯導,敎徒,敎導,交刀,交道,敎道,橋道
+d2-000164	AI_unreviewed	?	needs_independent_semantic_review	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		敎徒,敎導,交刀,交道,敎道,橋道,矯導
+d2-000165	AI_unreviewed	U	listed	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		敎徒,矯導,敎導,交刀,交道,敎道,橋道
+d2-000167	AI_unreviewed	U	listed	7	交刀,交道,敎導,敎徒,敎道,橋道,矯導		敎徒,敎導,交刀,交道,敎道,橋道,矯導
+d2-000173	AI_unreviewed	U	listed	5	九曲,九穀,舊曲,舊穀,鉤曲		九曲,九穀,舊曲,舊穀,鉤曲
+d2-000174	AI_unreviewed	U	listed	5	九曲,九穀,舊曲,舊穀,鉤曲		九曲,九穀,舊曲,舊穀,鉤曲
+d2-000180	AI_unreviewed	U	listed	4	禁山,金山,金酸,錦山		錦山,金山,禁山,金酸
+d2-000181	AI_unreviewed	?	needs_independent_semantic_review	4	禁山,金山,金酸,錦山		錦山,金山,禁山,金酸
+d2-000183	AI_unreviewed	U	listed	4	禁山,金山,金酸,錦山		錦山,金山,禁山,金酸
+d2-000185	AI_unreviewed	?	needs_independent_semantic_review	4	禁山,金山,金酸,錦山		金山,禁山,錦山,金酸
+d2-000186	AI_unreviewed	U	listed	4	禁山,金山,金酸,錦山		金山,禁山,錦山,金酸
+d2-000187	AI_unreviewed	U	listed	4	禁山,金山,金酸,錦山		錦山,金山,禁山,金酸
+d2-000188	AI_unreviewed	U	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	機器,碁器	氣機,器機,起期,期期,旣記,紀記,奇技,奇奇,汽機,騏驥,碁器,機器
+d2-000189	AI_unreviewed	U	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	機器,碁器	氣機,器機,起期,期期,旣記,紀記,奇技,奇奇,汽機,騏驥,碁器,機器
+d2-000190	AI_unreviewed	U	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	機器,碁器	器機,氣機,起期,期期,旣記,紀記,奇技,奇奇,汽機,騏驥,碁器,機器
+d2-000192	AI_unreviewed	U	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	機器,碁器	器機,氣機,起期,期期,旣記,紀記,奇技,奇奇,汽機,騏驥,碁器,機器
+d2-000194	AI_unreviewed	M	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	碁器,騏驥	器機,起期,機器,期期,旣記,紀記,奇技,氣機,奇奇,汽機,騏驥,碁器
+d2-000195	AI_unreviewed	M	listed	12	器機,奇奇,奇技,旣記,期期,機器,氣機,汽機,碁器,紀記,起期,騏驥	碁器,騏驥	器機,旣記,氣機,機器,起期,期期,紀記,奇技,奇奇,汽機,騏驥,碁器
+d2-000196	AI_unreviewed	U	listed	2	技能,機能		技能,機能
+d2-000198	AI_unreviewed	U	listed	2	技能,機能		機能,技能
+d2-000199	AI_unreviewed	U	listed	2	技能,機能		機能,技能
+d2-000200	AI_unreviewed	U	listed	2	技能,機能		技能,機能
+d2-000201	AI_unreviewed	U	listed	2	技能,機能		機能,技能
+d2-000203	AI_unreviewed	U	listed	2	技能,機能		技能,機能
+d2-000204	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		忌日,期日,己日,幾日,奇日,奇一
+d2-000205	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		期日,忌日,己日,幾日,奇日,奇一
+d2-000206	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		期日,忌日,己日,幾日,奇日,奇一
+d2-000208	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		期日,忌日,己日,幾日,奇日,奇一
+d2-000209	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		期日,忌日,己日,幾日,奇日,奇一
+d2-000211	AI_unreviewed	U	listed	6	奇一,奇日,己日,幾日,忌日,期日		期日,忌日,己日,幾日,奇日,奇一
+d2-000212	AI_unreviewed	U	listed	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		旗亭,奇正,技正,旣定,氣精,欺情,起程,旗旌,汽艇
+d2-000213	AI_unreviewed	U	listed	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		技正,旣定,奇正,氣精,欺情,起程,旗亭,旗旌,汽艇
+d2-000216	AI_unreviewed	U	listed	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		欺情,旣定,技正,奇正,氣精,起程,旗亭,旗旌,汽艇
+d2-000217	AI_unreviewed	K	hangul_keep_label	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		技正,旣定,奇正,氣精,欺情,起程,旗亭,旗旌,汽艇
+d2-000218	AI_unreviewed	K	hangul_keep_label	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		技正,旣定,奇正,氣精,欺情,起程,旗亭,旗旌,汽艇
+d2-000219	AI_unreviewed	U	listed	9	奇正,技正,旗亭,旗旌,旣定,欺情,氣精,汽艇,起程		技正,旣定,奇正,氣精,欺情,起程,旗亭,旗旌,汽艇
+d2-000220	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000221	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000222	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000223	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000224	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000225	AI_unreviewed	U	listed	2	暖色,難色		難色,暖色
+d2-000228	AI_unreviewed	K	hangul_keep_label	4	來示,內侍,內寺,內示		內侍,內示,來示,內寺
+d2-000229	AI_unreviewed	K	hangul_keep_label	4	來示,內侍,內寺,內示		內寺,內侍,內示,來示
+d2-000236	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000238	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000239	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000241	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000242	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000243	AI_unreviewed	U	listed	2	綠陰,錄音		錄音,綠陰
+d2-000245	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000246	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000247	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000248	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000249	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000250	AI_unreviewed	U	listed	2	論意,論議		論議,論意
+d2-000252	AI_unreviewed	U	listed	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		團地,段地,但只,端志,短枝,短智,斷指,丹脂,斷趾
+d2-000253	AI_unreviewed	U	listed	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		團地,但只,段地,端志,短枝,短智,斷指,丹脂,斷趾
+d2-000255	AI_unreviewed	K	hangul_keep_label	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		團地,但只,段地,端志,短枝,短智,斷指,丹脂,斷趾
+d2-000256	AI_unreviewed	K	hangul_keep_label	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		但只,斷指,團地,段地,端志,短枝,短智,丹脂,斷趾
+d2-000258	AI_unreviewed	K	hangul_keep_label	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		但只,團地,段地,端志,短枝,短智,斷指,丹脂,斷趾
+d2-000259	AI_unreviewed	U	listed	9	丹脂,但只,團地,斷指,斷趾,段地,短智,短枝,端志		團地,但只,段地,端志,短枝,短智,斷指,丹脂,斷趾
+d2-000260	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000261	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000262	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000263	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000264	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000267	AI_unreviewed	U	listed	3	唐國,當國,當局		當局,當國,唐國
+d2-000276	AI_unreviewed	?	needs_independent_semantic_review	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大同,大東,大洞,對同,帶同,臺東,垈洞
+d2-000277	AI_unreviewed	U	listed	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大洞,垈洞,大同,大東,對同,帶同,臺東
+d2-000278	AI_unreviewed	U	listed	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大洞,垈洞,大同,大東,對同,帶同,臺東
+d2-000279	AI_unreviewed	?	needs_independent_semantic_review	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大洞,垈洞,大同,大東,對同,帶同,臺東
+d2-000280	AI_unreviewed	U	listed	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大洞,大同,垈洞,大東,對同,帶同,臺東
+d2-000281	AI_unreviewed	U	listed	7	垈洞,大同,大東,大洞,對同,帶同,臺東		大同,大洞,垈洞,大東,對同,帶同,臺東
+d2-000284	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		大物,代物,對物,貸物
+d2-000285	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		大物,代物,對物,貸物
+d2-000287	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		大物,代物,對物,貸物
+d2-000288	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		大物,代物,對物,貸物
+d2-000289	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		代物,大物,對物,貸物
+d2-000290	AI_unreviewed	U	listed	4	代物,大物,對物,貸物		大物,代物,對物,貸物
+d2-000292	AI_unreviewed	U	listed	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		待遇,大雨,大憂,大愚,大優,大禹,對偶,大遇
+d2-000293	AI_unreviewed	K	hangul_keep_label	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		待遇,大雨,大憂,大愚,大優,大禹,對偶,大遇
+d2-000294	AI_unreviewed	U	listed	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		待遇,大雨,大憂,大愚,大優,大禹,對偶,大遇
+d2-000296	AI_unreviewed	U	listed	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		大愚,待遇,大雨,大憂,大優,大禹,對偶,大遇
+d2-000297	AI_unreviewed	U	listed	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		待遇,對偶,大雨,大憂,大愚,大優,大禹,大遇
+d2-000298	AI_unreviewed	U	listed	8	大優,大愚,大憂,大禹,大遇,大雨,對偶,待遇		待遇,大雨,大憂,大愚,大優,大禹,對偶,大遇
+d2-000300	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000301	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000303	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000304	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000306	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000307	AI_unreviewed	K	hangul_keep_label	2	突然,突燃		突然,突燃
+d2-000309	AI_unreviewed	?	needs_independent_semantic_review	5	冬帽,冬毛,冬茅,同母,同謀		同母,冬毛,同謀,冬帽,冬茅
+d2-000312	AI_unreviewed	?	needs_independent_semantic_review	5	冬帽,冬毛,冬茅,同母,同謀		同母,冬毛,同謀,冬帽,冬茅
+d2-000317	AI_unreviewed	U	listed	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000320	AI_unreviewed	?	needs_independent_semantic_review	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000321	AI_unreviewed	U	listed	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000322	AI_unreviewed	?	needs_independent_semantic_review	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000323	AI_unreviewed	?	needs_independent_semantic_review	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000324	AI_unreviewed	U	listed	3	馬臺,馬隊,麻袋		麻袋,馬隊,馬臺
+d2-000334	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		名簿,冥府,明部,命婦,名付
+d2-000335	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		名簿,冥府,明部,命婦,名付
+d2-000336	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		名簿,冥府,明部,命婦,名付
+d2-000337	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		名簿,冥府,明部,命婦,名付
+d2-000339	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		命婦,冥府,名簿,明部,名付
+d2-000340	AI_unreviewed	U	listed	5	冥府,名付,名簿,命婦,明部		名簿,冥府,明部,命婦,名付
+d2-000341	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000343	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000344	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000346	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000347	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000348	AI_unreviewed	U	listed	3	名實,命실,明悉		名實,明悉,命실
+d2-000349	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000350	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000351	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000352	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000355	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000356	AI_unreviewed	K	hangul_keep_label	3	暮世,暮歲,毛細		毛細,暮世,暮歲
+d2-000357	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文壇,文段,文緞,紋緞
+d2-000358	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文壇,文段,文緞,紋緞
+d2-000361	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文段,文壇,文緞,紋緞
+d2-000362	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文壇,文段,文緞,紋緞
+d2-000363	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文壇,文段,文緞,紋緞
+d2-000364	AI_unreviewed	U	listed	4	文壇,文段,文緞,紋緞		文壇,文段,文緞,紋緞
+d2-000365	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000366	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000367	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000368	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000369	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000372	AI_unreviewed	U	listed	4	博受,博搜,拍手,薄收		拍手,博受,薄收,博搜
+d2-000373	AI_unreviewed	U	listed	2	發光,發狂		發光,發狂
+d2-000374	AI_unreviewed	U	listed	2	發光,發狂		發光,發狂
+d2-000375	AI_unreviewed	U	listed	2	發光,發狂		發光,發狂
+d2-000376	AI_unreviewed	U	listed	2	發光,發狂		發光,發狂
+d2-000377	AI_unreviewed	U	listed	2	發光,發狂		發狂,發光
+d2-000379	AI_unreviewed	U	listed	2	發光,發狂		發狂,發光
+d2-000382	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		報道,步道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000383	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		步道,報道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000385	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		報道,步道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000386	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		報道,步道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000387	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		報道,步道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000388	AI_unreviewed	U	listed	9	保導,報導,報道,寶刀,寶島,步度,步道,補導,輔導		報道,步道,寶刀,步度,保導,寶島,報導,補導,輔導
+d2-000389	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		輻射,複寫,卜辭,伏射,服事,卜師,複絲,覆沙
+d2-000391	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		覆沙,複寫,輻射,伏射,服事,卜師,複絲,卜辭
+d2-000393	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		輻射,複寫,伏射,服事,卜師,複絲,卜辭,覆沙
+d2-000394	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		輻射,卜辭,卜師,伏射,複寫,服事,複絲,覆沙
+d2-000395	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		輻射,複寫,伏射,服事,卜師,複絲,卜辭,覆沙
+d2-000396	AI_unreviewed	U	listed	8	伏射,卜師,卜辭,服事,複寫,複絲,覆沙,輻射		輻射,複寫,卜辭,伏射,服事,卜師,複絲,覆沙
+d2-000397	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉祀,奉事,奉使,封事,封祀
+d2-000398	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉使,奉祀,奉事,封事,封祀
+d2-000399	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉使,奉祀,奉事,封事,封祀
+d2-000400	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉祀,封祀,封事,奉事,奉使
+d2-000401	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉祀,奉事,奉使,封事,封祀
+d2-000404	AI_unreviewed	U	listed	6	奉事,奉仕,奉使,奉祀,封事,封祀		奉仕,奉祀,奉事,奉使,封事,封祀
+d2-000406	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		簿記,扶起,浮氣,府妓,父忌,負氣,附記,浮寄,附驥,缶器
+d2-000407	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		浮氣,簿記,父忌,扶起,負氣,附記,浮寄,附驥,府妓,缶器
+d2-000408	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		浮氣,簿記,父忌,扶起,負氣,附記,浮寄,附驥,府妓,缶器
+d2-000409	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		浮氣,簿記,父忌,扶起,負氣,附記,浮寄,附驥,府妓,缶器
+d2-000411	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		簿記,浮氣,父忌,扶起,負氣,附記,浮寄,附驥,府妓,缶器
+d2-000412	AI_unreviewed	K	hangul_keep_label	10	府妓,扶起,浮寄,浮氣,父忌,簿記,缶器,負氣,附記,附驥		浮氣,簿記,父忌,扶起,負氣,附記,浮寄,附驥,府妓,缶器
+d2-000413	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000414	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000416	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000417	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000418	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000420	AI_unreviewed	?	needs_independent_semantic_review	4	肥鮮,飛仙,飛船,鼻線		鼻線,飛仙,飛船,肥鮮
+d2-000421	AI_unreviewed	?	needs_independent_semantic_review	5	史錄,司祿,四綠,寫錄,麝鹿		四綠,史錄,司祿,寫錄,麝鹿
+d2-000422	AI_unreviewed	U	listed	5	史錄,司祿,四綠,寫錄,麝鹿		史錄,四綠,司祿,寫錄,麝鹿
+d2-000423	AI_unreviewed	?	needs_independent_semantic_review	5	史錄,司祿,四綠,寫錄,麝鹿		四綠,史錄,司祿,寫錄,麝鹿
+d2-000424	AI_unreviewed	U	listed	5	史錄,司祿,四綠,寫錄,麝鹿		四綠,史錄,司祿,寫錄,麝鹿
+d2-000426	AI_unreviewed	U	listed	5	四術,射術,師術,詐術,邪術		四術,師術,射術,邪術,詐術
+d2-000429	AI_unreviewed	?	needs_independent_semantic_review	5	四術,射術,師術,詐術,邪術		四術,師術,射術,邪術,詐術
+d2-000432	AI_unreviewed	U	listed	23	事宜,事意,司儀,司衣,司議,四儀,寫意,射儀,徙倚,思義,思議,死義,私意,私誼,私議,蓑衣,蛇醫,謝儀,謝意,辭意,邪意,邪義,邪議	司儀,司議,寫意,射儀,徙倚,私誼,私議,蓑衣,蛇醫,謝儀,邪意,邪義,邪議	辭意,謝意,事意,私意,死義,思義,四儀,思議,事宜,司衣,寫意,私議,邪意,邪義,司議,謝儀,射儀,蛇醫,私誼,司儀,邪議,蓑衣,徙倚
+d2-000435	AI_unreviewed	U	listed	23	事宜,事意,司儀,司衣,司議,四儀,寫意,射儀,徙倚,思義,思議,死義,私意,私誼,私議,蓑衣,蛇醫,謝儀,謝意,辭意,邪意,邪義,邪議	事宜,司儀,司衣,射儀,徙倚,私誼,私議,蓑衣,蛇醫,謝儀,邪意,邪義,邪議	司議,謝意,寫意,辭意,事意,私意,死義,思義,四儀,思議,事宜,司衣,私議,邪意,邪義,謝儀,射儀,蛇醫,私誼,司儀,邪議,蓑衣,徙倚
+d2-000440	AI_unreviewed	?	needs_independent_semantic_review	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	使酒,司舟,四洲,沙柱,蛇酒,賜酒,飼主	四柱,寺主,私鑄,砂洲,社主,使嗾,事主,師主,四周,事酒,四洲,使酒,飼主,賜酒,司舟,蛇酒,沙柱
+d2-000442	AI_unreviewed	U	listed	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	使酒,司舟,四周,私鑄,蛇酒,賜酒,飼主	事酒,四柱,砂洲,四洲,沙柱,社主,使嗾,事主,師主,寺主,四周,使酒,飼主,私鑄,賜酒,司舟,蛇酒
+d2-000443	AI_unreviewed	U	display_truncated	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	司舟,沙柱,砂洲,私鑄,蛇酒,賜酒,飼主	四洲,砂洲,四柱,社主,使嗾,事主,師主,寺主,四周,事酒,使酒,飼主,私鑄,賜酒,司舟,蛇酒,沙柱
+d2-000444	AI_unreviewed	U	listed	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	司舟,沙柱,砂洲,私鑄,蛇酒,賜酒,飼主	四柱,社主,使嗾,事主,師主,寺主,四周,事酒,四洲,使酒,飼主,私鑄,賜酒,司舟,蛇酒,沙柱,砂洲
+d2-000445	AI_unreviewed	U	listed	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	司舟,沙柱,砂洲,私鑄,蛇酒,賜酒,飼主	寺主,社主,四柱,使嗾,事主,師主,四周,事酒,四洲,使酒,飼主,私鑄,賜酒,司舟,蛇酒,沙柱,砂洲
+d2-000447	AI_unreviewed	U	listed	17	事主,事酒,使嗾,使酒,司舟,四周,四柱,四洲,寺主,師主,沙柱,砂洲,社主,私鑄,蛇酒,賜酒,飼主	司舟,沙柱,砂洲,私鑄,蛇酒,賜酒,飼主	四柱,社主,使嗾,事主,師主,寺主,四周,事酒,四洲,使酒,飼主,私鑄,賜酒,司舟,蛇酒,沙柱,砂洲
+d2-000448	AI_unreviewed	U	listed	3	社債,私債,詞彩		私債,社債,詞彩
+d2-000450	AI_unreviewed	U	listed	3	社債,私債,詞彩		社債,私債,詞彩
+d2-000451	AI_unreviewed	U	listed	3	社債,私債,詞彩		私債,社債,詞彩
+d2-000452	AI_unreviewed	U	listed	3	社債,私債,詞彩		私債,社債,詞彩
+d2-000453	AI_unreviewed	U	listed	3	社債,私債,詞彩		私債,社債,詞彩
+d2-000455	AI_unreviewed	U	listed	3	社債,私債,詞彩		私債,社債,詞彩
+d2-000456	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		産地,山地,山紙,山池
+d2-000457	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		産地,山地,山紙,山池
+d2-000458	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		産地,山地,山紙,山池
+d2-000461	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		山地,産地,山紙,山池
+d2-000462	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		産地,山地,山紙,山池
+d2-000463	AI_unreviewed	U	listed	4	山地,山池,山紙,産地		産地,山地,山紙,山池
+d2-000466	AI_unreviewed	U	listed	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三上,三相,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000467	AI_unreviewed	U	listed	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三相,三上,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000468	AI_unreviewed	U	listed	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三相,三上,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000469	AI_unreviewed	K	hangul_keep_label	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三上,三相,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000470	AI_unreviewed	U	listed	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三上,三相,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000471	AI_unreviewed	U	listed	9	三上,三商,三喪,三常,三想,三湘,三相,三霜,蔘商		三上,三相,三想,三常,三商,三喪,三霜,蔘商,三湘
+d2-000472	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上洞,相同,上同,上東,上冬
+d2-000473	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上同,上洞,相同,上東,上冬
+d2-000474	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上同,上洞,相同,上東,上冬
+d2-000476	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上洞,相同,上同,上東,上冬
+d2-000477	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上同,上洞,相同,上東,上冬
+d2-000479	AI_unreviewed	U	listed	5	上冬,上同,上東,上洞,相同		上同,上洞,相同,上東,上冬
+d2-000480	AI_unreviewed	U	listed	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000481	AI_unreviewed	U	listed	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000482	AI_unreviewed	U	listed	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000484	AI_unreviewed	?	needs_independent_semantic_review	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000486	AI_unreviewed	U	listed	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000487	AI_unreviewed	U	listed	5	上里,商利,商理,常理,相離		上里,常理,商利,商理,相離
+d2-000488	AI_unreviewed	U	listed	6	上藥,嘗藥,尙藥,常藥,相約,相若		上藥,相約,常藥,相若,尙藥,嘗藥
+d2-000491	AI_unreviewed	?	needs_independent_semantic_review	5	上僊,上天,常川,常賤,霜天		上天,常川,霜天,常賤,上僊
+d2-000496	AI_unreviewed	?	needs_independent_semantic_review	5	夕煙,淅然,石燕,石硯,釋然		夕煙,石燕,釋然,石硯,淅然
+d2-000497	AI_unreviewed	U	listed	5	夕煙,淅然,石燕,石硯,釋然		夕煙,石燕,釋然,石硯,淅然
+d2-000498	AI_unreviewed	U	listed	8	席典,石奠,石戰,石殿,石田,石箭,釋典,釋奠		石田,石戰,石殿,席典,釋典,石奠,石箭,釋奠
+d2-000499	AI_unreviewed	?	needs_independent_semantic_review	8	席典,石奠,石戰,石殿,石田,石箭,釋典,釋奠		釋典,釋奠,石田,石戰,石殿,席典,石奠,石箭
+d2-000501	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000503	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000504	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000506	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000507	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000508	AI_unreviewed	U	listed	2	先發,選拔		先發,選拔
+d2-000509	AI_unreviewed	K	hangul_keep_label	2	泄瀉,設使		設使,泄瀉
+d2-000510	AI_unreviewed	K	hangul_keep_label	2	泄瀉,設使		設使,泄瀉
+d2-000511	AI_unreviewed	K	hangul_keep_label	2	泄瀉,設使		設使,泄瀉
+d2-000513	AI_unreviewed	K	hangul_keep_label	2	泄瀉,設使		設使,泄瀉
+d2-000515	AI_unreviewed	U	listed	2	泄瀉,設使		泄瀉,設使
+d2-000516	AI_unreviewed	U	listed	2	泄瀉,設使		泄瀉,設使
+d2-000517	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		聖事,成事,星使,盛事,星絲,聖史,聖師
+d2-000518	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		成事,聖事,星使,盛事,星絲,聖史,聖師
+d2-000519	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		聖事,聖史,成事,星使,盛事,星絲,聖師
+d2-000521	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		聖事,成事,星使,盛事,星絲,聖史,聖師
+d2-000522	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		聖事,成事,星使,盛事,星絲,聖史,聖師
+d2-000524	AI_unreviewed	U	listed	7	成事,星使,星絲,盛事,聖事,聖史,聖師		聖事,成事,星使,盛事,星絲,聖史,聖師
+d2-000526	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		消去,小車,素車,掃去,燒距
+d2-000527	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		小車,素車,消去,掃去,燒距
+d2-000528	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		小車,素車,消去,掃去,燒距
+d2-000530	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		消去,素車,小車,掃去,燒距
+d2-000531	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		小車,素車,消去,掃去,燒距
+d2-000532	AI_unreviewed	U	listed	5	小車,掃去,消去,燒距,素車		小車,素車,消去,掃去,燒距
+d2-000533	AI_unreviewed	U	listed	5	所請,掃淸,疏廳,疏請,訴請		訴請,所請,掃淸,疏請,疏廳
+d2-000534	AI_unreviewed	U	listed	5	所請,掃淸,疏廳,疏請,訴請		訴請,所請,掃淸,疏請,疏廳
+d2-000537	AI_unreviewed	?	needs_independent_semantic_review	5	所請,掃淸,疏廳,疏請,訴請		所請,掃淸,訴請,疏請,疏廳
+d2-000541	AI_unreviewed	U	listed	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		水圈,首卷,授權,受權,獸圈,殊眷,垂眷
+d2-000542	AI_unreviewed	U	listed	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		受權,授權,水圈,首卷,獸圈,殊眷,垂眷
+d2-000544	AI_unreviewed	U	listed	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		水圈,授權,首卷,受權,獸圈,殊眷,垂眷
+d2-000545	AI_unreviewed	U	listed	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		授權,受權,水圈,首卷,獸圈,殊眷,垂眷
+d2-000546	AI_unreviewed	?	needs_independent_semantic_review	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		水圈,授權,首卷,受權,獸圈,殊眷,垂眷
+d2-000548	AI_unreviewed	U	listed	7	受權,垂眷,授權,殊眷,水圈,獸圈,首卷		授權,水圈,首卷,受權,獸圈,殊眷,垂眷
+d2-000549	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		睡眠,水面,水綿,獸面,垂面,愁眠,水麵,羞面,瘦面
+d2-000550	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		睡眠,水面,水綿,獸面,垂面,愁眠,水麵,羞面,瘦面
+d2-000552	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		水面,睡眠,水綿,獸面,垂面,愁眠,水麵,羞面,瘦面
+d2-000553	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		水面,睡眠,水綿,獸面,垂面,愁眠,水麵,羞面,瘦面
+d2-000555	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		水面,獸面,睡眠,水綿,垂面,愁眠,水麵,羞面,瘦面
+d2-000556	AI_unreviewed	U	listed	9	垂面,愁眠,水綿,水面,水麵,獸面,瘦面,睡眠,羞面		水面,睡眠,水綿,獸面,垂面,愁眠,水麵,羞面,瘦面
+d2-000557	AI_unreviewed	U	listed	2	垂範,首犯		垂範,首犯
+d2-000558	AI_unreviewed	K	hangul_keep_label	2	垂範,首犯		垂範,首犯
+d2-000559	AI_unreviewed	U	listed	2	手術臺,수술代		手術臺,수술代
+d2-000560	AI_unreviewed	K	hangul_keep_label	2	手術臺,수술代		手術臺,수술代
+d2-000561	AI_unreviewed	U	listed	2	手術臺,수술代		手術臺,수술代
+d2-000563	AI_unreviewed	K	hangul_keep_label	2	手術臺,수술代		手術臺,수술代
+d2-000564	AI_unreviewed	U	listed	2	手術臺,수술代		手術臺,수술代
+d2-000566	AI_unreviewed	U	listed	2	手術臺,수술代		手術臺,수술代
+d2-000567	AI_unreviewed	U	listed	2	術語,述語		述語,術語
+d2-000569	AI_unreviewed	U	listed	2	術語,述語		術語,述語
+d2-000570	AI_unreviewed	U	listed	2	術語,述語		述語,術語
+d2-000571	AI_unreviewed	U	listed	2	術語,述語		述語,術語
+d2-000572	AI_unreviewed	U	listed	2	術語,述語		術語,述語
+d2-000573	AI_unreviewed	U	listed	2	術語,述語		術語,述語
+d2-000575	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		習氣,濕氣,襲器
+d2-000576	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		濕氣,習氣,襲器
+d2-000578	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		濕氣,習氣,襲器
+d2-000580	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		濕氣,習氣,襲器
+d2-000581	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		濕氣,習氣,襲器
+d2-000582	AI_unreviewed	U	listed	3	濕氣,習氣,襲器		濕氣,習氣,襲器
+d2-000583	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,時刻,視角,時角,始覺
+d2-000585	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,時刻,視角,時角,始覺
+d2-000587	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,視角,時刻,時角,始覺
+d2-000588	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,時刻,視角,時角,始覺
+d2-000589	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,視角,時刻,時角,始覺
+d2-000590	AI_unreviewed	U	listed	5	始覺,時刻,時角,視覺,視角		視覺,時刻,視角,時角,始覺
+d2-000591	AI_unreviewed	K	hangul_keep_label	4	十方,時方,猜謗,試放		時方,十方,試放,猜謗
+d2-000592	AI_unreviewed	K	hangul_keep_label	4	十方,時方,猜謗,試放		十方,時方,試放,猜謗
+d2-000593	AI_unreviewed	?	needs_independent_semantic_review	4	十方,時方,猜謗,試放		十方,時方,試放,猜謗
+d2-000594	AI_unreviewed	?	needs_independent_semantic_review	4	十方,時方,猜謗,試放		時方,十方,試放,猜謗
+d2-000595	AI_unreviewed	K	hangul_keep_label	4	十方,時方,猜謗,試放		時方,十方,試放,猜謗
+d2-000596	AI_unreviewed	K	hangul_keep_label	4	十方,時方,猜謗,試放		時方,十方,試放,猜謗
+d2-000597	AI_unreviewed	U	listed	2	信任,新任		信任,新任
+d2-000598	AI_unreviewed	U	listed	2	信任,新任		信任,新任
+d2-000599	AI_unreviewed	U	listed	2	信任,新任		新任,信任
+d2-000601	AI_unreviewed	U	listed	2	信任,新任		新任,信任
+d2-000602	AI_unreviewed	U	listed	2	信任,新任		新任,信任
+d2-000603	AI_unreviewed	U	listed	2	信任,新任		信任,新任
+d2-000606	AI_unreviewed	?	needs_independent_semantic_review	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	伸葬,晨粧,腎腸,訊杖,身丈,身長,신欌	信章,信藏,腎臟,神將,申檣,伸張,伸長,新裝,新粧,新疆,伸葬,晨粧,腎腸,訊杖,身丈,身長,신欌
+d2-000607	AI_unreviewed	?	needs_independent_semantic_review	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	晨粧,申檣,腎腸,訊杖,身丈,身長,신欌	神將,伸張,腎臟,信章,伸長,信藏,新裝,新粧,新疆,伸葬,晨粧,申檣,腎腸,訊杖,身丈,身長,신欌
+d2-000608	AI_unreviewed	U	listed	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	伸葬,晨粧,腎腸,訊杖,身丈,身長,신欌	申檣,新疆,腎臟,伸長,伸張,信章,神將,信藏,新裝,新粧,伸葬,晨粧,腎腸,訊杖,身丈,身長,신欌
+d2-000609	AI_unreviewed	U	listed	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	伸葬,新疆,晨粧,腎腸,訊杖,身丈,신欌	身長,申檣,伸張,腎臟,信章,神將,伸長,信藏,新裝,新粧,新疆,伸葬,晨粧,腎腸,訊杖,身丈,신欌
+d2-000610	AI_unreviewed	?	needs_independent_semantic_review	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	伸葬,新疆,晨粧,腎腸,訊杖,身丈,신欌	腎臟,神將,申檣,伸長,身長,伸張,信章,信藏,新裝,新粧,新疆,伸葬,晨粧,腎腸,訊杖,身丈,신欌
+d2-000611	AI_unreviewed	U	listed	17	伸張,伸葬,伸長,信章,信藏,新疆,新粧,新裝,晨粧,申檣,神將,腎腸,腎臟,訊杖,身丈,身長,신欌	晨粧,申檣,腎腸,訊杖,身丈,身長,신欌	新疆,伸張,腎臟,信章,神將,伸長,信藏,新裝,新粧,伸葬,晨粧,申檣,腎腸,訊杖,身丈,身長,신欌
+d2-000613	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000615	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000617	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000618	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000619	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000620	AI_unreviewed	U	listed	2	失敗,失牌		失敗,失牌
+d2-000629	AI_unreviewed	?	needs_independent_semantic_review	4	亞門,牙門,衙門,雅文		衙門,亞門,牙門,雅文
+d2-000632	AI_unreviewed	?	needs_independent_semantic_review	4	亞門,牙門,衙門,雅文		亞門,牙門,雅文,衙門
+d2-000633	AI_unreviewed	K	hangul_keep_label	4	亞門,牙門,衙門,雅文		衙門,亞門,牙門,雅文
+d2-000634	AI_unreviewed	U	listed	4	亞門,牙門,衙門,雅文		亞門,牙門,雅文,衙門
+d2-000635	AI_unreviewed	?	needs_independent_semantic_review	4	亞門,牙門,衙門,雅文		亞門,牙門,雅文,衙門
+d2-000636	AI_unreviewed	?	needs_independent_semantic_review	4	亞門,牙門,衙門,雅文		衙門,亞門,牙門,雅文
+d2-000637	AI_unreviewed	U	listed	2	惡語,鰐魚		惡語,鰐魚
+d2-000638	AI_unreviewed	U	listed	2	惡語,鰐魚		惡語,鰐魚
+d2-000639	AI_unreviewed	U	listed	2	惡語,鰐魚		鰐魚,惡語
+d2-000641	AI_unreviewed	U	listed	2	惡語,鰐魚		惡語,鰐魚
+d2-000642	AI_unreviewed	U	listed	2	惡語,鰐魚		惡語,鰐魚
+d2-000643	AI_unreviewed	U	listed	2	惡語,鰐魚		鰐魚,惡語
+d2-000646	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		鞍裝,安葬,雁掌
+d2-000647	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		安葬,鞍裝,雁掌
+d2-000648	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		安葬,鞍裝,雁掌
+d2-000649	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		安葬,鞍裝,雁掌
+d2-000650	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		鞍裝,安葬,雁掌
+d2-000651	AI_unreviewed	U	listed	3	安葬,雁掌,鞍裝		鞍裝,安葬,雁掌
+d2-000653	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000655	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000656	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000658	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000659	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000660	AI_unreviewed	U	listed	2	弱冠,約款		約款,弱冠
+d2-000661	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,年長,年壯,連將,連章,連狀,鍊匠,姸粧,連牆
+d2-000662	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,鍊匠,年長,年壯,連將,連章,連狀,姸粧,連牆
+d2-000663	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,年長,年壯,連將,連章,連狀,鍊匠,姸粧,連牆
+d2-000664	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,年長,年壯,連將,連章,連狀,鍊匠,姸粧,連牆
+d2-000666	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,年長,年壯,連將,連章,連狀,鍊匠,姸粧,連牆
+d2-000667	AI_unreviewed	U	listed	9	姸粧,年壯,年長,延長,連將,連牆,連狀,連章,鍊匠		延長,年長,年壯,連將,連章,連狀,鍊匠,姸粧,連牆
+d2-000669	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000670	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000672	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000673	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000674	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000676	AI_unreviewed	U	listed	5	厭忌,厭棄,艶氣,鹽基,鹽氣		鹽基,鹽氣,艶氣,厭忌,厭棄
+d2-000677	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000679	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000680	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000681	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000682	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000684	AI_unreviewed	U	listed	4	穢政,豫定,豫程,銳精		豫定,豫程,銳精,穢政
+d2-000693	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,愚生,友生,寓生,芋笙
+d2-000694	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,友生,愚生,寓生,芋笙
+d2-000695	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,友生,愚生,寓生,芋笙
+d2-000696	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,友生,愚生,寓生,芋笙
+d2-000697	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,友生,愚生,寓生,芋笙
+d2-000698	AI_unreviewed	U	listed	5	優生,友生,寓生,愚生,芋笙		優生,友生,愚生,寓生,芋笙
+d2-000708	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	原主,原住,園主,願主,原酒,院主,原株,原州,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000710	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	院主,原主,原住,園主,願主,原酒,原株,原州,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000712	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	原主,原住,園主,願主,原酒,院主,原株,原州,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000713	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	原住,原主,園主,願主,原酒,院主,原株,原州,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000714	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	原州,原住,原主,園主,願主,原酒,院主,原株,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000715	AI_unreviewed	U	listed	14	元紬,原主,原住,原州,原株,原註,原酒,園主,圓周,圓柱,圓胄,遠胄,院主,願主	元紬,原註,圓胄,遠胄	原州,原住,原主,園主,願主,原酒,院主,原株,圓周,圓柱,元紬,原註,遠胄,圓胄
+d2-000716	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000717	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000719	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000720	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000722	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000723	AI_unreviewed	?	needs_independent_semantic_review	5	幼弱,有若,柔弱,留約,類藥		有若,幼弱,柔弱,留約,類藥
+d2-000726	AI_unreviewed	K	hangul_keep_label	6	幽眞,留陣,誘進,遊塵,遊疹,遺塵		誘進,幽眞,留陣,遺塵,遊塵,遊疹
+d2-000729	AI_unreviewed	K	hangul_keep_label	6	幽眞,留陣,誘進,遊塵,遊疹,遺塵		誘進,幽眞,留陣,遺塵,遊塵,遊疹
+d2-000731	AI_unreviewed	K	hangul_keep_label	6	幽眞,留陣,誘進,遊塵,遊疹,遺塵		誘進,幽眞,留陣,遺塵,遊塵,遊疹
+d2-000732	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		留學,儒學,遊學,有學,幼學,幽壑
+d2-000735	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		留學,儒學,遊學,有學,幼學,幽壑
+d2-000736	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		儒學,遊學,留學,有學,幼學,幽壑
+d2-000737	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		儒學,留學,遊學,有學,幼學,幽壑
+d2-000738	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		留學,儒學,遊學,有學,幼學,幽壑
+d2-000739	AI_unreviewed	U	listed	6	儒學,幼學,幽壑,有學,留學,遊學		幼學,有學,留學,儒學,遊學,幽壑
+d2-000740	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		有形,類型,流刑,幼形,遺形,流螢,柳珩
+d2-000741	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		有形,流刑,類型,幼形,遺形,流螢,柳珩
+d2-000743	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		類型,有形,流刑,幼形,遺形,流螢,柳珩
+d2-000744	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		有形,流刑,幼形,類型,遺形,流螢,柳珩
+d2-000745	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		類型,有形,流刑,幼形,遺形,流螢,柳珩
+d2-000746	AI_unreviewed	U	listed	7	幼形,有形,柳珩,流刑,流螢,遺形,類型		類型,有形,流刑,幼形,遺形,流螢,柳珩
+d2-000748	AI_unreviewed	?	needs_independent_semantic_review	13	淫事,淫奢,淫祀,淫祠,淫辭,蔭仕,陰事,陰司,陰沙,陰祠,陰私,陰邪,飮射	淫奢,淫祠,蔭仕	陰事,陰私,淫事,飮射,陰司,陰沙,陰邪,淫辭,淫祀,陰祠,蔭仕,淫祠,淫奢
+d2-000749	AI_unreviewed	?	needs_independent_semantic_review	13	淫事,淫奢,淫祀,淫祠,淫辭,蔭仕,陰事,陰司,陰沙,陰祠,陰私,陰邪,飮射	淫奢,淫祀,陰祠	淫祠,蔭仕,陰事,陰私,淫事,飮射,陰司,陰沙,陰邪,淫辭,淫祀,陰祠,淫奢
+d2-000750	AI_unreviewed	?	needs_independent_semantic_review	13	淫事,淫奢,淫祀,淫祠,淫辭,蔭仕,陰事,陰司,陰沙,陰祠,陰私,陰邪,飮射	淫奢,淫祠,蔭仕	淫事,陰事,陰私,飮射,陰司,陰沙,陰邪,淫辭,淫祀,陰祠,蔭仕,淫祠,淫奢
+d2-000755	AI_unreviewed	K	hangul_keep_label	10	二道,利刀,利導,吏道,李燾,泥塗,異圖,異道,移都,離島		二道,利刀,異道,異圖,吏道,利導,移都,離島,李燾,泥塗
+d2-000756	AI_unreviewed	?	needs_independent_semantic_review	10	二道,利刀,利導,吏道,李燾,泥塗,異圖,異道,移都,離島		二道,利刀,異道,異圖,吏道,利導,移都,離島,李燾,泥塗
+d2-000760	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人事,人士,人師,鄰舍
+d2-000762	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人事,人士,人師,鄰舍
+d2-000763	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人士,人事,人師,鄰舍
+d2-000764	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人士,人事,人師,鄰舍
+d2-000765	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人事,人士,人師,鄰舍
+d2-000766	AI_unreviewed	U	listed	4	人事,人士,人師,鄰舍		人事,人士,人師,鄰舍
+d2-000767	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000768	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000770	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000771	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000772	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000773	AI_unreviewed	U	listed	3	仁勇,引用,認容		引用,認容,仁勇
+d2-000775	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000776	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000777	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000778	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000779	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000781	AI_unreviewed	U	listed	5	一刻,一覺,一角,日脚,日角		一角,一刻,日角,日脚,一覺
+d2-000785	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000786	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000787	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000788	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000789	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000790	AI_unreviewed	U	listed	4	一匙,一時,一矢,日時		一時,日時,一矢,一匙
+d2-000795	AI_unreviewed	K	hangul_keep_label	3	壬子,妊子,荏子		壬子,荏子,妊子
+d2-000799	AI_unreviewed	?	needs_independent_semantic_review	5	入亭,入定,入廷,入靜,立庭		入定,立庭,入靜,入廷,入亭
+d2-000800	AI_unreviewed	?	needs_independent_semantic_review	5	入亭,入定,入廷,入靜,立庭		入定,立庭,入靜,入廷,入亭
+d2-000801	AI_unreviewed	K	hangul_keep_label	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	腸垢	裝具,長句,長久,張口,長球,長驅,章句,長軀,葬具,粧具,腸垢
+d2-000803	AI_unreviewed	K	hangul_keep_label	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	腸垢	長驅,長球,裝具,長句,長久,張口,章句,長軀,葬具,粧具,腸垢
+d2-000804	AI_unreviewed	K	hangul_keep_label	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	腸垢	長驅,裝具,長句,長久,張口,長球,章句,長軀,葬具,粧具,腸垢
+d2-000806	AI_unreviewed	U	listed	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	粧具	裝具,長驅,章句,腸垢,長句,長久,張口,長球,長軀,葬具,粧具
+d2-000807	AI_unreviewed	K	hangul_keep_label	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	腸垢	裝具,長句,長久,張口,長球,長驅,章句,長軀,葬具,粧具,腸垢
+d2-000808	AI_unreviewed	K	hangul_keep_label	11	張口,章句,粧具,腸垢,葬具,裝具,長久,長句,長球,長軀,長驅	腸垢	裝具,長句,長久,張口,長球,長驅,章句,長軀,葬具,粧具,腸垢
+d2-000809	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	仗器,壯妓,壯騎,將基,將棋,帳記,掌記,杖朞,杖期,葬器,長崎	長期,臟器,長技,場技,將氣,長旗,壯氣,將器,臟氣,葬期,長崎,壯騎,葬器,杖期,壯妓,仗器,杖朞,將基,將棋,帳記,掌記
+d2-000810	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	仗器,壯妓,壯騎,將基,帳記,掌記,杖朞,杖期,臟氣,葬器,葬期	將棋,長期,長崎,臟器,長技,場技,將氣,長旗,壯氣,將器,臟氣,葬期,壯騎,葬器,杖期,壯妓,仗器,杖朞,將基,帳記,掌記
+d2-000812	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	仗器,壯妓,壯騎,將基,將棋,帳記,掌記,杖期,臟氣,葬器,葬期	杖朞,長期,長崎,臟器,長技,場技,將氣,長旗,壯氣,將器,臟氣,葬期,壯騎,葬器,杖期,壯妓,仗器,將基,將棋,帳記,掌記
+d2-000813	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	仗器,壯妓,壯騎,將基,將棋,帳記,掌記,杖朞,杖期,葬器,長崎	長期,臟器,臟氣,長技,場技,將氣,長旗,壯氣,將器,葬期,長崎,壯騎,葬器,杖期,壯妓,仗器,杖朞,將基,將棋,帳記,掌記
+d2-000815	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	壯妓,壯氣,壯騎,將器,將基,帳記,掌記,杖朞,臟氣,葬器,長旗	長期,將棋,仗器,杖期,葬期,長崎,臟器,長技,場技,將氣,長旗,壯氣,將器,臟氣,壯騎,葬器,壯妓,杖朞,將基,帳記,掌記
+d2-000816	AI_unreviewed	U	listed	21	仗器,場技,壯妓,壯氣,壯騎,將器,將基,將棋,將氣,帳記,掌記,杖朞,杖期,臟器,臟氣,葬器,葬期,長崎,長技,長旗,長期	仗器,壯妓,壯騎,將基,將棋,帳記,掌記,杖朞,杖期,葬器,長崎	長期,臟器,葬期,臟氣,長技,場技,將氣,長旗,壯氣,將器,長崎,壯騎,葬器,杖期,壯妓,仗器,杖朞,將基,將棋,帳記,掌記
+d2-000825	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		長木,張目,裝木,樟木
+d2-000826	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		長木,張目,裝木,樟木
+d2-000827	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		長木,張目,裝木,樟木
+d2-000829	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		長木,張目,裝木,樟木
+d2-000831	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		樟木,長木,張目,裝木
+d2-000832	AI_unreviewed	U	listed	4	張目,樟木,裝木,長木		長木,張目,裝木,樟木
+d2-000833	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		在住,財主,再鑄,齋主
+d2-000834	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		在住,財主,再鑄,齋主
+d2-000836	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		在住,財主,再鑄,齋主
+d2-000837	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		財主,在住,再鑄,齋主
+d2-000838	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		在住,財主,再鑄,齋主
+d2-000840	AI_unreviewed	K	hangul_keep_label	4	再鑄,在住,財主,齋主		在住,財主,再鑄,齋主
+d2-000842	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		裁判,再版,再販,재板
+d2-000843	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		再版,再販,裁判,재板
+d2-000844	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		裁判,再版,再販,재板
+d2-000845	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		再版,裁判,再販,재板
+d2-000847	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		裁判,再販,再版,재板
+d2-000848	AI_unreviewed	U	listed	4	再版,再販,裁判,재板		裁判,再版,再販,재板
+d2-000851	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		赤線,積善,敵船,敵線,賊船,謫仙
+d2-000852	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		賊船,積善,敵船,赤線,敵線,謫仙
+d2-000853	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		賊船,謫仙,積善,敵船,赤線,敵線
+d2-000854	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		積善,敵船,賊船,赤線,敵線,謫仙
+d2-000855	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		賊船,敵船,積善,赤線,敵線,謫仙
+d2-000856	AI_unreviewed	U	listed	6	敵線,敵船,積善,謫仙,賊船,赤線		積善,敵船,赤線,敵線,賊船,謫仙
+d2-000857	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		全館,前官,展觀,轉官,錢貫,專管,銓官
+d2-000859	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		全館,前官,展觀,轉官,錢貫,專管,銓官
+d2-000860	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		前官,全館,展觀,轉官,錢貫,專管,銓官
+d2-000862	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		全館,前官,展觀,轉官,錢貫,專管,銓官
+d2-000863	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		全館,前官,展觀,轉官,錢貫,專管,銓官
+d2-000864	AI_unreviewed	U	listed	7	全館,前官,專管,展觀,轉官,銓官,錢貫		全館,前官,展觀,轉官,錢貫,專管,銓官
+d2-000866	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,廛房,傳方,前房,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000868	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,前房,廛房,傳方,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000869	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,廛房,傳方,前房,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000871	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,廛房,傳方,前房,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000872	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,廛房,傳方,前房,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000873	AI_unreviewed	U	listed	11	傳方,傳榜,傳芳,全方,前房,前方,前紡,專房,廛房,轉房,錢放	全方	前方,廛房,傳方,前房,錢放,前紡,專房,轉房,傳芳,傳榜,全方
+d2-000875	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	前提,專制,前際,典制,田制,前帝,田齊,全制,全濟,典製,專製,奠祭,剪除,煎劑,筌蹄
+d2-000876	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	專制,前提,田制,前帝,田齊,前際,全制,全濟,典製,典制,專製,奠祭,剪除,煎劑,筌蹄
+d2-000877	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	前提,專制,田制,前帝,田齊,前際,全制,全濟,典製,典制,專製,奠祭,剪除,煎劑,筌蹄
+d2-000878	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	全制,前提,專制,田制,前帝,田齊,前際,全濟,典製,典制,專製,奠祭,剪除,煎劑,筌蹄
+d2-000879	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	專制,前提,田齊,典制,田制,前帝,前際,全制,全濟,典製,專製,奠祭,剪除,煎劑,筌蹄
+d2-000881	AI_unreviewed	U	listed	15	全制,全濟,典制,典製,前帝,前提,前際,剪除,奠祭,專制,專製,煎劑,田制,田齊,筌蹄	剪除,奠祭,專製,煎劑,筌蹄	田制,前提,專制,前帝,田齊,前際,全制,全濟,典製,典制,專製,奠祭,剪除,煎劑,筌蹄
+d2-000882	AI_unreviewed	U	listed	3	前職,殿直,轉職		前職,轉職,殿直
+d2-000884	AI_unreviewed	U	listed	3	前職,殿直,轉職		殿直,前職,轉職
+d2-000885	AI_unreviewed	U	listed	3	前職,殿直,轉職		轉職,前職,殿直
+d2-000887	AI_unreviewed	U	listed	3	前職,殿直,轉職		前職,轉職,殿直
+d2-000888	AI_unreviewed	U	listed	3	前職,殿直,轉職		前職,轉職,殿直
+d2-000889	AI_unreviewed	U	listed	3	前職,殿直,轉職		前職,轉職,殿直
+d2-000890	AI_unreviewed	U	listed	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		前漢,田漢,前恨,戰寒,展限,戰汗,典翰,田閒
+d2-000891	AI_unreviewed	U	listed	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		前漢,典翰,田漢,前恨,戰寒,展限,戰汗,田閒
+d2-000894	AI_unreviewed	U	listed	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		前漢,田漢,前恨,戰寒,展限,戰汗,典翰,田閒
+d2-000895	AI_unreviewed	U	listed	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		前漢,田漢,前恨,戰寒,展限,戰汗,典翰,田閒
+d2-000896	AI_unreviewed	K	hangul_keep_label	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		田漢,前漢,前恨,戰寒,展限,戰汗,典翰,田閒
+d2-000897	AI_unreviewed	K	hangul_keep_label	8	典翰,前恨,前漢,展限,戰寒,戰汗,田漢,田閒		典翰,田漢,前漢,前恨,戰寒,展限,戰汗,田閒
+d2-000898	AI_unreviewed	K	hangul_keep_label	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000900	AI_unreviewed	K	hangul_keep_label	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000901	AI_unreviewed	U	listed	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000903	AI_unreviewed	K	hangul_keep_label	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000904	AI_unreviewed	U	listed	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000905	AI_unreviewed	K	hangul_keep_label	3	絶代,絶大,絶對		絶對,絶大,絶代
+d2-000907	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		丁字,亭子,程子,精子,正子,正字,丁子,定字,井字,晶子
+d2-000909	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		亭子,丁字,程子,精子,正子,正字,丁子,定字,井字,晶子
+d2-000910	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		精子,井字,丁字,亭子,正子,正字,丁子,定字,程子,晶子
+d2-000911	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		丁字,正字,亭子,精子,正子,丁子,定字,井字,程子,晶子
+d2-000912	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		精子,亭子,正字,丁字,程子,正子,丁子,定字,井字,晶子
+d2-000913	AI_unreviewed	U	listed	10	丁子,丁字,井字,亭子,定字,晶子,正子,正字,程子,精子		丁字,亭子,精子,正子,正字,丁子,定字,井字,程子,晶子
+d2-000915	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000917	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000918	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000919	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000920	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000921	AI_unreviewed	U	listed	4	條約,調藥,跳躍,造藥		條約,跳躍,調藥,造藥
+d2-000922	AI_unreviewed	?	needs_independent_semantic_review	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,漕轉	朝典,兆前,弔電,造錢,操典,租典,朝奠,祖奠,祖餞,鳥篆,漕轉,彫鐫
+d2-000924	AI_unreviewed	U	listed	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,漕轉	
+d2-000925	AI_unreviewed	U	listed	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,漕轉	弔電,朝典,兆前,造錢,操典,租典,朝奠,祖奠,祖餞,鳥篆,漕轉,彫鐫
+d2-000926	AI_unreviewed	U	listed	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,漕轉	弔電,朝典,兆前,造錢,操典,租典,朝奠,祖奠,祖餞,鳥篆,漕轉,彫鐫
+d2-000927	AI_unreviewed	?	needs_independent_semantic_review	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,鳥篆	漕轉,朝典,兆前,弔電,造錢,操典,租典,朝奠,祖奠,祖餞,鳥篆,彫鐫
+d2-000928	AI_unreviewed	U	listed	12	兆前,弔電,彫鐫,操典,朝典,朝奠,漕轉,祖奠,祖餞,租典,造錢,鳥篆	彫鐫,漕轉	弔電,朝典,兆前,造錢,操典,租典,朝奠,祖奠,祖餞,鳥篆,漕轉,彫鐫
+d2-000930	AI_unreviewed	U	listed	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	曹操,朝朝,早朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,躁躁
+d2-000931	AI_unreviewed	U	listed	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	曹操,早朝,朝朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,躁躁
+d2-000932	AI_unreviewed	U	listed	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	早朝,朝朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,曹操,躁躁
+d2-000935	AI_unreviewed	U	listed	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	曹操,朝朝,早朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,躁躁
+d2-000936	AI_unreviewed	U	listed	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	曹操,朝朝,早朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,躁躁
+d2-000937	AI_unreviewed	K	hangul_keep_label	11	彫造,早朝,曹操,朝朝,條條,燥燥,祚祚,租調,粗造,肇造,躁躁	躁躁	曹操,朝朝,早朝,租調,條條,彫造,粗造,肇造,祚祚,燥燥,躁躁
+d2-000938	AI_unreviewed	U	listed	3	朝會,照會,藻繪		照會,朝會,藻繪
+d2-000939	AI_unreviewed	U	listed	3	朝會,照會,藻繪		照會,朝會,藻繪
+d2-000941	AI_unreviewed	U	listed	3	朝會,照會,藻繪		照會,朝會,藻繪
+d2-000943	AI_unreviewed	U	listed	3	朝會,照會,藻繪		朝會,照會,藻繪
+d2-000944	AI_unreviewed	U	listed	3	朝會,照會,藻繪		照會,朝會,藻繪
+d2-000945	AI_unreviewed	U	listed	3	朝會,照會,藻繪		朝會,照會,藻繪
+d2-000947	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000949	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000950	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000951	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000952	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000953	AI_unreviewed	U	listed	8	中圖,中島,中度,中稻,中途,中道,衆徒,重盜		中道,中途,中度,中島,中稻,重盜,衆徒,中圖
+d2-000954	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		地籍,指摘,知的,地積,指笛
+d2-000956	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		地籍,知的,指摘,地積,指笛
+d2-000957	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		指摘,知的,地籍,地積,指笛
+d2-000958	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		知的,地籍,地積,指摘,指笛
+d2-000959	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		知的,地籍,指摘,地積,指笛
+d2-000961	AI_unreviewed	U	listed	5	地積,地籍,指摘,指笛,知的		地籍,知的,指摘,地積,指笛
+d2-000962	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000963	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000964	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000965	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000966	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000967	AI_unreviewed	U	listed	2	直線,直選		直線,直選
+d2-000970	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		眞君,進軍,鎭軍,津軍
+d2-000971	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		鎭軍,眞君,進軍,津軍
+d2-000972	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		眞君,進軍,鎭軍,津軍
+d2-000974	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		鎭軍,進軍,眞君,津軍
+d2-000975	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		鎭軍,進軍,眞君,津軍
+d2-000976	AI_unreviewed	U	listed	4	津軍,眞君,進軍,鎭軍		眞君,進軍,鎭軍,津軍
+d2-000978	AI_unreviewed	U	listed	5	振作,眞作,眞勺,眞斫,進爵		眞勺,眞作,振作,進爵,眞斫
+d2-000979	AI_unreviewed	U	listed	5	振作,眞作,眞勺,眞斫,進爵		振作,眞作,進爵,眞勺,眞斫
+d2-000980	AI_unreviewed	U	listed	5	振作,眞作,眞勺,眞斫,進爵		眞作,振作,進爵,眞勺,眞斫
+d2-000982	AI_unreviewed	U	listed	5	振作,眞作,眞勺,眞斫,進爵		眞作,進爵,振作,眞勺,眞斫
+d2-000984	AI_unreviewed	K	hangul_keep_label	5	振作,眞作,眞勺,眞斫,進爵		眞勺,眞作,振作,進爵,眞斫
+d2-000985	AI_unreviewed	U	listed	5	振作,眞作,眞勺,眞斫,進爵		眞作,振作,進爵,眞勺,眞斫
+d2-000987	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	進展,陳田,進前,陣前,震電,眞殿,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000988	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	震電,進展,陳田,進前,陣前,眞殿,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000989	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	眞殿,進展,陳田,進前,陣前,震電,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000990	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	陳田,進展,進前,陣前,震電,眞殿,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000991	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	進展,陳田,進前,陣前,震電,眞殿,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000993	AI_unreviewed	U	listed	13	振顫,眞殿,眞詮,秦甸,秦篆,進前,進展,進箋,陣前,陳田,震電,震顫,진廛	振顫,震顫,진廛	進展,陳田,進前,陣前,震電,眞殿,進箋,眞詮,秦甸,秦篆,振顫,震顫,진廛
+d2-000994	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		差官,次官,借款,茶罐
+d2-000997	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		次官,借款,茶罐,差官
+d2-000998	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		次官,借款,差官,茶罐
+d2-000999	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		次官,借款,茶罐,差官
+d2-001000	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		次官,借款,茶罐,差官
+d2-001001	AI_unreviewed	U	listed	4	借款,差官,次官,茶罐		次官,借款,茶罐,差官
+d2-001002	AI_unreviewed	U	listed	6	天度,天桃,天道,薦度,踐倒,遷都		天道,遷都,天度,天桃,薦度,踐倒
+d2-001003	AI_unreviewed	?	needs_independent_semantic_review	6	天度,天桃,天道,薦度,踐倒,遷都		天桃,遷都,天道,天度,薦度,踐倒
+d2-001004	AI_unreviewed	U	listed	6	天度,天桃,天道,薦度,踐倒,遷都		遷都,天道,天度,天桃,薦度,踐倒
+d2-001005	AI_unreviewed	?	needs_independent_semantic_review	6	天度,天桃,天道,薦度,踐倒,遷都		天道,天桃,遷都,天度,薦度,踐倒
+d2-001007	AI_unreviewed	K	hangul_keep_label	6	天度,天桃,天道,薦度,踐倒,遷都		遷都,天道,天度,天桃,薦度,踐倒
+d2-001009	AI_unreviewed	U	listed	6	天度,天桃,天道,薦度,踐倒,遷都		遷都,天道,天桃,天度,薦度,踐倒
+d2-001010	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		天變,千變,天邊,川邊
+d2-001011	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		川邊,天變,千變,天邊
+d2-001012	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		天變,千變,天邊,川邊
+d2-001013	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		川邊,天變,千變,天邊
+d2-001015	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		天變,千變,天邊,川邊
+d2-001017	AI_unreviewed	U	listed	4	千變,天變,天邊,川邊		川邊,天變,千變,天邊
+d2-001018	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		廳長,淸醬,靑帳,靑腸,淸帳,請狀
+d2-001019	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		廳長,淸醬,靑帳,靑腸,淸帳,請狀
+d2-001021	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		淸醬,廳長,靑帳,靑腸,淸帳,請狀
+d2-001022	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		淸醬,廳長,靑帳,靑腸,淸帳,請狀
+d2-001023	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		廳長,淸醬,靑帳,靑腸,淸帳,請狀
+d2-001024	AI_unreviewed	U	listed	6	廳長,淸帳,淸醬,請狀,靑帳,靑腸		廳長,淸醬,靑帳,靑腸,淸帳,請狀
+d2-001027	AI_unreviewed	U	listed	4	彈火,彈花,炭化,炭火		炭化,彈火,炭火,彈花
+d2-001028	AI_unreviewed	U	listed	4	彈火,彈花,炭化,炭火		炭化,彈火,炭火,彈花
+d2-001029	AI_unreviewed	U	listed	4	彈火,彈花,炭化,炭火		炭化,彈火,炭火,彈花
+d2-001031	AI_unreviewed	U	listed	4	彈火,彈花,炭化,炭火		炭化,彈火,炭火,彈花
+d2-001036	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001037	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001038	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001039	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001040	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001041	AI_unreviewed	U	listed	2	統屬,通俗		通俗,統屬
+d2-001042	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信社,通信使,通信士,通信司
+d2-001043	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信使,通信社,通信士,通信司
+d2-001044	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信社,通信使,通信士,通信司
+d2-001045	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信使,通信社,通信士,通信司
+d2-001046	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信社,通信士,通信使,通信司
+d2-001048	AI_unreviewed	U	listed	4	通信使,通信司,通信士,通信社		通信社,通信士,通信使,通信司
+d2-001050	AI_unreviewed	K	hangul_keep_label	4	下拍,下膊,下薄,河泊		下拍,下薄,河泊,下膊
+d2-001052	AI_unreviewed	?	needs_independent_semantic_review	4	下拍,下膊,下薄,河泊		下拍,下薄,河泊,下膊
+d2-001053	AI_unreviewed	K	hangul_keep_label	4	下拍,下膊,下薄,河泊		下拍,下薄,河泊,下膊
+d2-001054	AI_unreviewed	U	listed	4	下拍,下膊,下薄,河泊		下膊,下拍,下薄,河泊
+d2-001055	AI_unreviewed	U	listed	4	下拍,下膊,下薄,河泊		下膊,下拍,下薄,河泊
+d2-001057	AI_unreviewed	U	listed	4	下拍,下膊,下薄,河泊		下膊,下拍,下薄,河泊
+d2-001058	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學士,學事,學師,學舍,虐使
+d2-001060	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學士,學舍,學事,學師,虐使
+d2-001061	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學事,學士,學師,學舍,虐使
+d2-001062	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學士,學事,學師,學舍,虐使
+d2-001063	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學士,學事,學師,學舍,虐使
+d2-001064	AI_unreviewed	U	listed	5	學事,學士,學師,學舍,虐使		學士,學事,學師,學舍,虐使
+d2-001066	AI_unreviewed	K	hangul_keep_label	5	汗垢,漢口,閑具,韓構,韓歐		漢口,韓構,韓歐,閑具,汗垢
+d2-001074	AI_unreviewed	U	listed	6	孩童,海東,海桐,解冬,解凍,該洞		海東,解凍,解冬,該洞,海桐,孩童
+d2-001075	AI_unreviewed	U	listed	6	孩童,海東,海桐,解冬,解凍,該洞		海東,解凍,解冬,該洞,海桐,孩童
+d2-001077	AI_unreviewed	?	needs_independent_semantic_review	6	孩童,海東,海桐,解冬,解凍,該洞		海東,解凍,解冬,該洞,海桐,孩童
+d2-001078	AI_unreviewed	U	listed	6	孩童,海東,海桐,解冬,解凍,該洞		解凍,海東,解冬,該洞,海桐,孩童
+d2-001079	AI_unreviewed	U	listed	6	孩童,海東,海桐,解冬,解凍,該洞		海東,解凍,解冬,該洞,海桐,孩童
+d2-001080	AI_unreviewed	U	listed	6	孩童,海東,海桐,解冬,解凍,該洞		海東,解凍,解冬,該洞,海桐,孩童
+d2-001083	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		解像,海商,海上,海相,害想,海象,海床,解喪,諧商
+d2-001084	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		海上,解像,海商,海相,害想,海象,海床,解喪,諧商
+d2-001086	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		海上,海商,海相,害想,海象,海床,解喪,解像,諧商
+d2-001087	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		海上,解像,海商,海相,害想,海象,海床,解喪,諧商
+d2-001088	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		海上,海商,海相,害想,海象,海床,解喪,解像,諧商
+d2-001089	AI_unreviewed	U	listed	9	害想,海上,海商,海床,海相,海象,解像,解喪,諧商		海上,海商,海相,害想,海象,海床,解喪,解像,諧商
+d2-001090	AI_unreviewed	U	listed	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		化主,花主,火主,火酒,貨主,華主,火珠,花柱,禾主,華胄
+d2-001091	AI_unreviewed	U	listed	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		火主,花主,化主,火酒,貨主,華主,火珠,花柱,禾主,華胄
+d2-001092	AI_unreviewed	U	listed	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		化主,火主,花主,火酒,貨主,華主,火珠,花柱,禾主,華胄
+d2-001093	AI_unreviewed	U	listed	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		化主,火主,花主,火酒,貨主,華主,火珠,花柱,禾主,華胄
+d2-001095	AI_unreviewed	U	listed	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		花柱,化主,花主,禾主,火主,火酒,貨主,華主,火珠,華胄
+d2-001097	AI_unreviewed	?	needs_independent_semantic_review	10	化主,火主,火珠,火酒,禾主,花主,花柱,華主,華胄,貨主		化主,火主,花主,火酒,貨主,華主,火珠,花柱,禾主,華胄
+d2-001098	AI_unreviewed	U	listed	4	厚酬,後手,後水,後綬		後綬,後手,後水,厚酬
+d2-001099	AI_unreviewed	U	listed	4	厚酬,後手,後水,後綬		後手,後水,後綬,厚酬
+d2-001100	AI_unreviewed	U	listed	4	厚酬,後手,後水,後綬		後綬,後手,後水,厚酬
+d2-001101	AI_unreviewed	U	listed	4	厚酬,後手,後水,後綬		後綬,後手,後水,厚酬
+d2-001102	AI_unreviewed	?	needs_independent_semantic_review	4	厚酬,後手,後水,後綬		後手,後水,後綬,厚酬
+d2-001105	AI_unreviewed	U	listed	4	厚酬,後手,後水,後綬		後手,後水,後綬,厚酬

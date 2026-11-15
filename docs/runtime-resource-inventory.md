@@ -45,14 +45,16 @@ Live source paths used by the app target:
 - `woorilee/data/hanja/freq-hanjaeo.txt`
 - `woorilee/data/hanja/hanja-context.bin` (bundled artifact; the sibling `hanja-context.txt` stays
   in the repo for tests/diff but is not bundled — see docs/plans/hanja-context-scaling-plan.md §5).
-  Since 단계 D3 (2026-08-01) the file is a **hybrid**: 226 readings carry corpus weights plus a
-  learned signed correction and a non-zero per-candidate `bias`, the rest keep their pre-D3 corpus
-  profile with `bias = 0.0`. The `bias` Float32 slot — reserved but ignored by the 0c loader — is
-  now read by `HanjaContextAssociationStore.bias(reading:hanja:)` and affects **ranking only**,
-  never `HanjaContextEvidence` (auto-convert promotion gate invariant). Feature weights may now be
-  negative in both the binary (Int8) and the text file (widened to -255…255); `bias` has no text
-  representation at all. Regenerate with `build_association_table.py` → `build_d3_ranker.py export`
-  **in that order** so curated overrides survive, then `verify_binary_roundtrip.py --model …`.
+  The current bundle uses corpus weights plus 51 curated candidate profiles. A 2026-11-15
+  independent binary read found 3,260 readings, 18,126 profiles and 827,610 associations,
+  with no nonzero biases and no negative weights. D3 bias/signed-weight support remains in the
+  loader for experiments but is inactive in this bundle; do not run the D3 export as a routine
+  regeneration step. R2 joint selection is also disabled (`jointDomainConsistency = 0`).
+  Generate the corpus/curated table with `build_association_table.py`, then verify it with
+  `verify_binary_roundtrip.py` using the matching counts/statistics. Historical D3 exports
+  require their own `--model` and must not replace this bundle without independent validation.
+  Resource hashes and the Kiwi commit are recorded in
+  `eval/hanja-improvement-2026-11-15/resources.json`.
 - `woorilee/data/hanja/hanja-native-homograph.txt`
 - `woorilee/KiwiModels/*`
 - `woorilee/en.lproj/InfoPlist.strings`

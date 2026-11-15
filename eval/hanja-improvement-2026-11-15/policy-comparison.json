@@ -1,0 +1,39 @@
+{
+  "label_provenance": "AI; no independent review yet",
+  "scope": "Existing D2 development diagnostics; segmentation failures remain in coverage denominators.",
+  "decision": "Do not adopt a new abstention threshold before independent dev review; report coverage with precision.",
+  "policies": {
+    "current": {
+      "um_rows": 597,
+      "correct_auto": 330,
+      "incorrect_auto": 106,
+      "correct_auto_coverage": 0.5527638190954773,
+      "reading_macro_correct_auto_coverage": 0.5247863247863248,
+      "k_rows": 71,
+      "k_auto": 37,
+      "k_auto_rate": 0.5211267605633803,
+      "judged_auto_total": 473,
+      "provisional_precision": 0.6976744186046512,
+      "wilson_95": [
+        0.6548295861457982,
+        0.7373343009089919
+      ]
+    },
+    "positive_context_and_no_tie": {
+      "um_rows": 597,
+      "correct_auto": 256,
+      "incorrect_auto": 78,
+      "correct_auto_coverage": 0.4288107202680067,
+      "reading_macro_correct_auto_coverage": 0.40683760683760684,
+      "k_rows": 71,
+      "k_auto": 21,
+      "k_auto_rate": 0.29577464788732394,
+      "judged_auto_total": 355,
+      "provisional_precision": 0.7211267605633803,
+      "wilson_95": [
+        0.6723004933886296,
+        0.7652186286101743
+      ]
+    }
+  }
+}

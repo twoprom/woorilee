@@ -1,9 +1,7 @@
 // Context-aware ranking interface for Hanja candidates.
 //     Copyright (C) 2026 Seungjin Lee.
 //
-// Step 4a (사전 내부 문맥 신호, measurement only — see
-// docs/plans/context-aware-hanja-conversion.md §5) implements the real context signal here.
-// Nothing in this file is wired into the production input path yet; that is step 4b.
+// Shared by realtime previews, candidate panels and the offline evaluation harness.
 
 import Foundation
 import Kiwi
@@ -251,7 +249,10 @@ func contextEvidence(
         if contextHanja.contains(candidate.value) {
             dictionaryBoost += weights.containment
         }
-        dictionaryBoost += sharedHanjaCharCount(candidate.value, contextHanja) * weights.charShare
+        // The default disables this axis; do not construct grapheme sets for a zero contribution.
+        if weights.charShare != 0 {
+            dictionaryBoost += sharedHanjaCharCount(candidate.value, contextHanja) * weights.charShare
+        }
     }
     let associationScore = associationScores[candidate.value] ?? 0
     return HanjaContextEvidence(dictionaryBoost: dictionaryBoost, associationScore: associationScore)
@@ -334,4 +335,78 @@ func rankWithContext(
         sessionBoosts: sessionBoosts,
         biases: biases
     ).map(\.candidate)
+}
+
+/// Candidate-panel ranking shared by the app and app-mode evaluation. Auto-conversion policy
+/// is deliberately separate: the first panel candidate need not be the inline preview.
+func rankSegmentCandidates(
+    _ candidates: [HanjaCandidate],
+    for segment: HanjaSegment,
+    associationLookup: ((String, String) -> [String: Double]?)? = nil,
+    biasLookup: ((String, String) -> Double?)? = nil,
+    sessionInputs: HanjaSessionScoringInputs? = nil
+) -> [(candidate: HanjaCandidate, boost: Double)] {
+    guard NumericHanjaCandidateGenerator.normalizedDigits(from: segment.normalizedLookupKey) == nil,
+          !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
+            || !(sessionInputs?.isEmpty ?? true) || !segment.jointBoosts.isEmpty
+    else {
+        return candidates.map { ($0, 0) }
+    }
+    let scores = associationLookup.map {
+        associationScores(for: candidates, contextFeatures: segment.contextFeatures, lookup: $0)
+    } ?? [:]
+    var boosts = sessionInputs.map {
+        sessionContextBoosts(for: candidates, reading: segment.normalizedLookupKey,
+                            session: $0, lookup: associationLookup, weights: .default)
+    } ?? [:]
+    for (value, boost) in segment.jointBoosts {
+        boosts[value, default: 0] += boost
+    }
+    var biases: [String: Double] = [:]
+    if let biasLookup {
+        for candidate in candidates {
+            biases[candidate.value] = biasLookup(candidate.reading, candidate.value)
+        }
+    }
+    return rankWithContextScored(
+        candidates: candidates, contextDominantHanja: segment.contextDominantHanja,
+        associationScores: scores, weights: .default, segmentTag: segment.tag,
+        sessionBoosts: boosts, biases: biases
+    )
+}
+
+/// Manual boundaries retain their ranges and reuse the last automatic analysis. Intersect the
+/// self-excluded feature sets of every overlapping old span: a merge must exclude both spans,
+/// while a split conservatively excludes its whole old parent. No new Kiwi analysis is needed.
+func rankManualSegments(
+    _ segments: [HanjaSegment],
+    previousSegments: [HanjaSegment],
+    candidateLookup: (String) -> [HanjaCandidate],
+    associationLookup: ((String, String) -> [String: Double]?)? = nil,
+    biasLookup: ((String, String) -> Double?)? = nil,
+    sessionInputs: HanjaSessionScoringInputs? = nil
+) -> [HanjaSegment] {
+    segments.map { segment in
+        let overlapping = previousSegments.filter {
+            NSIntersectionRange($0.sourceRange, segment.sourceRange).length > 0
+        }
+        var features = Set(overlapping.first?.contextFeatures ?? [])
+        for previous in overlapping.dropFirst() {
+            features.formIntersection(previous.contextFeatures)
+        }
+        let context = overlapping.first?.contextDominantHanja ?? []
+        let originalTag = overlapping.first {
+            $0.sourceRange == segment.sourceRange && $0.normalizedLookupKey == segment.normalizedLookupKey
+        }?.tag
+        let contextual = HanjaSegment(
+            id: segment.id, sourceRange: segment.sourceRange, surface: segment.surface,
+            normalizedLookupKey: segment.normalizedLookupKey, tag: originalTag ?? segment.tag,
+            isConvertible: segment.isConvertible, previewCandidate: segment.previewCandidate,
+            contextDominantHanja: context, contextFeatures: features.sorted())
+        let ranked = rankSegmentCandidates(candidateLookup(segment.normalizedLookupKey), for: contextual,
+            associationLookup: associationLookup, biasLookup: biasLookup, sessionInputs: sessionInputs)
+        // Explicit boundary adjustment preserves the existing manual conversion policy; numeric
+        // spans stay in Arabic notation until the user chooses a candidate.
+        return contextual.replacingPreviewCandidate(segment.previewCandidate == nil ? nil : ranked.first?.candidate)
+    }
 }

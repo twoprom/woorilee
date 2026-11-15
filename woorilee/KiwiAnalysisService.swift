@@ -18,7 +18,7 @@ struct RealtimeClauseAnalysis {
 
 @MainActor
 final class KiwiAnalysisService {
-    private static let realtimeAnalysisCandidateCount = 3
+    static let realtimeAnalysisCandidateCount = 3
 
     /// Kiwi match options for the realtime conversion path. Also one half of the step-5a
     /// offline↔runtime morpheme-space contract (see scripts/hanja-context/README.md): the offline
@@ -210,46 +210,79 @@ final class KiwiAnalysisService {
         // Step 7 — native-homograph gate (docs/plans/context-aware-hanja-conversion.md §10).
         let nativeHomographLookup: (String) -> Bool = hanjaService.isNativeHomographReading(_:)
 
+        let associationStore = HanjaContextAssociationStore.shared
+        return Self.analyzeClause(
+            clause, kiwi: kiwi, candidateLookup: candidateLookup,
+            hangulUsageLookup: hanjaService.hangulUsageCount(for:),
+            dominantMap: hanjaService.dominantHanjaMap ?? [:],
+            associationFeatureLookup: associationStore.isAvailable
+                ? { associationStore.features(reading: $0, hanja: $1) } : nil,
+            associationBiasLookup: associationStore.isAvailable
+                ? { associationStore.bias(reading: $0, hanja: $1) } : nil,
+            autoConvertGate: autoConvertGate,
+            nativeHomographLookup: nativeHomographLookup,
+            composingTailStart: composingTailStart, sessionInputs: sessionInputs
+        )
+    }
+
+    /// Shared app/offline pipeline. Callers supply resource access, never analysis options or
+    /// their own sequencing of segmentation, stable features, ranking and conversion gates.
+    static func analyzeClause(
+        _ clause: String,
+        kiwi: Kiwi,
+        candidateLookup uncachedCandidateLookup: (String) -> [HanjaCandidate],
+        hangulUsageLookup: (String) -> Int,
+        dominantMap: [String: String],
+        associationFeatureLookup: ((String, String) -> [String: Double]?)? = nil,
+        associationBiasLookup: ((String, String) -> Double?)? = nil,
+        autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil,
+        nativeHomographLookup: ((String) -> Bool)? = nil,
+        composingTailStart: Int? = nil,
+        sessionInputs: HanjaSessionScoringInputs? = nil
+    ) -> RealtimeClauseAnalysis {
+        guard !clause.isEmpty else {
+            return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
+        }
+        // One synchronous analysis observes a fixed dictionary/usage snapshot. Keep this cache
+        // local so edits to user entries or usage are visible on the very next keystroke.
+        var candidatesByReading: [String: [HanjaCandidate]] = [:]
+        func candidateLookup(_ reading: String) -> [HanjaCandidate] {
+            if let cached = candidatesByReading[reading] { return cached }
+            let candidates = uncachedCandidateLookup(reading)
+            candidatesByReading[reading] = candidates
+            return candidates
+        }
         do {
+            let kiwiStart = DispatchTime.now().uptimeNanoseconds
             let results = try kiwi.analyze(
                 clause,
                 topN: Self.realtimeAnalysisCandidateCount,
                 options: Self.realtimeAnalysisMatchOptions
             )
+            HanjaPerformance.record("kiwi_analysis", since: kiwiStart)
+            let segmentStart = DispatchTime.now().uptimeNanoseconds
             let best = Self.bestRealtimeSegmentsWithWinningTokens(
                 from: results,
                 in: clause,
                 candidateLookup: candidateLookup,
-                hangulUsageLookup: hanjaService.hangulUsageCount(for:),
+                hangulUsageLookup: hangulUsageLookup,
                 autoConvertGate: autoConvertGate,
                 nativeHomographLookup: nativeHomographLookup
             )
 
+            HanjaPerformance.record("segmentation", since: segmentStart)
             let stableTokens = Self.stableWinningTokens(from: best.winningTokens, composingTailStart: composingTailStart)
             // R1a (docs/plans/hanja-context-scaling-plan.md §6): the commit-time session buffer
             // needs the clause's content-morpheme features regardless of association-table
             // availability, so — unlike the reranking pass below — this is computed unconditionally.
             let clauseContentFeatures = Self.clauseContentFeatures(from: stableTokens, excludingRangeOverlapping: nil)
 
-            guard let dominantMap = hanjaService.dominantHanjaMap,
-                  !dominantMap.isEmpty
+            guard !dominantMap.isEmpty
             else {
                 return RealtimeClauseAnalysis(segments: best.segments, clauseContentFeatures: clauseContentFeatures)
             }
 
-            // Step 5c — corpus association scoring (docs/plans/context-aware-hanja-conversion.md
-            // §7 5c). Passed only when the store finished loading; nil otherwise keeps this
-            // identical to step 4b's containment-only reranking.
-            let associationStore = HanjaContextAssociationStore.shared
-            let associationFeatureLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
-                ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
-                : nil
-            // D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): same availability
-            // gate as the feature lookup above — nil when the store hasn't finished warming up.
-            let associationBiasLookup: ((String, String) -> Double?)? = associationStore.isAvailable
-                ? { reading, hanja in associationStore.bias(reading: reading, hanja: hanja) }
-                : nil
-
+            let rankingStart = DispatchTime.now().uptimeNanoseconds
             let segments = Self.applyContextReranking(
                 to: best.segments,
                 clause: clause,
@@ -261,6 +294,7 @@ final class KiwiAnalysisService {
                 autoConvertGate: autoConvertGate,
                 sessionInputs: sessionInputs
             )
+            HanjaPerformance.record("reranking", since: rankingStart)
             return RealtimeClauseAnalysis(segments: segments, clauseContentFeatures: clauseContentFeatures)
         } catch {
             return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
@@ -395,14 +429,16 @@ final class KiwiAnalysisService {
         }
 
         let context = clauseContextDominantHanja(clause: clause, segments: segments, dominantMap: dominantMap)
-        let clauseFeatures = associationFeatureLookup != nil
-            ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: nil)
+        // Token feature strings do not depend on the target span. Build them once, then apply
+        // each span's exclusion before deduplication (repeated words outside the span still count).
+        let contentTokens = associationFeatureLookup != nil
+            ? contentTokenFeatures(from: winningTokens)
             : []
 
         // R1a (docs/plans/hanja-context-scaling-plan.md §6): a non-empty session snapshot keeps
         // reranking running even when this clause alone has no context/association evidence —
         // otherwise a session-only boost could never surface for a clause with no other signal.
-        guard !context.isEmpty || !clauseFeatures.isEmpty || !(sessionInputs?.isEmpty ?? true) else {
+        guard !context.isEmpty || !contentTokens.isEmpty || !(sessionInputs?.isEmpty ?? true) else {
             return segments
         }
 
@@ -414,7 +450,7 @@ final class KiwiAnalysisService {
             // Self-exclusion (mirrors the offline collector's span exclusion): the segment's own
             // surface must not vote for its own candidates.
             let segmentFeatures = associationFeatureLookup != nil
-                ? clauseContentFeatures(from: winningTokens, excludingRangeOverlapping: segment.sourceRange)
+                ? clauseContentFeatures(from: contentTokens, excludingRangeOverlapping: segment.sourceRange)
                 : []
 
             // Step 7 (docs/plans/context-aware-hanja-conversion.md §10): segments suppressed by
@@ -641,17 +677,26 @@ final class KiwiAnalysisService {
         from tokens: [Token],
         excludingRangeOverlapping excludedRange: NSRange?
     ) -> [String] {
+        clauseContentFeatures(from: contentTokenFeatures(from: tokens), excludingRangeOverlapping: excludedRange)
+    }
+
+    private static func contentTokenFeatures(from tokens: [Token]) -> [(range: NSRange, feature: String)] {
+        tokens.compactMap { token in
+            guard isContextContentMorphemeTag(token.tag) else { return nil }
+            return (NSRange(location: token.position, length: token.length), "\(token.form)/\(token.tag.description)")
+        }
+    }
+
+    private static func clauseContentFeatures(
+        from tokens: [(range: NSRange, feature: String)],
+        excludingRangeOverlapping excludedRange: NSRange?
+    ) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
         for token in tokens {
-            guard isContextContentMorphemeTag(token.tag) else { continue }
-            let tokenRange = NSRange(location: token.position, length: token.length)
-            if let excludedRange, rangesOverlap(tokenRange, excludedRange) { continue }
-
-            let feature = "\(token.form)/\(token.tag.description)"
-            guard !seen.contains(feature) else { continue }
-            seen.insert(feature)
-            result.append(feature)
+            if let excludedRange, rangesOverlap(token.range, excludedRange) { continue }
+            guard seen.insert(token.feature).inserted else { continue }
+            result.append(token.feature)
         }
         return result
     }
@@ -963,7 +1008,7 @@ final class KiwiAnalysisService {
     /// context-association features — NNG, NNP, VV, VV-I, VA, VA-I, MAG, XR, feature key
     /// `form/TAG` (TAG = `POSTag.description`). The offline collector
     /// (scripts/hanja-context/collector) uses the identical set; step 5c will use this in the
-    /// production re-ranking path. Not referenced by the realtime path yet — additive only.
+    /// production re-ranking path and the offline app-settings harness.
     static func isContextContentMorphemeTag(_ tag: POSTag) -> Bool {
         switch tag {
         case .nng, .nnp, .vv, .vvi, .va, .vai, .mag, .xr:

@@ -21,7 +21,7 @@ Sparkle 업데이트 릴리스 작업(빌드 → 서명 → 업로드 → appcas
 - `woorilee/data/hanja/`: 번들된 한자 사전(`hanja.txt`, `freq-hanja.txt`, `freq-hanjaeo.txt`).
 - `woorilee/KiwiModels/`: 앱 번들에 포함되는 Kiwi 모델 리소스.
 - `woorilee.xcodeproj/`: Xcode 프로젝트와 SwiftPM 의존성 설정(`IMKSwift`, `LibHangul`, 로컬 `Kiwi`).
-- `Kiwi/`: 로컬 Swift 패키지 의존성으로 연결된 서드파티 코드. gitignore 대상이며 명시적 요청 없이는 수정하지 않는다.
+- `Kiwi/`: 로컬 Swift 패키지 의존성으로 연결된 서드파티 Git 서브모듈. 명시적 요청 없이는 수정하지 않는다.
 - `DerivedData/`, `DerivedDataPlan/`, `.xcode-home/`, `.xcode-swiftpm-modulecache/`: 생성물/캐시. 수정하지 말 것.
 - 루트 `KiwiModels/`: 벤더링된 참조용 복사본이며 gitignore 대상이다. 실제 앱 번들은 `woorilee/KiwiModels/`를 사용한다. 두 경로를 혼동하지 말 것.
 
@@ -80,7 +80,7 @@ Sparkle 업데이트 릴리스 작업(빌드 → 서명 → 업로드 → appcas
 - 앱 번들 리소스는 `woorilee/` 아래에 있다. `data/hanja/{hanja.txt,freq-hanja.txt,freq-hanjaeo.txt}`, `KiwiModels/*`, `main.tiff`, `mainicon.icon`, `*.lproj/InfoPlist.strings`가 포함된다. 프로젝트 파일 변경 후에는 기준 목록인 `docs/refactor-parity-checklist.md`를 확인한다.
 - `mainicon.icon`은 빌드 시 `mainicon.icns`로 컴파일되는 Icon Composer 번들이다.
 - SwiftPM 의존성은 Xcode 프로젝트가 해석하는 `IMKSwift`, `LibHangul`, `Sparkle`과 `Kiwi/bindings/swift`의 로컬 경로 `Kiwi` 패키지다. Sparkle은 자동 업데이트를 위해 `AboutWindowController`에서만 사용한다.
-- 루트의 `Kiwi/`와 `KiwiModels/`는 gitignore된 벤더링 복사본이고, 실제 앱 번들 리소스는 `woorilee/KiwiModels/`에 있다.
+- 루트의 `Kiwi/`는 Git 서브모듈이고 `KiwiModels/`는 gitignore된 참조용 복사본이다. 실제 앱 번들 리소스는 `woorilee/KiwiModels/`에 있다.
 - 생성/캐시 경로인 `DerivedData/`, `DerivedDataPlan/`, `.xcode-home/`, `.xcode-swiftpm-modulecache/`는 수정하지 않는다.
 
 ## 수정 원칙

@@ -353,8 +353,8 @@ final class InputSession {
     }
 
     /// R1a commit hook (docs/plans/hanja-context-scaling-plan.md §6): records the just-committed
-    /// clause's stable content-morpheme features and its resolved (auto-converted or
-    /// user-selected) candidates into the session buffer. Must be called BEFORE `reset()` — it
+    /// clause's stable content-morpheme features and explicitly selected candidates into the
+    /// session buffer. Automatic previews must not become strong selection priors. Must be called BEFORE `reset()` — it
     /// reads `realtimeClauseState`, which `reset()` clears.
     func recordRealtimeCommitToSessionContext() {
         guard compositionMode == .realtimeHanja else {
@@ -362,15 +362,14 @@ final class InputSession {
         }
 
         let features = realtimeClauseState.clauseContentFeatures
-        let selections = realtimeClauseState.segments.compactMap { segment in
-            segment.previewCandidate.map { (reading: segment.normalizedLookupKey, value: $0.value) }
+        let selections = realtimeClauseState.pendingUsageEvents.map {
+            (reading: $0.lookupKey, value: $0.value)
         }
         hanjaSessionContext.recordCommittedClause(features: features, selections: selections)
     }
 
-    /// R1a manual-panel selection hook: records a single manual Hanja candidate pick (or ignores a
-    /// hangul-kept selection — see `HanjaSessionContext.recordManualSelection`) into the session
-    /// buffer.
+    /// Manual-panel confirmation records a Hanja pick or clears the reading's stale prior when
+    /// the user keeps Hangul. Cancellation never calls this hook.
     func recordManualHanjaSelectionToSessionContext(reading: String, value: String) {
         hanjaSessionContext.recordManualSelection(reading: reading, value: value)
     }

@@ -100,6 +100,8 @@ enum Fixtures {
     /// mergeHanjaCandidates (app source) with empty user/usage tables (reading-only, no
     /// personalization — matching the eval harness's own contract).
     static func candidateLookup(_ key: String) -> [HanjaCandidate] {
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("dictionary_lookup", since: start) }
         let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
         if !numericCandidates.isEmpty { return numericCandidates }
 

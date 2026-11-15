@@ -1,0 +1,158 @@
+{
+  "full_suite": {
+    "configuration": "Release",
+    "tests": 345,
+    "failures": 0,
+    "elapsed_seconds": 429.092,
+    "xcresult": "/Volumes/Workbench/woorilee/DerivedData/woorilee/Logs/Test/Test-woorilee-2026.11.15_9-23-01-+0000.xcresult"
+  },
+  "final_targeted": {
+    "configuration": "Debug",
+    "tests": 128,
+    "failures": 0,
+    "xcresult": "/Volumes/Workbench/woorilee/DerivedData/woorilee/Logs/Test/Test-woorilee-2026.11.15_8-55-34-+0000.xcresult"
+  },
+  "association_roundtrip": {
+    "passed": true,
+    "entries": 827610,
+    "profiles": 18126,
+    "checks": [
+      "entry_set",
+      "quantization_tolerance",
+      "header_crc",
+      "zero_bias"
+    ]
+  },
+  "host_UI": {
+    "status": "not_verified",
+    "reason": "Computer Use was not approved to use TextEdit"
+  },
+  "review_tool": {
+    "neutral_rows": 73,
+    "logic_checks": [
+      "selection",
+      "navigation",
+      "state_restore",
+      "tsv_export"
+    ],
+    "visual_inspection": false
+  },
+  "installation": {
+    "status": "installed_and_verified",
+    "built_bundle": "/Volumes/Workbench/woorilee/DerivedData/Build/Products/Debug/woorilee.app",
+    "installed_bundle": "/Library/Input Methods/woorilee.app",
+    "files": 89,
+    "mismatches": [],
+    "test_bundle_present": false,
+    "version": "1.0.4",
+    "build": "106",
+    "codesign_verification": "passed with normal system trust access",
+    "host_input_test": "not_verified",
+    "executable_sha256": "0d1a490194f1a35b10b94e9559423a3049b8e12c876abc799c714b73430a9f78",
+    "debug_library_sha256": "95ced04a19d338652836775d519395bd843e8d3f212974cdcb8cf43b2ffa8152",
+    "dictionary_sha256": "a6b47686472fb4c48c5b62481efb191fa99cba133b0df20b21cf49702354e35f"
+  },
+  "isolated_performance_recheck": {
+    "status": "passed",
+    "tests": 1,
+    "failures": 0,
+    "r2_on_p95_us": [
+      178.88,
+      177.08,
+      183.67
+    ],
+    "r2_off_p95_us": [
+      21.25,
+      21.96,
+      22.21
+    ],
+    "note": "Same Release test rerun without other compiler/corpus jobs; first recheck process exited 137 before starting tests, successful retry used test-without-building."
+  },
+  "quiet_performance": {
+    "file": "quiet-performance.json",
+    "semantic_differences": 0,
+    "short_reranking_p95_us": 680.167,
+    "long_reranking_p95_us": 3272.917,
+    "long_1ms_target_met": false
+  },
+  "previous_full_suite": {
+    "configuration": "Release",
+    "tests": 343,
+    "failures": 1,
+    "failing_test": "HanjaContextEvalV2Tests.testApplyContextRerankingJointAxisIsolatedLatency",
+    "failure_p95_us": 1432.5833333333333,
+    "note": "R2 weight remains zero in the production default. Other builds/corpus tests were active during this measurement.",
+    "xcresult": "/Volumes/Workbench/woorilee/DerivedData/woorilee/Logs/Test/Test-woorilee-2026.11.15_8-43-54-+0000.xcresult"
+  },
+  "additional_targeted": [
+    {
+      "name": "zero_weight_character_share",
+      "tests": 35,
+      "failures": 0
+    },
+    {
+      "name": "content_feature_reuse_and_self_exclusion",
+      "tests": 43,
+      "failures": 0
+    }
+  ],
+  "performance_followup": {
+    "char_share": "performance-char-share/summary.json",
+    "feature_cache": "performance-feature-cache/summary.json",
+    "semantic_differences": 0,
+    "release_short_reranking_p95_us": 122.625,
+    "release_long_reranking_p95_us": 482.875,
+    "scope": "Three paired runs per variant, offline only; system speed varies between cohorts.",
+    "host_latency_verified": false
+  },
+  "segmentation_comparison": {
+    "rows": 1105,
+    "current_exact": 936,
+    "score_first_exact": 931,
+    "recovered": 0,
+    "lost": 5,
+    "current_vs_app_exact_differences": 0,
+    "app_policy_changed": false
+  },
+  "modern_holdout_pilot": {
+    "rows": 3,
+    "labels": 0,
+    "scored": false,
+    "overlap_audit_assets": 24
+  },
+  "usage_store_profile": {
+    "status": "not_measured",
+    "reason": "macOS container access denied even outside the filesystem sandbox; no user content was printed."
+  },
+  "previous_installation_before_human_review": {
+    "status": "installed_and_verified",
+    "built_bundle": "/Volumes/Workbench/woorilee/DerivedData/Build/Products/Debug/woorilee.app",
+    "installed_bundle": "/Library/Input Methods/woorilee.app",
+    "files": 89,
+    "mismatches": [],
+    "test_bundle_present": false,
+    "version": "1.0.4",
+    "build": "106",
+    "codesign_verification": "passed with normal system trust access",
+    "host_input_test": "not_verified",
+    "executable_sha256": "5a36c3e9799d68e0ec2364acc19d1bf4127b92ae86c2cfa225f2f262a40073ef",
+    "debug_library_sha256": "b4eaf8ab5cf488d5d2f4b5ff716386e44b51f627351029bcdadc431f91862bbc"
+  },
+  "human_review_followup": {
+    "rows": 73,
+    "judged_rows": 70,
+    "excluded_uncertain": 3,
+    "raw_source_preserved": true,
+    "python_tests": 8,
+    "app_targeted_tests": 7,
+    "failures": 0,
+    "full_suite_scope": "345 passing tests preceded the human-review dictionary additions; follow-up ran 7 relevant app tests and all 1105 offline rows.",
+    "xcresult": "/Volumes/Workbench/woorilee/DerivedData/woorilee/Logs/Test/Test-woorilee-2026.11.15_11-09-55-+0000.xcresult",
+    "regression_rows": 1105,
+    "segmentation_auto_hold_changes": 0,
+    "panel_list_changes": 15,
+    "AI_policy_metric_changes": 0,
+    "report": "human-review/REPORT.md",
+    "resource_manifest": "human-review/resources-after-dictionary.json"
+  }
+}

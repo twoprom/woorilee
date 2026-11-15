@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "source": {
+      "path": "eval/hanja-improvement-2026-11-15/hanja-independent-review.tsv",
+      "sha256": "1ca11d0923f18ce9a5e96db289819113aef098849a98c3bca28fcccb8df09027"
+    },
+    "neutral": {
+      "path": "eval/hanja-improvement-2026-11-15/independent-review.tsv",
+      "sha256": "9842635b428143926a4a23681f69d161cd447e1b30e7ae54f9a08eede0fc3705"
+    },
+    "clarifications": {
+      "path": "eval/hanja-improvement-2026-11-15/independent-review-clarifications.json",
+      "sha256": "269b93d151156aa9554c1baf4f086402864533ff4c84615d35d84cfc9c878c60"
+    },
+    "results": {
+      "path": "eval/hanja-improvement-2026-11-15/performance-feature-cache/after-3.jsonl",
+      "sha256": "014f62ea6d5583a54c083533f2b832d8c12890fb13a4f48c5fd294a7f89c8cde"
+    },
+    "ai_labels": {
+      "path": "eval/hanja-improvement-2026-11-15/ai-labels-baseline.tsv",
+      "sha256": "d76514581ae1dbccba30a34e6566674e8972ecc978e04eed5ac01f327c7e56b3"
+    },
+    "dictionary": {
+      "path": "eval/hanja-improvement-2026-11-15/human-review/dictionary-before.txt",
+      "sha256": "194fe6a307afe458cab3810cf1f4b74f76fb4f4bf45c657ac6df019923f070b8"
+    }
+  },
+  "scripts": {
+    "/Volumes/Workbench/woorilee/scripts/hanja-context/import_independent_review.py": "98c4bd0786431659f4bfaf8d7f072a3c2ada9955f1d02bc1e4c9fa6bb3e26d45",
+    "/Volumes/Workbench/woorilee/scripts/hanja-context/compare_auto_conversion_policies.py": "2c100b4a2b1d1b3aa5eb14cb33cfe3ab6f9b06bb6addc3949cbd3acf7da3cb8d"
+  },
+  "reviewer": "Authenticated chat user submitted file; no reviewer alias was provided. Raw reviewer fields remain blank.",
+  "clarification": {
+    "source_sha256": "1ca11d0923f18ce9a5e96db289819113aef098849a98c3bca28fcccb8df09027",
+    "source": "User reply in this chat on 2026-11-15; raw submitted TSV is preserved.",
+    "rows": {
+      "d2-000825": {
+        "category": "U",
+        "confirmation": "User explicitly confirmed U for 長木."
+      },
+      "d2-000840": {
+        "allow_hangul": true,
+        "confirmation": "User explicitly confirmed that both 재주 and 才操 are acceptable."
+      }
+    }
+  },
+  "original_complete_flag": "Ignored; validated schema and explicit clarifications determine eligibility."
+}

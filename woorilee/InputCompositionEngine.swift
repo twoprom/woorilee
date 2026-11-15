@@ -106,6 +106,7 @@ struct InputCompositionEngine {
     let session: InputSession
     let analyzeRealtimeClause: (String, Int, HanjaSessionScoringInputs?) -> RealtimeClauseAnalysis
     let analyzeManualClause: (String, [Int]) -> [HanjaSegment]
+    var rankManualClause: ([HanjaSegment], [HanjaSegment], HanjaSessionScoringInputs?) -> [HanjaSegment] = { segments, _, _ in segments }
     /// R1b: analyzes the document-context fetch window into content-morpheme features (same
     /// feature space as `analyzeRealtimeClause`'s clause features). Defaults to "no features" so
     /// call sites that predate R1b (only test helpers today) don't need to be touched. `var` (not
@@ -139,7 +140,7 @@ struct InputCompositionEngine {
             let clientMarkedRange = client.markedRange()
             session.syncMarkedTextRange(clientRange: clientMarkedRange)
             debugLog(
-                "update preedit=\(preeditText) selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) sessionReplacement=\(inputDebugRangeString(session.currentReplacementRange)) mode=\(session.rangeHandlingDescription)"
+                "update preeditLength=\(preeditText.utf16.count) selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) sessionReplacement=\(inputDebugRangeString(session.currentReplacementRange)) mode=\(session.rangeHandlingDescription)"
             )
         }
     }
@@ -168,13 +169,13 @@ struct InputCompositionEngine {
 
         if session.isRealtimeHanjaMode {
             session.appendCommittedTextToRealtimeClause(committed)
-            debugLog("appendRealtimeCommitted text=\(committed) display=\(session.realtimeDisplayText)")
+            debugLog("appendRealtimeCommitted textLength=\(committed.utf16.count) displayLength=\(session.realtimeDisplayText.utf16.count)")
             return
         }
 
         let replacementRange = effectiveReplacementRange()
         debugLog(
-            "insertCommitted text=\(committed) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
+            "insertCommitted textLength=\(committed.utf16.count) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
         )
         client.insertText(committed, replacementRange: replacementRange)
         session.didInsertCommittedText(length: inputUTF16Length(of: committed), replacedRange: replacementRange)
@@ -197,7 +198,7 @@ struct InputCompositionEngine {
         } else {
             let replacementRange = effectiveReplacementRange()
             debugLog(
-                "commit text=\(textToCommit) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
+                "commit textLength=\(textToCommit.utf16.count) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
             )
             client.insertText(textToCommit, replacementRange: replacementRange)
         }
@@ -213,7 +214,7 @@ struct InputCompositionEngine {
         }
 
         debugLog(
-            "cancelRealtime display=\(session.realtimeDisplayText) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
+            "cancelRealtime displayLength=\(session.realtimeDisplayText.utf16.count) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
         )
         session.resetHangulState()
         clearMarkedText()
@@ -334,7 +335,7 @@ struct InputCompositionEngine {
         let clientMarkedRange = client.markedRange()
         session.syncMarkedTextRange(clientRange: clientMarkedRange)
         debugLog(
-            "updateRealtime display=\(displayText) selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) sessionReplacement=\(inputDebugRangeString(session.currentReplacementRange)) mode=\(session.rangeHandlingDescription)"
+            "updateRealtime displayLength=\(displayText.utf16.count) selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) sessionReplacement=\(inputDebugRangeString(session.currentReplacementRange)) mode=\(session.rangeHandlingDescription)"
         )
     }
 
@@ -356,7 +357,7 @@ struct InputCompositionEngine {
 
         let replacementRange = effectiveReplacementRange()
         debugLog(
-            "commitRealtime text=\(textToCommit) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
+            "commitRealtime textLength=\(textToCommit.utf16.count) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
         )
         client.insertText(textToCommit, replacementRange: replacementRange)
         // R1a (docs/plans/hanja-context-scaling-plan.md §6): must run BEFORE session.reset() below
@@ -376,7 +377,7 @@ struct InputCompositionEngine {
         // 수동 경계 오버레이가 있으면 재분석이 그것을 존중한다(Kiwi 재분절 중단).
         if let boundaries = state.manualBoundaries {
             let segments = analyzeManualClause(sourceText, boundaries)
-            session.updateRealtimeAnalysis(segments: segments)
+            session.updateRealtimeAnalysis(segments: rankManualClause(segments, state.automaticContextSegments, session.sessionScoringInputs))
         } else {
             // tailPreedit is still-composing (uncommitted) — its offset is passed through so the
             // context-feature axis can ignore tokens overlapping it (see KiwiAnalysisService.

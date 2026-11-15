@@ -65,8 +65,11 @@ struct HanjaSessionContext {
         selections = selections.filter { $0.value.age < Self.selectionLifetime }
 
         for (reading, value) in newSelections {
-            guard value != reading else { continue }
-            selections[reading] = SelectionEntry(value: value, age: 0)
+            if value == reading {
+                selections.removeValue(forKey: reading)
+            } else {
+                selections[reading] = SelectionEntry(value: value, age: 0)
+            }
         }
 
         guard !features.isEmpty else { return }
@@ -85,12 +88,16 @@ struct HanjaSessionContext {
         }
     }
 
+    /// A confirmed Hangul choice clears a stale Hanja prior; cancellation never calls this hook.
     /// Manual-panel selection (no clause commit involved): age-0 insert/replace only, no aging of
     /// the other entries — the plan's manual-panel selection axis is a pure "most recent pick"
     /// signal, independent of sentence-commit cadence.
     mutating func recordManualSelection(reading: String, value: String) {
-        guard value != reading else { return }
-        selections[reading] = SelectionEntry(value: value, age: 0)
+        if value == reading {
+            selections.removeValue(forKey: reading)
+        } else {
+            selections[reading] = SelectionEntry(value: value, age: 0)
+        }
     }
 
     private var totalMorphemeCount: Int {

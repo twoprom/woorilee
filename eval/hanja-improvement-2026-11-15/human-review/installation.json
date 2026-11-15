@@ -1,0 +1,15 @@
+{
+  "status": "installed_and_verified",
+  "built_bundle": "/Volumes/Workbench/woorilee/DerivedData/Build/Products/Debug/woorilee.app",
+  "installed_bundle": "/Library/Input Methods/woorilee.app",
+  "files": 89,
+  "mismatches": [],
+  "test_bundle_present": false,
+  "version": "1.0.4",
+  "build": "106",
+  "codesign_verification": "passed with normal system trust access",
+  "host_input_test": "not_verified",
+  "executable_sha256": "0d1a490194f1a35b10b94e9559423a3049b8e12c876abc799c714b73430a9f78",
+  "debug_library_sha256": "95ced04a19d338652836775d519395bd843e8d3f212974cdcb8cf43b2ffa8152",
+  "dictionary_sha256": "a6b47686472fb4c48c5b62481efb191fa99cba133b0df20b21cf49702354e35f"
+}

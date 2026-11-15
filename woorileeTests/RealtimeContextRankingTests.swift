@@ -445,4 +445,25 @@ final class RealtimeContextRankingTests: XCTestCase {
             baseRank: 0
         )
     }
+    func testRerankingExcludesOccurrencesBeforeDeduplicatingRepeatedFeatures() {
+        let source = "수도 수도 학교"
+        let tokens = [
+            Token(form: "수도", tag: .nng, position: 0, length: 2),
+            Token(form: "의", tag: .jkg, position: 2, length: 1),
+            Token(form: "수도", tag: .nng, position: 3, length: 2),
+            Token(form: "학교", tag: .nng, position: 6, length: 2),
+        ]
+        let first = HanjaSegment(sourceRange: NSRange(location: 0, length: 2), surface: "수도",
+            normalizedLookupKey: "수도", tag: .nng, isConvertible: false, previewCandidate: nil)
+        let merged = HanjaSegment(sourceRange: NSRange(location: 0, length: 5), surface: "수도 수도",
+            normalizedLookupKey: "수도 수도", tag: .nng, isConvertible: false, previewCandidate: nil)
+        let features = [first, merged].map { segment in
+            KiwiAnalysisService.applyContextReranking(
+                to: [segment], clause: source, dominantMap: [:], candidateLookup: { _ in [] },
+                winningTokens: tokens, associationFeatureLookup: { _, _ in [:] }).first?.contextFeatures
+        }
+        XCTAssertEqual(features[0], ["수도/NNG", "학교/NNG"])
+        XCTAssertEqual(features[1], ["학교/NNG"])
+    }
+
 }

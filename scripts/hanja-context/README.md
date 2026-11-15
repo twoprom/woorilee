@@ -223,3 +223,99 @@ python3 scripts/hanja-context/build_association_table.py \
   하/있/되/나/오/보 수도 계열에서 전부 부재 확인.
 - 5b 게이트 보고: `docs/plans/hanja-context-5b-report.md` (스팟체크·thin
   새니티·크기·재현 명령; 개정 3에 ubiquity 필터 추가).
+
+## App-settings evaluation (2026-11-15)
+
+Historical `eval-ctx`, `eval5d`, and `d2-verify` retain their original settings.
+Use the shared production entry point to evaluate actual top-3 segmentation, both conversion
+ gates, tag-aware panel ranking and the actual automatic candidate value:
+
+```sh
+swift build -c release --package-path scripts/hanja-context/assoc
+scripts/hanja-context/assoc/.build/release/assoc app-verify \
+  /path/to/d2/mined-sentences.tsv /tmp/app-results.jsonl
+scripts/hanja-context/assoc/.build/release/assoc app-preview-trace \
+  eval/hanja-improvement-2026-11-15/preview-fixtures.tsv /tmp/preview-traces.jsonl
+```
+
+`app-verify` is a clean-session/no-personalization run, not a replay of a user's live session.
+Each JSONL row distinguishes the requested UTF-16 span, actual segmentation, all panel candidates,
+score components, automatic value, hold reason, dictionary call count and per-stage timing.
+A missing/mismatched span never counts as a successful target. The adjacent `.timing.json` reports
+stage p50/p95/p99 in microseconds; whole-analysis time is separately reported in milliseconds.
+Neither number includes IMK IPC, host editing, event dispatch or panel display. The first row
+includes lazy resource warm-up; compare warm runs with other CPU-heavy jobs stopped.
+
+`app-preview-trace` reconstructs two-beolsik keystrokes with LibHangul, verifies the roundtrip,
+and records per-key preview choices and the first/stable correct key for public development
+fixtures. Choice-change counts include temporary loss of the target segmentation. This is a
+prefix-analysis simulation, not the full InputController event/auto-commit loop; it does not
+simulate host IPC or prove independent language accuracy.
+
+`audit_app_evaluation.py` compares historical output with app-mode output, audits full dictionary
+candidate sets, and creates a neutral 73-row independent review sheet. Keep the original
+`app-baseline.jsonl`/`legacy-baseline.tsv` and their resource manifest together; do not regenerate
+historical audits against a changed dictionary. Pass `--dictionary` with the matching snapshot;
+the audit refuses a hash mismatch against `resources.json`. `compare_auto_conversion_policies.py` reports
+precision AND correct-conversion coverage, with Wilson intervals and explicit AI-label provenance.
+The D2 and v1/v2 sets have already informed development and are not unseen generalization tests.
+The six preview fixtures are newly authored development examples, not independent gold.
+
+### Importing the independent review
+
+`import_independent_review.py` validates all IDs, readings and sentences against the neutral
+sheet before scoring. It preserves the exact submitted bytes, separates human labels from the
+731 AI labels, and records input/script hashes. Explicit chat clarifications are bound to the
+submitted file's SHA-256 in `independent-review-clarifications.json`; they cannot replace answers.
+The exported `complete` flag is not used as evidence of a valid label.
+
+```sh
+python3 scripts/hanja-context/import_independent_review.py \
+  --source eval/hanja-improvement-2026-11-15/hanja-independent-review.tsv \
+  --neutral eval/hanja-improvement-2026-11-15/independent-review.tsv \
+  --clarifications eval/hanja-improvement-2026-11-15/independent-review-clarifications.json \
+  --results eval/hanja-improvement-2026-11-15/human-review/app-after-dictionary.jsonl \
+  --ai-labels eval/hanja-improvement-2026-11-15/ai-labels-baseline.tsv \
+  --dictionary woorilee/data/hanja/hanja.txt \
+  --output-dir eval/hanja-improvement-2026-11-15/human-review/after-dictionary
+python3 -m unittest discover -s scripts/hanja-context -p test_independent_review.py -v
+```
+
+Normalized `acceptable` includes the primary answer. `M` plus `allow_hangul=1` means the
+reviewer explicitly accepts both the original Hangul and one or more Hanja outputs. Such rows
+are reported separately from Hanja-required U/M coverage; correct automatic Hanja outputs still
+count toward automatic precision. `?` rows are excluded, and missing uncertainty reasons remain
+warnings rather than invented judgments. Dictionary gaps and Unicode compatibility forms are
+audit flags, never automatic corrections to human labels. Compare panel ranks and actual automatic
+values separately. These reviewed D2 rows remain development diagnostics, including their
+historical `test` split; do not tune thresholds against them and claim unseen performance.
+
+Runtime timing events (`Performance` log category) contain only stage names and durations. They
+cover key handling, Kiwi, segmentation, dictionary lookup, reranking, host-context fetch and panel
+display. The observer hook is used only by the offline tool; raw user text is never a timing field.
+
+
+### Segmentation policy comparison and performance follow-up
+
+```sh
+scripts/hanja-context/assoc/.build/release/assoc segmentation-compare \
+  eval/hanja-improvement-2026-11-15/mined-sentences.tsv /tmp/segmentation.jsonl
+```
+
+Both arms consume the same top-3 analyses and production segment builder. The alternative keeps
+the highest-scoring analysis (first on ties); the current arm still prefers convertible length
+subject to its functional-span guard. This comparison reports exact target spans and partitions,
+not semantic accuracy, and does not change the app's policy. The current arm was checked against
+all 1,105 app-mode target outcomes, with no differences.
+
+`performance-char-share/` and `performance-feature-cache/` archive separate three-run paired
+comparisons. Only timing fields differ; panel order, scores, preview values and hold reasons are
+identical. System speed changed between rounds, so compare each before/after cohort rather than
+combining different rounds into one speedup. These are Release analysis measurements, not Debug
+host-input latency. No persistent cache or background Kiwi access was introduced.
+
+`modern-holdout-input.tsv` and `modern-holdout-review.tsv` are a frozen, unscored three-row pilot
+from new public prose. The review file refers to the input file instead of duplicating excerpts.
+Sources, hashes, publication dates and the bounded 24-asset overlap audit are in
+`modern-holdout-sources.json`. Labels are blank. Expand and independently review this pilot before
+using it for generalization claims; it is neither a training set nor an acceptance gate.

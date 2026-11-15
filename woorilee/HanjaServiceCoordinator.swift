@@ -281,8 +281,32 @@ func hideWarmUpPanelIfNeeded() {
         )
     }
 
-    func manualLookup(for target: ManualHanjaTarget) -> ManualHanjaLookupResult {
-        hanjaService.manualLookup(for: target)
+    func rankManualClause(_ segments: [HanjaSegment], previous: [HanjaSegment], sessionInputs: HanjaSessionScoringInputs?) -> [HanjaSegment] {
+        let store = HanjaContextAssociationStore.shared
+        return rankManualSegments(segments, previousSegments: previous,
+            candidateLookup: { self.hanjaService.exactCandidates(for: $0) },
+            associationLookup: store.isAvailable ? { store.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: store.isAvailable ? { store.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs)
+    }
+
+    func manualLookup(for target: ManualHanjaTarget, surroundingContext: String = "", sessionInputs: HanjaSessionScoringInputs? = nil) -> ManualHanjaLookupResult {
+        let lookup = hanjaService.manualLookup(for: target)
+        let analysis = analyzeRealtimeClause(surroundingContext)
+        let contextSegment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: target.sourceText.utf16.count),
+            surface: target.sourceText, normalizedLookupKey: target.sourceText,
+            tag: .nng, isConvertible: !lookup.state.candidates.isEmpty, previewCandidate: nil,
+            contextDominantHanja: analysis.segments.first?.contextDominantHanja ?? [],
+            contextFeatures: analysis.clauseContentFeatures)
+        let store = HanjaContextAssociationStore.shared
+        let candidates = rankSegmentCandidates(lookup.state.candidates, for: contextSegment,
+            associationLookup: store.isAvailable ? { store.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: store.isAvailable ? { store.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs).map(\.candidate)
+        return ManualHanjaLookupResult(state: HanjaCandidatePanelState(
+            mode: lookup.state.mode, anchorRange: lookup.state.anchorRange, candidates: candidates,
+            highlightedIsHangul: lookup.state.highlightedIsHangul), lookupKey: lookup.lookupKey)
     }
 
     func recordSelection(lookupKey: String, value: String) {
@@ -302,21 +326,23 @@ func hideWarmUpPanelIfNeeded() {
         client: any IMKTextInput,
         onSelect: ((HanjaCandidatePanelSelection) -> Void)? = nil
     ) {
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("panel_display", since: start) }
         switch content {
         case .candidates(let state):
             switch state.mode {
             case .manual(let sourceText, _):
                 manualHanjaPanelLogger.info(
-                    "show manual candidates sourceText=\(sourceText, privacy: .public) count=\(state.candidates.count, privacy: .public)"
+                    "show manual candidates sourceLength=\(sourceText.utf16.count, privacy: .public) count=\(state.candidates.count, privacy: .public)"
                 )
             case .realtime(_, let segmentSurface):
                 manualHanjaPanelLogger.info(
-                    "show realtime candidates segment=\(segmentSurface, privacy: .public) count=\(state.candidates.count, privacy: .public) page=\(state.page, privacy: .public)"
+                    "show realtime candidates segmentLength=\(segmentSurface.utf16.count, privacy: .public) count=\(state.candidates.count, privacy: .public) page=\(state.page, privacy: .public)"
                 )
             }
         case .notice(let state):
             manualHanjaPanelLogger.info(
-                "show notice message=\(state.message, privacy: .public) detail=\(state.detail ?? "", privacy: .public)"
+                "show notice messageLength=\(state.message.utf16.count, privacy: .public) detailLength=\(state.detail?.utf16.count ?? 0, privacy: .public)"
             )
         }
 
@@ -343,67 +369,15 @@ func hideWarmUpPanelIfNeeded() {
             return numericCandidates
         }
 
-        let candidates = hanjaService.exactCandidates(for: segment.normalizedLookupKey)
-        guard !segment.contextDominantHanja.isEmpty || !segment.contextFeatures.isEmpty
-            || !(sessionInputs?.isEmpty ?? true) || !segment.jointBoosts.isEmpty
-        else {
-            return candidates
-        }
-
         let associationStore = HanjaContextAssociationStore.shared
-        let scores = associationStore.isAvailable
-            ? associationScores(
-                for: candidates,
-                contextFeatures: segment.contextFeatures,
-                lookup: associationStore.features(reading:hanja:)
-            )
-            : [:]
-
-        // R1a (docs/plans/hanja-context-scaling-plan.md §6): keep the candidate-panel order
-        // consistent with the inline preview by folding the same session boosts in here.
-        let sessionAssociationLookup: ((String, String) -> [String: Double]?)? = associationStore.isAvailable
-            ? { reading, hanja in associationStore.features(reading: reading, hanja: hanja) }
-            : nil
-        var sessionBoosts = sessionInputs.map {
-            sessionContextBoosts(
-                for: candidates,
-                reading: segment.normalizedLookupKey,
-                session: $0,
-                lookup: sessionAssociationLookup,
-                weights: .default
-            )
-        } ?? [:]
-
-        // R2 (docs/plans/hanja-context-scaling-plan.md §7): fold the segment's joint-selection
-        // domain-consistency bonus in right after the session boosts, same map (same keying by
-        // candidate value, summed on collision) — keeps the candidate-panel order consistent
-        // with the inline preview, which already baked this bonus into its ranking.
-        for (value, boost) in segment.jointBoosts {
-            sessionBoosts[value, default: 0] += boost
-        }
-
-        // D3 (docs/plans/hanja-context-scaling-plan.md §5 "0c 포맷 명세"): same reasoning as the
-        // session/joint boosts above — fold in the candidate-profile bias so the candidate PANEL
-        // order matches the inline preview, which already includes it via
-        // `KiwiAnalysisService.applyContextReranking`'s `associationBiasLookup`.
-        var biases: [String: Double] = [:]
-        if associationStore.isAvailable {
-            for candidate in candidates {
-                if let bias = associationStore.bias(reading: candidate.reading, hanja: candidate.value) {
-                    biases[candidate.value] = bias
-                }
-            }
-        }
-
-        return rankWithContext(
-            candidates: candidates,
-            contextDominantHanja: segment.contextDominantHanja,
-            associationScores: scores,
-            weights: .default,
-            segmentTag: segment.tag,
-            sessionBoosts: sessionBoosts,
-            biases: biases
-        )
+        return rankSegmentCandidates(
+            hanjaService.exactCandidates(for: segment.normalizedLookupKey), for: segment,
+            associationLookup: associationStore.isAvailable
+                ? { associationStore.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: associationStore.isAvailable
+                ? { associationStore.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs
+        ).map(\.candidate)
     }
 
     func flushRealtimeUsageEvents(_ events: [PendingHanjaUsageEvent]) {

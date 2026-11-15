@@ -188,4 +188,16 @@ final class HanjaContextRankerTests: XCTestCase {
 
         XCTAssertEqual(ranked.first?.value, "造船")
     }
+    func testContextEvidenceKeepsCustomCharacterShareWeightsAndSelfExclusion() {
+        let candidate = sudoCandidatesByFrequency()[2]
+        for (weight, expectedShare) in [(-7, -21), (0, 0), (11, 33)] {
+            var weights = HanjaContextRankingWeights.default
+            weights.charShare = weight
+            let evidence = contextEvidence(
+                for: candidate, contextDominantHanja: ["水道", "上下水道", "水質"], weights: weights)
+            XCTAssertEqual(evidence.dictionaryBoost, 10_000_000 + expectedShare)
+            XCTAssertEqual(evidence.associationScore, 0)
+        }
+    }
+
 }

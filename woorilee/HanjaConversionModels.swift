@@ -194,6 +194,7 @@ struct HanjaCandidatePanelState: Equatable {
     var page: Int
     let pageSize: Int
     var highlightedIsHangul: Bool
+    var hasUserNavigated: Bool
 
     init(
         mode: HanjaCandidatePanelMode,
@@ -202,13 +203,15 @@ struct HanjaCandidatePanelState: Equatable {
         highlightedIndex: Int = 0,
         page: Int = 0,
         pageSize: Int = Self.defaultPageSize,
-        highlightedIsHangul: Bool = false
+        highlightedIsHangul: Bool = false,
+        hasUserNavigated: Bool = false
     ) {
         self.mode = mode
         self.anchorRange = anchorRange
         self.candidates = candidates
         self.pageSize = max(1, pageSize)
         self.highlightedIsHangul = highlightedIsHangul
+        self.hasUserNavigated = hasUserNavigated
 
         if candidates.isEmpty {
             self.highlightedIndex = 0
@@ -260,7 +263,33 @@ struct HanjaCandidatePanelState: Equatable {
         segment.previewCandidate == nil
     }
 
+    /// Follow the preview until the user browses. Thereafter preserve candidate identity across
+    /// reordering, including its new page, rather than preserving a stale numeric index.
+    static func realtimeState(
+        segment: HanjaSegment, index: Int, anchorRange: NSRange,
+        candidates: [HanjaCandidate], previous: HanjaCandidatePanelState?
+    ) -> HanjaCandidatePanelState {
+        let sameSegment = previous?.mode.realtimeSegmentIndex == index
+            && previous?.mode.realtimeSegmentSurface == segment.surface
+        let preserve = sameSegment && previous?.hasUserNavigated == true
+        let previousKey = preserve ? previous?.highlightedCandidate?.candidateKey : nil
+        let preservedIndex = previousKey.flatMap { key in candidates.firstIndex { $0.candidateKey == key } }
+        let previewIndex = segment.previewCandidate.flatMap { preview in
+            candidates.firstIndex { $0.candidateKey == preview.candidateKey }
+        }
+        let highlighted = preservedIndex ?? previewIndex ?? 0
+        let keepHangul = preserve && previous?.highlightedIsHangul == true
+        return HanjaCandidatePanelState(
+            mode: .realtime(segmentIndex: index, segmentSurface: segment.surface),
+            anchorRange: anchorRange, candidates: candidates,
+            highlightedIndex: highlighted, page: highlighted / defaultPageSize,
+            highlightedIsHangul: keepHangul || (preservedIndex == nil && previewIndex == nil),
+            hasUserNavigated: preserve && (keepHangul || preservedIndex != nil)
+        )
+    }
+
     mutating func moveHighlight(by delta: Int) {
+        if delta != 0 { hasUserNavigated = true }
         guard !candidates.isEmpty else {
             highlightedIsHangul = false
             return
@@ -303,6 +332,7 @@ struct HanjaCandidatePanelState: Equatable {
     }
 
     mutating func movePage(by delta: Int) {
+        if delta != 0 { hasUserNavigated = true }
         guard pageCount > 0 else {
             highlightedIsHangul = false
             return
@@ -347,6 +377,8 @@ struct RealtimeClauseState: Equatable {
     /// it to the session buffer without re-running Kiwi. Set by `updateAnalysis(segments:
     /// clauseContentFeatures:)`; untouched (keeps its last value) when that argument is nil.
     var clauseContentFeatures: [String] = []
+    /// Last automatic analysis, retained through repeated manual boundary edits for self-exclusion.
+    var automaticContextSegments: [HanjaSegment] = []
 
     /// 수동 경계 조정(일본어 IME식 문절 신축)이 활성일 때 소스(rawClauseText + tailPreedit)에 대한
     /// 내부 분할 지점들. UTF-16 오프셋, 오름차순, 0 < bᵢ < N. nil이면 Kiwi 자동 분절.
@@ -372,10 +404,12 @@ struct RealtimeClauseState: Equatable {
             manualBoundaries = nil
             focusedSpanStart = nil
             clauseContentFeatures = []
+            automaticContextSegments = []
         }
     }
 
     mutating func updateAnalysis(segments analyzedSegments: [HanjaSegment], clauseContentFeatures: [String]? = nil) {
+        if !isManualSegmentation { automaticContextSegments = analyzedSegments }
         if let clauseContentFeatures {
             self.clauseContentFeatures = clauseContentFeatures
         }

@@ -197,3 +197,32 @@ extension Character {
         }
     }
 }
+
+/// Fetch each side separately so a long selection never becomes part of the context request.
+/// A host may adjust the returned range; intersect it before extracting text to exclude the
+/// conversion target even when the host returns a wider window.
+func manualHanjaSurroundingContext(
+    targetRange: NSRange,
+    windowLength: Int = 200,
+    fetch: (NSRange) -> (text: String, actualRange: NSRange)?
+) -> String {
+    guard targetRange.location != NSNotFound, targetRange.location >= 0,
+          targetRange.length >= 0, windowLength > 0,
+          targetRange.location <= Int.max - targetRange.length - windowLength
+    else { return "" }
+    let start = max(0, targetRange.location - windowLength)
+    let ranges = [NSRange(location: start, length: targetRange.location - start),
+                  NSRange(location: NSMaxRange(targetRange), length: windowLength)]
+    return ranges.compactMap { requested -> String? in
+        guard requested.length > 0, let result = fetch(requested),
+              result.actualRange.location != NSNotFound,
+              result.actualRange.length == result.text.utf16.count
+        else { return nil }
+        let overlap = NSIntersectionRange(requested, result.actualRange)
+        guard overlap.length > 0,
+              let slice = Range(NSRange(location: overlap.location - result.actualRange.location,
+                                        length: overlap.length), in: result.text)
+        else { return nil }
+        return String(result.text[slice])
+    }.joined(separator: " ")
+}

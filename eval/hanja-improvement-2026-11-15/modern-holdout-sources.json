@@ -1,0 +1,147 @@
+{
+  "created": "2026-11-15",
+  "rows": 3,
+  "sources": [
+    {
+      "id": "modern-001",
+      "publisher": "행정안전부",
+      "publication_date": "2026-11-05",
+      "source_url": "https://www.korea.kr/news/policyNewsView.do?newsId=148975104",
+      "text_sha256": "42a02c87e426e2a61e5079f64f7cc4738109b0ef3e57797346a8055513137ebe",
+      "quoted_words": 11,
+      "label_status": "unlabeled_not_scored",
+      "purpose": "evaluation_only_not_training",
+      "source_notice": "Text-only KOGL Type 1 attribution; no photos copied."
+    },
+    {
+      "id": "modern-002",
+      "publisher": "재정경제부",
+      "publication_date": "2026-11-11",
+      "source_url": "https://www.korea.kr/news/policyNewsView.do?newsId=148975484",
+      "text_sha256": "d5fb180179ca042b200172660e828db6834a9d3e2da78b7929d031d205abb5a3",
+      "quoted_words": 14,
+      "label_status": "unlabeled_not_scored",
+      "purpose": "evaluation_only_not_training",
+      "source_notice": "Text-only KOGL Type 1 attribution; no photos copied."
+    },
+    {
+      "id": "modern-003",
+      "publisher": "외교부",
+      "publication_date": "2026-11-15",
+      "source_url": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789245",
+      "text_sha256": "3126c546048663cb9794fb6f70e42f462130e7ebfb0d2050742069b12535784d",
+      "quoted_words": 21,
+      "label_status": "unlabeled_not_scored",
+      "purpose": "evaluation_only_not_training",
+      "source_notice": "Text-only KOGL Type 1 attribution; no photos copied."
+    }
+  ],
+  "historical_assets_audited": [
+    {
+      "path": "/Volumes/Workbench/woorilee/eval/hanja-context-session-replay.tsv",
+      "sha256": "761e1a7003490afd78f484e336152379b496337cb3be25f5ac4b90de86ec7a50"
+    },
+    {
+      "path": "/Volumes/Workbench/woorilee/eval/hanja-context-eval-set.tsv",
+      "sha256": "ed766848edb59465ce92c7c59a3b2aee44244404df85a03d16e12792d22b4040"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/relabel-sheet.tsv",
+      "sha256": "0ab6ec7d34bc64df46b1ee0b29aba4d35f3d40b55aa41f79e58e864051f5ab26"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/verified-f5.tsv",
+      "sha256": "45ab12471a7c2cc00db31c3d661b063596faa95fbf03486381b2c8b4b157563f"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/verified-f4.tsv",
+      "sha256": "45ab12471a7c2cc00db31c3d661b063596faa95fbf03486381b2c8b4b157563f"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/safety-set.tsv",
+      "sha256": "ba8964f21945c0c447fa0b89a619bf6f10c523dbe26c49099b50210867c70a8b"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/verified-f3.tsv",
+      "sha256": "45ab12471a7c2cc00db31c3d661b063596faa95fbf03486381b2c8b4b157563f"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/mined-sentences.tsv",
+      "sha256": "d0cbfcbd2ac412cae32b74122d999079b099a9281fbd31c1a180fe4a00b739b4"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/label-sheet.tsv",
+      "sha256": "03b216929d8eff45a7d3fc6f5016b1da1968fb7e2a28f21b542585d6a834242b"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/label-sheet-filled.tsv",
+      "sha256": "d76514581ae1dbccba30a34e6566674e8972ecc978e04eed5ac01f327c7e56b3"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/reading-selection.tsv",
+      "sha256": "ec7cf9813d56de64ca61e53082abaca5f9ac30d12b1609174b8f449832b55282"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/verified-sentences.tsv",
+      "sha256": "a58e5cf22c12306f9ea1b485d002165569b8f7fec514cbbb6ffd22f2a7a20698"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/label-view-neutral.tsv",
+      "sha256": "fa041a25210a6e911f9d8024772bd8c0ce011f18696ce7bbc54cd92ee66b8de1"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d3/features.tsv",
+      "sha256": "196152e06739a71a97d0d4fbde3b605bdddeae1c929810ba0186718346370bff"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d3/eval-readings.tsv",
+      "sha256": "b53ef3dd8e392267760cd789ed287cc00272701a3611259fa0fc5d901418eff5"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d3/fit.tsv",
+      "sha256": "da19072ea641f1e9783f4310df58da9ac2c2a0929cccbe6a00b45def4921e6ff"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d3/holdout.tsv",
+      "sha256": "d2ba755dec41bc7318d86a1068d5fa40333661e22a3a7a5c935d45f35985cb1c"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/verified-f3.tsv",
+      "sha256": "ab44ec56e9356a9909a55e987f8f38ff82e24525b9feca88f6395803d5b66a99"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/mined-sentences.tsv",
+      "sha256": "4af0c70616a2ece702c7d2b9d9bbb88c26027d847096af423f365bb7332463c3"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/verified-after2.tsv",
+      "sha256": "6a33f50be2d38eee49e4bad6dba468347469d7f0d63b89e36180eaf21ef2a396"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/verified.tsv",
+      "sha256": "1aaee1ad41d4fa84d178deb6c5c28f010e126074170a8420de26cad57ff3bbd3"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/verified-after.tsv",
+      "sha256": "7a9089f9ad71d32280f717a546b092e1ba408ab55874a00fc3d204c6908d71f6"
+    },
+    {
+      "path": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/cureval/verified-final.tsv",
+      "sha256": "6a33f50be2d38eee49e4bad6dba468347469d7f0d63b89e36180eaf21ef2a396"
+    },
+    {
+      "path": "/Volumes/Workbench/woorilee/scripts/hanja-context/curated-association-overrides.txt",
+      "sha256": "d83ad5328f1440b69a3eff43ffb5fa746fb05720f8d1ce240143891ab670af83"
+    }
+  ],
+  "known_target_overlap": [],
+  "exact_sentence_overlap": [],
+  "limitations": [
+    "Three government-policy samples are a pilot, not representative modern-prose coverage.",
+    "Known evaluation/development assets and curated targets were checked; this is not an exhaustive audit of every original corpus document.",
+    "No category or Hanja answer is assigned; independent review and a larger balanced sample are required before generalization claims.",
+    "Targets inside compounds retain their exact UTF-16 spans; reviewers must also judge span suitability."
+  ],
+  "input_sha256": "fc72d4c6391131cfe139068caa6cb7e69a382cad4820efebfa9d2d5a5effe179",
+  "frozen_before_scoring": true
+}
