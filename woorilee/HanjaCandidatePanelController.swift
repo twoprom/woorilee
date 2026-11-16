@@ -158,6 +158,7 @@ final class HanjaCandidatePanelController {
             + Layout.shortcutLabelWidth
             + Layout.rowSpacing
             + stringWidth(candidate.value, font: Layout.candidateFont)
+            + Layout.rowSpacing
             + Layout.rowSpacerWidth
 
         if candidate.source == .userDefined {

@@ -25,15 +25,63 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
     func testNumericHanjaCandidatesForLargeNumber() {
         XCTAssertEqual(
             NumericHanjaCandidateGenerator.candidates(for: "123456789").map(\.value),
-            ["一二三四五六七八九", "一億二千三百四十五萬六千七百八十九", "1억2345만6789", "일억이천삼백사십오만육천칠백팔십구"]
+            ["一億二千三百四十五萬六千七百八十九", "一二三四五六七八九", "일억이천삼백사십오만육천칠백팔십구", "1억2345만6789", "1億2345萬6789"]
         )
     }
 
     func testNumericHanjaCandidatesIgnoreCommasForValue() {
         XCTAssertEqual(
             NumericHanjaCandidateGenerator.candidates(for: "123,456,789").map(\.value),
-            ["一二三四五六七八九", "一億二千三百四十五萬六千七百八十九", "1억2345만6789", "일억이천삼백사십오만육천칠백팔십구"]
+            ["一億二千三百四十五萬六千七百八十九", "一二三四五六七八九", "일억이천삼백사십오만육천칠백팔십구", "1억2345만6789", "1億2345萬6789"]
         )
+    }
+
+    func testNumericCandidateOrderStaysStableAcrossLargeUnits() {
+        for (digits, hanja, hangul, mixed, mixedHanja) in [
+            ("10000000", "千萬", "천만", "1000만", "1000萬"),
+            ("100000000", "一億", "일억", "1억", "1億"),
+            ("1000000000000", "一兆", "일조", "1조", "1兆"),
+            ("10000000000000000", "一京", "일경", "1경", "1京"),
+        ] {
+            let zeroCount = digits.count - 1
+            XCTAssertEqual(
+                NumericHanjaCandidateGenerator.candidates(for: digits).map(\.value),
+                [hanja, "一" + String(repeating: "零", count: zeroCount),
+                 "一" + String(repeating: "〇", count: zeroCount), hangul, mixed, mixedHanja],
+                digits
+            )
+        }
+    }
+
+    func testNumericCandidateCommentsDescribeEachNotation() {
+        for (digits, comments) in [
+            ("10000000", ["漢字", "漢字", "漢字", "한글", "혼용", "混用"]),
+            ("100000000", ["漢字", "漢字", "漢字", "한글", "혼용", "混用"]),
+            ("123", ["漢字", "漢字", "한글"]),
+            ("0012", ["漢字", "漢字", "한글"]),
+            ("100000000000000000000", ["漢字", "漢字", "한글"]),
+        ] {
+            XCTAssertEqual(
+                NumericHanjaCandidateGenerator.candidates(for: digits).map(\.comment),
+                comments,
+                digits
+            )
+        }
+    }
+
+    func testNumericMixedHanjaCandidateUsesLargeUnitsAndSkipsZeroGroups() {
+        for (digits, expected) in [
+            ("10000", "1萬"),
+            ("10000000", "1000萬"),
+            ("123456789", "1億2345萬6789"),
+            ("100010001", "1億1萬1"),
+            ("100000001", "1億1"),
+            ("99999999999999999999", "9999京9999兆9999億9999萬9999"),
+        ] {
+            let candidates = NumericHanjaCandidateGenerator.candidates(for: digits)
+            XCTAssertEqual(candidates.last?.value, expected, digits)
+            XCTAssertEqual(candidates.last?.comment, "混用", digits)
+        }
     }
 
     func testNumericHanjaCandidatesForLeadingZeroUseDigitReadingsOnly() {
