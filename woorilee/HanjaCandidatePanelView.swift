@@ -228,7 +228,11 @@ struct HanjaCandidatePanelView: View {
                 .foregroundStyle(isHighlighted ? Palette.selectedCandidateForeground : Color.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .fixedSize(horizontal: NumericHanjaCandidateGenerator.isNumericCandidateSource(candidate.reading), vertical: false)
+                .fixedSize(
+                    horizontal: NumericHanjaCandidateGenerator.isNumericCandidateSource(candidate.reading)
+                        || DateHanjaCandidateGenerator.isDateCandidateSource(candidate.reading),
+                    vertical: false
+                )
         }
         .padding(.horizontal, 9)
         .frame(maxWidth: .infinity, alignment: .leading)

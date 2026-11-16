@@ -11,6 +11,7 @@
 //   whose clean closure the plan's author identified) PLUS KiwiAnalysisService and everything ITS
 //   whole-file compilation transitively requires: HanjaConversionModels, HanjaClauseJointSelection,
 //   SessionHanjaContext, HanjaDictionaryService, AppRuntimePaths, NumericHanjaCandidateGenerator,
+//   DateHanjaCandidateGenerator,
 //   UserHanjaStore, HanjaUsageStore, ManualHanjaModels, HanjaPerformance. Every one of those files was individually
 //   confirmed (import-only-Foundation/Kiwi/LibHangul, no transitive reference to a Cocoa-importing
 //   file) before being added — see the K1b Task 1 report for the file-by-file check.

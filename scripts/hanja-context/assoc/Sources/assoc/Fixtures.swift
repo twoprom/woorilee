@@ -96,14 +96,15 @@ enum Fixtures {
     }
 
     /// Mirrors HanjaContextEvalV2Tests.candidateLookup(_:) / HanjaDictionaryService.exactCandidates
-    /// exactly: numeric candidates first, else dictionary lookup merged through the real
+    /// exactly: numeric/date candidates first, else dictionary lookup merged through the real
     /// mergeHanjaCandidates (app source) with empty user/usage tables (reading-only, no
     /// personalization — matching the eval harness's own contract).
     static func candidateLookup(_ key: String) -> [HanjaCandidate] {
         let start = DispatchTime.now().uptimeNanoseconds
         defer { HanjaPerformance.record("dictionary_lookup", since: start) }
-        let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
-        if !numericCandidates.isEmpty { return numericCandidates }
+        let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
+            + DateHanjaCandidateGenerator.candidates(for: key)
+        if !specialCandidates.isEmpty { return specialCandidates }
 
         guard let list = LibHangul.searchHanja(table: hanjaTable, key: key) else { return [] }
         let seeds: [HanjaCandidateSeed] = (0..<list.getSize()).compactMap { i in

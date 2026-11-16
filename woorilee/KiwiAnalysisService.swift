@@ -193,8 +193,9 @@ final class KiwiAnalysisService {
         }
 
         let candidateLookup: (String) -> [HanjaCandidate] = { key in
-            let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
-            return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
+            let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
+                + DateHanjaCandidateGenerator.candidates(for: key)
+            return specialCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : specialCandidates
         }
 
         // Step 6 — auto-convert word evidence gate (docs/plans/context-aware-hanja-conversion.md
@@ -880,6 +881,13 @@ final class KiwiAnalysisService {
         autoConvertGate: ((HanjaCandidate, POSTag) -> Bool)? = nil,
         nativeHomographLookup: ((String) -> Bool)? = nil
     ) -> [HanjaSegment] {
+        let particleStarts = Set(tokens.filter { token in
+            switch token.tag {
+            case .jks, .jkc, .jkg, .jko, .jkb, .jkv, .jkq, .jx, .jc: return true
+            default: return false
+            }
+        }.map(\.position))
+        let dateRanges = DateHanjaCandidateGenerator.sourceRanges(in: clause, particleStarts: particleStarts)
         let tokenSegments: [HanjaSegment] = tokens.compactMap { token -> HanjaSegment? in
             guard isRealtimeHanjaEligibleTag(token.tag),
                   token.length > 0
@@ -893,6 +901,9 @@ final class KiwiAnalysisService {
             }
 
             let surface = String(clause[stringRange])
+            if DateHanjaCandidateGenerator.isDateCandidateSource(surface), !dateRanges.contains(sourceRange) {
+                return nil
+            }
             let normalizedDigits = NumericHanjaCandidateGenerator.normalizedDigits(from: surface)
             let normalizedLookupKey = normalizedDigits ?? surface
             let candidates = candidateLookup(normalizedLookupKey)
@@ -900,6 +911,7 @@ final class KiwiAnalysisService {
             let hangulUsage = hangulUsageLookup(normalizedLookupKey)
             let preferHangul = hangulUsage > 0 && hangulUsage >= topHanjaUsage
             let allowsAutoConversion = isRealtimeAutoConvertEligibleTag(token.tag)
+                && !DateHanjaCandidateGenerator.isDateCandidateSource(surface)
             // Step 6 (docs/plans/context-aware-hanja-conversion.md §9): numeric surfaces bypass
             // the word-evidence gate entirely (numeric segments never preview auto-convert to
             // begin with — see makeNumericSegments).
@@ -935,19 +947,27 @@ final class KiwiAnalysisService {
             )
         }
 
-        let numericSegments = makeNumericSegments(
+        let specialSegments = makeNumericSegments(
             in: clause,
             candidateLookup: candidateLookup
-        )
-        guard !numericSegments.isEmpty else {
+        ) + dateRanges.compactMap { range -> HanjaSegment? in
+            guard let stringRange = Range(range, in: clause) else { return nil }
+            let surface = String(clause[stringRange])
+            guard !candidateLookup(surface).isEmpty else { return nil }
+            return HanjaSegment(
+                sourceRange: range, surface: surface, normalizedLookupKey: surface,
+                tag: .nng, isConvertible: true, previewCandidate: nil
+            )
+        }
+        guard !specialSegments.isEmpty else {
             return tokenSegments
         }
 
         return (tokenSegments.filter { tokenSegment in
-            !numericSegments.contains { numericSegment in
-                rangesOverlap(tokenSegment.sourceRange, numericSegment.sourceRange)
+            !specialSegments.contains { specialSegment in
+                rangesOverlap(tokenSegment.sourceRange, specialSegment.sourceRange)
             }
-        } + numericSegments)
+        } + specialSegments)
         .sorted {
             if $0.sourceRange.location != $1.sourceRange.location {
                 return $0.sourceRange.location < $1.sourceRange.location
@@ -986,8 +1006,9 @@ final class KiwiAnalysisService {
             let normalizedLookupKey = normalizedDigits ?? surface
             let candidates = candidateLookup(normalizedLookupKey)
             let isNumeric = normalizedDigits != nil
-            // 후보가 있으면 첫 후보를 프리뷰(태그 필터 미적용). 숫자는 기존 UX대로 아라비아 표기 유지.
-            let previewCandidate = (isNumeric || candidates.isEmpty) ? nil : candidates.first
+            // Numeric and date expressions retain their source until explicitly selected.
+            let previewCandidate = (isNumeric || DateHanjaCandidateGenerator.isDateCandidateSource(surface))
+                ? nil : candidates.first
             segments.append(
                 HanjaSegment(
                     sourceRange: range,

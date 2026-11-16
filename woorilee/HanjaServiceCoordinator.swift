@@ -275,8 +275,9 @@ func hideWarmUpPanelIfNeeded() {
             boundaries: boundaries,
             in: clause,
             candidateLookup: { [hanjaService] key in
-                let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
-                return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
+                let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
+                    + DateHanjaCandidateGenerator.candidates(for: key)
+                return specialCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : specialCandidates
             }
         )
     }
@@ -291,6 +292,16 @@ func hideWarmUpPanelIfNeeded() {
     }
 
     func manualLookup(for target: ManualHanjaTarget, surroundingContext: String = "", sessionInputs: HanjaSessionScoringInputs? = nil) -> ManualHanjaLookupResult {
+        let dateCandidates = DateHanjaCandidateGenerator.candidates(for: target.sourceText)
+        if !dateCandidates.isEmpty {
+            return ManualHanjaLookupResult(
+                state: HanjaCandidatePanelState(
+                    mode: .manual(sourceText: target.sourceText, replacementRange: target.replacementRange),
+                    anchorRange: target.anchorRange, candidates: dateCandidates
+                ),
+                lookupKey: target.sourceText
+            )
+        }
         let lookup = hanjaService.manualLookup(for: target)
         let analysis = analyzeRealtimeClause(surroundingContext)
         let contextSegment = HanjaSegment(
@@ -364,9 +375,10 @@ func hideWarmUpPanelIfNeeded() {
     }
 
     func realtimeCandidates(for segment: HanjaSegment, sessionInputs: HanjaSessionScoringInputs? = nil) -> [HanjaCandidate] {
-        let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
-        if !numericCandidates.isEmpty {
-            return numericCandidates
+        let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
+            + DateHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
+        if !specialCandidates.isEmpty {
+            return specialCandidates
         }
 
         let associationStore = HanjaContextAssociationStore.shared

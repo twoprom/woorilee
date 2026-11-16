@@ -52,6 +52,17 @@ enum NumericHanjaCandidateGenerator {
         return makeCandidates(values: values, reading: normalizedDigits)
     }
 
+    static func hanjaQuantityReading(for value: Int) -> String {
+        quantityReading(
+            for: String(value).compactMap(\.wholeNumberValue),
+            digits: hanjaDigitsWithLing, smallUnits: hanjaSmallUnits, largeUnits: hanjaLargeUnits
+        )
+    }
+
+    static func hanjaDigitReading(for value: Int) -> String {
+        digitReading(for: String(value).compactMap(\.wholeNumberValue), using: hanjaDigitsWithCircle)
+    }
+
     static func isNumericCandidateSource(_ text: String) -> Bool {
         normalizedDigits(from: text) != nil
     }

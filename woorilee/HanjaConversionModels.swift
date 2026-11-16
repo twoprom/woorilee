@@ -428,6 +428,20 @@ struct RealtimeClauseState: Equatable {
                 return segment.replacingPreviewCandidate(lockedCandidate)
             }
 
+            if isManualSegmentation {
+                // Rebuilding manual spans bypasses automatic conversion gates. Keep the exact
+                // preview (including Hangul) of unchanged spans instead of accepting new defaults.
+                if let previous = segments.first(where: {
+                    $0.sourceRange == segment.sourceRange && SegmentLockKey(segment: $0) == lockKey
+                }) {
+                    return segment.replacingPreviewCandidate(previous.previewCandidate)
+                }
+                // New remainder/gap spans were not the target of the user's boundary edit.
+                if segment.sourceRange.location != focusedSpanStart {
+                    return segment.replacingPreviewCandidate(nil)
+                }
+            }
+
             return segment
         }
 

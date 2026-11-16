@@ -60,6 +60,12 @@ ones to preserve when extending the code.
 - `woorilee/NumericHanjaCandidateGenerator.swift`
   - Stateless generator of 數字 candidates for all-digit input — digit-by-digit
     and quantity-unit readings in both Hanja and Hangul.
+- `woorilee/DateHanjaCandidateGenerator.swift`
+  - Relative-day expressions produce nine date notations using the current local
+    date and time zone, with slash dates and Korean/Hanja weekdays first, followed by
+    Gregorian and Republic of Korea era dates.
+    Manual and realtime panels share the same fixed candidate order;
+    realtime expressions retain their source until explicitly selected, like numeric input.
 - `woorilee/HanjaCandidatePanelController.swift`
   - Non-activating panel that hosts both manual and realtime candidates;
     positions itself via `CandidatePanelOriginCalculator`.
@@ -124,6 +130,8 @@ Each service owns a warm-up `Status` enum
 
 ## Test Coverage
 
+- `woorileeTests/DateHanjaCandidateTests.swift` — relative-day aliases, date notations and labels,
+  calendar/time-zone boundaries, real Kiwi segmentation, and manual/realtime candidate paths.
 - `woorileeTests/InputEventPolicyTests.swift` — key normalization and
   navigation selector classification.
 - `woorileeTests/InputRangeStateTests.swift` — replacement-range and
