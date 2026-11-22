@@ -348,6 +348,29 @@ struct HanjaCandidatePanelState: Equatable {
         return "\(localIndex + 1)"
     }
 
+    /// 숫자키 선택: 현재 페이지의 `index`번째 후보로 하이라이트를 옮긴다.
+    /// 유효성은 호출 측이 `candidateForPageNumberIndex`로 먼저 확인한다.
+    mutating func highlightCandidate(atPageNumberIndex index: Int) {
+        let absoluteIndex = visibleCandidateRange.lowerBound + index
+        guard candidates.indices.contains(absoluteIndex) else {
+            return
+        }
+
+        highlightedIndex = absoluteIndex
+        highlightedIsHangul = false
+        hasUserNavigated = true
+    }
+
+    /// 숫자키 "0": 한글 유지 행으로 하이라이트를 옮긴다.
+    mutating func highlightHangulRow() {
+        guard hasHangulRow else {
+            return
+        }
+
+        highlightedIsHangul = true
+        hasUserNavigated = true
+    }
+
     func candidateForPageNumberIndex(_ index: Int) -> HanjaCandidate? {
         guard index >= 0, index < pageSize else {
             return nil

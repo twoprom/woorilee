@@ -23,6 +23,9 @@ final class InputController: IMKInputSessionController {
         case blockedNoTarget(anchorRange: NSRange)
     }
 
+    /// `InputEventPolicy.numericCandidateIndex`가 "0" 키에 주는 인덱스 — 한글 유지 행.
+    private static let manualHangulRowNumberIndex = 9
+
     private weak var session: InputSession?
     private let debugLoggingEnabled = true
     private let hanjaServices = HanjaServiceCoordinator.shared
@@ -197,10 +200,6 @@ final class InputController: IMKInputSessionController {
         }
 
         if InputEventPolicy.isManualHanjaTrigger(keyCode: keyCode, modifiers: modifiers) {
-            if session.isRealtimeHanjaMode {
-                return true
-            }
-
             debugLog("manual-hanja trigger keyCode=\(keyCode) modifiers=\(modifiers.rawValue)")
             return handleManualHanjaTrigger(client, session: session)
         }
@@ -564,7 +563,7 @@ final class InputController: IMKInputSessionController {
                 updateState: { session.updateManualCandidateState($0) },
                 refreshPanel: { showManualCandidatePanel(client: client, session: session) },
                 dismissPanel: { revertManualLivePreview(client: client, session: session) },
-                commitVisible: { finalizeManualLivePreview(session: session) },
+                commitVisible: { confirmManualHighlightedCandidate(client: client, session: session) },
                 applyHighlightPreview: { applyManualHighlightPreview(client: client, session: session) }
             ) {
                 return handled
@@ -585,12 +584,57 @@ final class InputController: IMKInputSessionController {
                 return true
 
             default:
+                // 패널 각주가 안내하는 숫자키 선택(1-9 후보, 0 한글 유지).
+                if let handled = handleManualNumberKeySelection(
+                    keyCode: keyCode,
+                    modifiers: modifiers,
+                    client: client,
+                    session: session
+                ) {
+                    return handled
+                }
+
                 // Any other key keeps what is visible (WYSIWYG), records it, and lets the key
                 // process normally.
                 finalizeManualLivePreview(session: session)
                 return nil
             }
         }
+    }
+
+    /// 수동 패널 각주("후보 선택 1-9, 0 한글")가 약속하는 숫자키 선택. 패널이 떠 있는 동안
+    /// 숫자키는 문서에 숫자를 넣는 대신 해당 행을 확정한다. 반환 `nil` = 숫자키가 아님.
+    private func handleManualNumberKeySelection(
+        keyCode: UInt16,
+        modifiers: NSEvent.ModifierFlags,
+        client: any IMKTextInput,
+        session: InputSession
+    ) -> Bool? {
+        guard modifiers.intersection([.command, .control, .option, .shift]).isEmpty,
+              let numericIndex = InputEventPolicy.numericCandidateIndex(keyCode: keyCode),
+              let state = session.manualCandidateState
+        else {
+            return nil
+        }
+
+        if numericIndex == Self.manualHangulRowNumberIndex {
+            guard state.hasHangulRow else {
+                return true
+            }
+
+            session.updateManualCandidateState { $0.highlightHangulRow() }
+            confirmManualHighlightedCandidate(client: client, session: session)
+            return true
+        }
+
+        guard state.candidateForPageNumberIndex(numericIndex) != nil else {
+            // 빈 번호는 소비만 한다 — 변환 도중 문서에 숫자가 끼어드는 편이 더 나쁘다.
+            return true
+        }
+
+        session.updateManualCandidateState { $0.highlightCandidate(atPageNumberIndex: numericIndex) }
+        confirmManualHighlightedCandidate(client: client, session: session)
+        return true
     }
 
     private func handleReturn(_ client: any IMKTextInput, session: InputSession) -> Bool {
@@ -737,6 +781,11 @@ final class InputController: IMKInputSessionController {
         session: InputSession
     ) -> Bool? {
         guard session.isShowingRealtimeCandidates else {
+            return nil
+        }
+
+        // Option+Return은 패널의 "보이는 대로 확정"이 아니라 수동 변환으로 보낸다.
+        if InputEventPolicy.isManualHanjaTrigger(keyCode: keyCode, modifiers: modifiers) {
             return nil
         }
 
@@ -1026,13 +1075,6 @@ final class InputController: IMKInputSessionController {
     ) -> ManualHanjaConversionAttemptResult {
         let defaultAnchorRange = manualHanjaAnchorRange(for: client)
 
-        guard !hanjaServices.isRealtimeHanjaConversionEnabled else {
-            return .blockedUnavailable(
-                anchorRange: defaultAnchorRange,
-                detail: "실시간 변환이 활성화되어 있습니다."
-            )
-        }
-
         guard let target = extractManualHanjaTarget(from: client, session: session) else {
             return .blockedNoTarget(anchorRange: defaultAnchorRange)
         }
@@ -1059,11 +1101,30 @@ final class InputController: IMKInputSessionController {
         session: InputSession
     ) -> Bool {
         session.clearManualHanjaTrigger()
+
+        // 실시간 모드: 진행 중인 절을 한글 원문으로 확정해 두면 이후는 수동 모드와 똑같이
+        // 문서(커서 왼쪽·선택 영역)에서 변환 대상을 찾는다.
+        if session.isRealtimeHanjaMode {
+            dismissRealtimeCandidatePanel(session: session, force: true)
+            compositionEngine(for: client, session: session).commitRealtimeSourceText()
+        }
+
+        let attempt = beginManualHanjaConversion(client, session: session)
+        // 조합 중이면 패널을 열기 전에 확정한다. 패널이 열린 뒤에 확정하면 커밋 경로의
+        // session.reset()이 수동 패널 상태(치환 범위·라이브 미리보기 기록)까지 지워
+        // 화살표 탐색도 Return 확정도 무효가 된다.
+        if case .started = attempt, session.hasPendingHangulText {
+            commitCurrentComposition(client, session: session)
+        }
+        // reset()은 개행 억제 플래그도 지우므로 확정한 뒤에 건다.
         session.suppressNextManualHanjaNewline()
 
-        switch beginManualHanjaConversion(client, session: session) {
+        switch attempt {
         case .started(let lookup):
             session.setManualCandidateState(lookup.state, lookupKey: lookup.lookupKey)
+            // WYSIWYG 불변식: 패널이 열리는 순간부터 하이라이트된 행이 화면에 반영돼 있어야
+            // Return이 "보이는 그대로"를 확정할 수 있다.
+            applyManualHighlightPreview(client: client, session: session)
             showManualCandidatePanel(client: client, session: session)
             debugLog("manual-hanja started lookupLength=\(lookup.lookupKey.utf16.count)")
             return true
@@ -1373,14 +1434,20 @@ final class InputController: IMKInputSessionController {
             return
         }
 
-        // 마크된 한글이 남아 있으면 먼저 커밋해 클라이언트가 replacementRange를 문서 절대
-        // 좌표로 해석하게 한다(applyManualCandidateSelection과 동일한 이유).
-        if session.hasPendingHangulText {
-            commitCurrentComposition(client, session: session)
-        }
-
+        // 조합은 패널을 열 때 이미 확정됐다(handleManualHanjaTrigger). 여기서 커밋하면
+        // session.reset()이 수동 패널 상태를 지워 미리보기 기록이 사라진다.
         client.insertText(desired, replacementRange: replacementRange)
         session.recordManualLivePreview(text: desired)
+    }
+
+    /// Return·숫자키 확정: 하이라이트된 행을 먼저 화면에 반영한 뒤(패널을 연 직후처럼
+    /// 아직 적용되지 않았을 수 있다) 그대로 확정한다.
+    private func confirmManualHighlightedCandidate(
+        client: any IMKTextInput,
+        session: InputSession
+    ) {
+        applyManualHighlightPreview(client: client, session: session)
+        finalizeManualLivePreview(session: session)
     }
 
     /// Return (and any other finalizing key) under WYSIWYG: the document already shows the
