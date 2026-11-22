@@ -200,10 +200,6 @@ final class InputController: IMKInputSessionController {
         }
 
         if InputEventPolicy.isManualHanjaTrigger(keyCode: keyCode, modifiers: modifiers) {
-            if session.isRealtimeHanjaMode {
-                return true
-            }
-
             debugLog("manual-hanja trigger keyCode=\(keyCode) modifiers=\(modifiers.rawValue)")
             return handleManualHanjaTrigger(client, session: session)
         }
@@ -788,6 +784,11 @@ final class InputController: IMKInputSessionController {
             return nil
         }
 
+        // Option+Return은 패널의 "보이는 대로 확정"이 아니라 수동 변환으로 보낸다.
+        if InputEventPolicy.isManualHanjaTrigger(keyCode: keyCode, modifiers: modifiers) {
+            return nil
+        }
+
         if let handled = handleCandidatePanelCommonKeyInput(
             keyCode: keyCode,
             modifiers: modifiers,
@@ -1074,13 +1075,6 @@ final class InputController: IMKInputSessionController {
     ) -> ManualHanjaConversionAttemptResult {
         let defaultAnchorRange = manualHanjaAnchorRange(for: client)
 
-        guard !hanjaServices.isRealtimeHanjaConversionEnabled else {
-            return .blockedUnavailable(
-                anchorRange: defaultAnchorRange,
-                detail: "실시간 변환이 활성화되어 있습니다."
-            )
-        }
-
         guard let target = extractManualHanjaTarget(from: client, session: session) else {
             return .blockedNoTarget(anchorRange: defaultAnchorRange)
         }
@@ -1107,6 +1101,13 @@ final class InputController: IMKInputSessionController {
         session: InputSession
     ) -> Bool {
         session.clearManualHanjaTrigger()
+
+        // 실시간 모드: 진행 중인 절을 한글 원문으로 확정해 두면 이후는 수동 모드와 똑같이
+        // 문서(커서 왼쪽·선택 영역)에서 변환 대상을 찾는다.
+        if session.isRealtimeHanjaMode {
+            dismissRealtimeCandidatePanel(session: session, force: true)
+            compositionEngine(for: client, session: session).commitRealtimeSourceText()
+        }
 
         let attempt = beginManualHanjaConversion(client, session: session)
         // 조합 중이면 패널을 열기 전에 확정한다. 패널이 열린 뒤에 확정하면 커밋 경로의

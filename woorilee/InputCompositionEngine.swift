@@ -222,6 +222,38 @@ struct InputCompositionEngine {
         session.finishComposition()
     }
 
+    /// 실시간 절을 미리보기(자동 한자)가 아닌 한글 원문 그대로 확정한다. Option+Return 수동 변환이
+    /// 수동 모드와 같은 문서 기준 대상 추출을 하도록 그 직전에 쓴다. 확정한 것은 한자 선택이 아니므로
+    /// 실시간 사용 기록·세션 선택 prior는 남기지 않는다.
+    func commitRealtimeSourceText() {
+        guard session.isRealtimeHanjaMode else {
+            commitCurrentComposition()
+            return
+        }
+
+        let flushed = session.flushText()
+        if !flushed.isEmpty {
+            session.appendCommittedTextToRealtimeClause(flushed)
+        } else {
+            session.syncRealtimeTailPreedit()
+        }
+
+        let state = session.realtimeClauseState
+        let textToCommit = state.rawClauseText + state.tailPreedit
+        if textToCommit.isEmpty {
+            clearMarkedText()
+            session.reset()
+            return
+        }
+
+        let replacementRange = effectiveReplacementRange()
+        debugLog(
+            "commitRealtimeSource textLength=\(textToCommit.utf16.count) replacement=\(inputDebugRangeString(replacementRange)) marked=\(inputDebugRangeString(client.markedRange())) selected=\(inputDebugRangeString(client.selectedRange()))"
+        )
+        client.insertText(textToCommit, replacementRange: replacementRange)
+        session.reset()
+    }
+
     func insertSpace() {
         client.insertText(" ", replacementRange: NSRange(location: NSNotFound, length: 0))
     }
