@@ -41,6 +41,9 @@
 				"data/hanja/freq-hanja.txt",
 				"data/hanja/freq-hanjaeo.txt",
 				data/hanja/hanja.txt,
+				"data/hanja/hanja-context.txt",
+				"data/hanja/hanja-context.bin",
+				"data/hanja/hanja-native-homograph.txt",
 				Info.plist,
 				KiwiModels/combiningRule.txt,
 				KiwiModels/cong.mdl,
@@ -254,6 +257,8 @@
 				"$(PROJECT_DIR)/woorilee/data/hanja/hanja.txt",
 				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanja.txt",
 				"$(PROJECT_DIR)/woorilee/data/hanja/freq-hanjaeo.txt",
+				"$(PROJECT_DIR)/woorilee/data/hanja/hanja-context.bin",
+				"$(PROJECT_DIR)/woorilee/data/hanja/hanja-native-homograph.txt",
 			);
 			name = "Copy Bundled Hanja Dictionary";
 			outputFileListPaths = (
@@ -262,10 +267,12 @@
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja.txt",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanja.txt",
 				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/freq-hanjaeo.txt",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja-context.bin",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/data/hanja/hanja-native-homograph.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\ndest=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja\"\n/bin/mkdir -p \"$dest\"\nfor name in hanja.txt freq-hanja.txt freq-hanjaeo.txt; do\n  /bin/rm -f \"$dest/$name\"\n  /bin/cp \"${PROJECT_DIR}/woorilee/data/hanja/$name\" \"$dest/$name\"\ndone\n";
+			shellScript = "set -eu\ndest=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/data/hanja\"\n/bin/mkdir -p \"$dest\"\nfor name in hanja.txt freq-hanja.txt freq-hanjaeo.txt hanja-context.bin hanja-native-homograph.txt; do\n  /bin/rm -f \"$dest/$name\"\n  /bin/cp \"${PROJECT_DIR}/woorilee/data/hanja/$name\" \"$dest/$name\"\ndone\n";
 		};
 		60D1C0032FA0000000ABC001 /* Copy Bundled Kiwi Models */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -465,7 +472,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 106;
+				CURRENT_PROJECT_VERSION = 107;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_DEBUG_DYLIB = YES;
@@ -484,7 +491,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorilee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -507,7 +514,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 106;
+				CURRENT_PROJECT_VERSION = 107;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_DEBUG_DYLIB = NO;
@@ -526,7 +533,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.twoprom.inputmethod.woorilee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

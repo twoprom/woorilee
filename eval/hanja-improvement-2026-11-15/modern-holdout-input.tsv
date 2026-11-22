@@ -1,0 +1,4 @@
+id	reading	page_id	page_title	split	span_start	span_len	sentence
+modern-001	결정	148975104	현대 산문 검수 대기 표본	holdout_pending_review	23	2	개정안은 이의신청 대상을 비공개·부분공개 결정에서 '정보공개와 관련한 공공기관의 결정' 전체로 넓힌다.
+modern-002	연구	148975484	현대 산문 검수 대기 표본	holdout_pending_review	34	2	5개 분야별 작업반은 주관부처 차관을 팀장으로 관계부처와 국책연구기관 등이 참여해 분야별 핵심과제를 발굴하고 구체화한다.
+modern-003	환경	156789245	현대 산문 검수 대기 표본	holdout_pending_review	29	2	외교부와 관세청은 앞으로도 우리 기업에 우호적인 통상환경을 조성하고, 국제적인 관세협력을 강화하기 위해 관련 협정의 체결 및 이행을 지속적으로 추진해 나갈 계획이다.

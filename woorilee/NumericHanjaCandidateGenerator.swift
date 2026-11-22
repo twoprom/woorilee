@@ -11,7 +11,6 @@ enum NumericHanjaCandidateGenerator {
     private static let hangulSmallUnits = ["", "십", "백", "천"]
     private static let hanjaLargeUnits = ["", "萬", "億", "兆", "京"]
     private static let hangulLargeUnits = ["", "만", "억", "조", "경"]
-    private static let largeGroupThreshold = "100000000"
 
     static func candidates(for sourceText: String) -> [HanjaCandidate] {
         guard let normalizedDigits = normalizedDigits(from: sourceText) else {
@@ -26,41 +25,42 @@ enum NumericHanjaCandidateGenerator {
         let hasLeadingZero = normalizedDigits.count > 1 && normalizedDigits.first == "0"
         let canUseQuantityUnits = !hasLeadingZero && groupCount(forDigitCount: digits.count) <= hangulLargeUnits.count
         let containsZero = digits.contains(0)
-        var values: [String] = []
+        var values: [(value: String, comment: String)] = []
 
         if !canUseQuantityUnits {
-            values.append(digitReading(for: digits, using: hanjaDigitsWithLing))
+            values.append((digitReading(for: digits, using: hanjaDigitsWithLing), "漢字"))
             if containsZero {
-                values.append(digitReading(for: digits, using: hanjaDigitsWithCircle))
+                values.append((digitReading(for: digits, using: hanjaDigitsWithCircle), "漢字"))
             }
-            values.append(digitReading(for: digits, using: hangulDigits))
+            values.append((digitReading(for: digits, using: hangulDigits), "한글"))
             return makeCandidates(values: values, reading: normalizedDigits)
         }
 
-        let isLargeNumber = isAtLeastLargeGroupThreshold(normalizedDigits)
-        if isLargeNumber {
-            values.append(digitReading(for: digits, using: hanjaDigitsWithLing))
-            values.append(quantityReading(for: digits, digits: hanjaDigitsWithLing, smallUnits: hanjaSmallUnits, largeUnits: hanjaLargeUnits))
-            if containsZero {
-                values.append(digitReading(for: digits, using: hanjaDigitsWithCircle))
-            }
-            if let grouped = groupedHangulUnitReading(for: normalizedDigits) {
-                values.append(grouped)
-            }
-            values.append(quantityReading(for: digits, digits: hangulDigits, smallUnits: hangulSmallUnits, largeUnits: hangulLargeUnits))
-        } else {
-            values.append(quantityReading(for: digits, digits: hanjaDigitsWithLing, smallUnits: hanjaSmallUnits, largeUnits: hanjaLargeUnits))
-            values.append(digitReading(for: digits, using: hanjaDigitsWithLing))
-            if containsZero {
-                values.append(digitReading(for: digits, using: hanjaDigitsWithCircle))
-            }
-            values.append(quantityReading(for: digits, digits: hangulDigits, smallUnits: hangulSmallUnits, largeUnits: hangulLargeUnits))
-            if let grouped = groupedHangulUnitReading(for: normalizedDigits) {
-                values.append(grouped)
-            }
+        values.append((quantityReading(for: digits, digits: hanjaDigitsWithLing, smallUnits: hanjaSmallUnits, largeUnits: hanjaLargeUnits), "漢字"))
+        values.append((digitReading(for: digits, using: hanjaDigitsWithLing), "漢字"))
+        if containsZero {
+            values.append((digitReading(for: digits, using: hanjaDigitsWithCircle), "漢字"))
+        }
+        values.append((quantityReading(for: digits, digits: hangulDigits, smallUnits: hangulSmallUnits, largeUnits: hangulLargeUnits), "한글"))
+        if let grouped = groupedUnitReading(for: normalizedDigits, largeUnits: hangulLargeUnits) {
+            values.append((grouped, "혼용"))
+        }
+        if let grouped = groupedUnitReading(for: normalizedDigits, largeUnits: hanjaLargeUnits) {
+            values.append((grouped, "混用"))
         }
 
         return makeCandidates(values: values, reading: normalizedDigits)
+    }
+
+    static func hanjaQuantityReading(for value: Int) -> String {
+        quantityReading(
+            for: String(value).compactMap(\.wholeNumberValue),
+            digits: hanjaDigitsWithLing, smallUnits: hanjaSmallUnits, largeUnits: hanjaLargeUnits
+        )
+    }
+
+    static func hanjaDigitReading(for value: Int) -> String {
+        digitReading(for: String(value).compactMap(\.wholeNumberValue), using: hanjaDigitsWithCircle)
     }
 
     static func isNumericCandidateSource(_ text: String) -> Bool {
@@ -92,16 +92,16 @@ enum NumericHanjaCandidateGenerator {
         return digits.isEmpty ? nil : digits
     }
 
-    private static func makeCandidates(values: [String], reading: String) -> [HanjaCandidate] {
+    private static func makeCandidates(values: [(value: String, comment: String)], reading: String) -> [HanjaCandidate] {
         var seen: Set<String> = []
         var candidates: [HanjaCandidate] = []
 
-        for value in values where !value.isEmpty && seen.insert(value).inserted {
+        for (value, comment) in values where !value.isEmpty && seen.insert(value).inserted {
             candidates.append(
                 HanjaCandidate(
                     reading: reading,
                     value: value,
-                    comment: "數字",
+                    comment: comment,
                     source: .system,
                     usageCount: 0,
                     frequency: 0,
@@ -164,9 +164,9 @@ enum NumericHanjaCandidateGenerator {
         return result
     }
 
-    private static func groupedHangulUnitReading(for normalizedDigits: String) -> String? {
+    private static func groupedUnitReading(for normalizedDigits: String, largeUnits: [String]) -> String? {
         let groups = fourDigitStringGroups(from: normalizedDigits)
-        guard groups.count > 1, groups.count <= hangulLargeUnits.count else {
+        guard groups.count > 1, groups.count <= largeUnits.count else {
             return nil
         }
 
@@ -177,24 +177,11 @@ enum NumericHanjaCandidateGenerator {
             }
 
             let unitIndex = groups.count - index - 1
-            parts.append("\(value)\(hangulLargeUnits[unitIndex])")
+            parts.append("\(value)\(largeUnits[unitIndex])")
         }
 
         let result = parts.joined()
         return result.isEmpty ? nil : result
-    }
-
-    private static func isAtLeastLargeGroupThreshold(_ normalizedDigits: String) -> Bool {
-        let trimmed = normalizedDigits.drop { $0 == "0" }
-        guard !trimmed.isEmpty else {
-            return false
-        }
-
-        if trimmed.count != largeGroupThreshold.count {
-            return trimmed.count > largeGroupThreshold.count
-        }
-
-        return String(trimmed) >= largeGroupThreshold
     }
 
     private static func fourDigitGroups(from digits: [Int]) -> [[Int]] {

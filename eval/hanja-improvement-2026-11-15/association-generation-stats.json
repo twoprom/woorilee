@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-08-01T04:44:37Z",
+  "params": {
+    "w_paren": 20,
+    "w_dict": 20,
+    "min_anchor_survival": 5,
+    "alpha": 0.5,
+    "selection_metric": "utility = score * ln(1 + weighted_count)",
+    "max_feature_df_count": 662,
+    "max_feature_df_count_rationale": "absolute cutoff fixed 2026-07-10 (= ceil(0.039 * 16974), the accepted 5b build's effective boundary); fractional cutoff loosened with pool growth and re-admitted 나/VV into 수도:修道",
+    "ubiquity_scoped_tags": "VV, VA, VA-I, VV-I",
+    "colloc_weight": 20,
+    "colloc_counts_file": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/counts/collocation-counts.tsv",
+    "colloc_tuples": 13,
+    "colloc_readings": 12,
+    "colloc_note": "NIKL 파생어 연어 (flagged readings only) — survival-granting, ubiquity-ban exempt per row; NOT in compute_profile_df (banned set independent)",
+    "curated_override_rows": 51,
+    "m": 300,
+    "min_total_weighted": 0,
+    "freq_cutoff": 0
+  },
+  "ubiquity_filter": {
+    "total_profiles": 18295,
+    "distinct_features": 101686,
+    "banned_feature_count": 86
+  },
+  "size_bytes": 12347934,
+  "binary_size_bytes": 5495541,
+  "binary_format_version": 2,
+  "size_cap_bytes": 8388608,
+  "readings_kept": 3260,
+  "candidates_kept": 18126,
+  "features_kept": 827610,
+  "dropped_zero_quant": 598,
+  "dropped_single_candidate_readings": 124,
+  "tightening_log": [
+    {
+      "m": 300,
+      "min_total_weighted": 0,
+      "freq_cutoff": 0,
+      "size_bytes": 12343571,
+      "binary_size_bytes": 5495541
+    }
+  ],
+  "global_max_score_nats": 9.816629909858237
+}

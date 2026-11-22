@@ -3,6 +3,7 @@
 
 import Cocoa
 import IMKSwift
+import Kiwi
 import OSLog
 
 private let manualHanjaPanelLogger = Logger(
@@ -24,6 +25,7 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     private enum MenuTitle {
         static let realtimeConversion = "실시간 변환"
         static let manageUserDictionary = "漢字 사전 편집…"
+        static let resetUsageData = "사용자 학습 데이터 초기화…"
         static let about = "우리입력기에 관하여"
     }
 
@@ -36,6 +38,7 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
     private weak var currentMenu: NSMenu?
     private weak var realtimeMenuItem: NSMenuItem?
     private weak var manageUserDictionaryMenuItem: NSMenuItem?
+    private weak var resetUsageDataMenuItem: NSMenuItem?
 
     private override init() {
         super.init()
@@ -60,6 +63,10 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
         return false
     }
 
+    var isResetUsageDataAvailable: Bool {
+        hanjaService.usageStore != nil
+    }
+
     var isRealtimeHanjaAvailable: Bool {
         realtimeConversionPhaseUnlocked && kiwiService.isAvailable && hanjaService.isAvailable
     }
@@ -80,6 +87,12 @@ final class HanjaServiceCoordinator: NSObject, NSMenuDelegate {
         kiwiStatusDidResolve: @escaping (KiwiAnalysisService.Status) -> Void,
         hanjaStatusDidResolve: @escaping (HanjaDictionaryService.Status) -> Void
     ) {
+        // Step 5c association table — independent of Kiwi/hanja, so it warms up in parallel with
+        // the chain below rather than blocking it. No status callback: the realtime path already
+        // gates on `HanjaContextAssociationStore.shared.isAvailable` and falls back to step 4b
+        // behavior while it's loading/unavailable.
+        HanjaContextAssociationStore.shared.warmUp()
+
         kiwiService.warmUp { [weak self] in
             guard let self else {
                 return
@@ -120,6 +133,7 @@ func hideWarmUpPanelIfNeeded() {
         target: AnyObject,
         realtimeAction: Selector,
         manageUserDictionaryAction: Selector,
+        resetUsageDataAction: Selector,
         aboutAction: Selector
     ) -> NSMenu {
         let menu = NSMenu(title: "우리입력기")
@@ -146,6 +160,15 @@ func hideWarmUpPanelIfNeeded() {
         manageItem.isEnabled = isManualHanjaAvailable
         menu.addItem(manageItem)
 
+        let resetUsageDataItem = NSMenuItem(
+            title: MenuTitle.resetUsageData,
+            action: resetUsageDataAction,
+            keyEquivalent: ""
+        )
+        resetUsageDataItem.target = target
+        resetUsageDataItem.isEnabled = isResetUsageDataAvailable
+        menu.addItem(resetUsageDataItem)
+
         menu.addItem(.separator())
         let aboutItem = NSMenuItem(
             title: MenuTitle.about,
@@ -158,6 +181,7 @@ func hideWarmUpPanelIfNeeded() {
         currentMenu = menu
         realtimeMenuItem = realtimeItem
         manageUserDictionaryMenuItem = manageItem
+        resetUsageDataMenuItem = resetUsageDataItem
         refreshMenuState(menu)
         return menu
     }
@@ -183,12 +207,66 @@ func hideWarmUpPanelIfNeeded() {
         hanjaService.flushUsageWrites()
     }
 
-    func analyzeRealtimeClause(_ clause: String) -> [HanjaSegment] {
+    func resetHanjaUsageData() {
+        hanjaService.resetUsageData()
+    }
+
+    /// Shows a confirmation alert before clearing learned usage statistics. IMK server processes
+    /// don't have a normal foreground presence, so this promotes to `.accessory` and activates —
+    /// same pattern as `HanjaUserDictionaryWindowController.show()` — so the alert reliably comes
+    /// to the front instead of appearing behind the current app.
+    func confirmAndResetUsageData() {
+        guard isResetUsageDataAvailable else {
+            return
+        }
+
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "사용자 학습 데이터를 초기화하시겠습니까?"
+        alert.informativeText = "한자 후보 선택으로 학습된 사용 빈도(한글 우선 학습 포함)가 모두 삭제되며 되돌릴 수 없습니다. 사용자 사전에 직접 등록한 항목은 삭제되지 않습니다."
+        alert.addButton(withTitle: "초기화")
+        alert.addButton(withTitle: "취소")
+
+        if NSApp.activationPolicy() != .accessory {
+            NSApp.setActivationPolicy(.accessory)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else {
+            return
+        }
+
+        resetHanjaUsageData()
+    }
+
+    func analyzeRealtimeClause(
+        _ clause: String,
+        composingTailStart: Int? = nil,
+        sessionInputs: HanjaSessionScoringInputs? = nil
+    ) -> RealtimeClauseAnalysis {
         guard kiwiService.isAvailable, hanjaService.isAvailable else {
+            return RealtimeClauseAnalysis(segments: [], clauseContentFeatures: [])
+        }
+
+        return kiwiService.analyzeClauseDetailed(
+            clause,
+            hanjaService: hanjaService,
+            composingTailStart: composingTailStart,
+            sessionInputs: sessionInputs
+        )
+    }
+
+    /// R1b (docs/plans/hanja-context-scaling-plan.md §6): analyzes the document-context fetch
+    /// window (see `InputCompositionEngine.fetchDocumentContextIfNeeded`) into content-morpheme
+    /// features. Only needs Kiwi (no hanja dictionary lookups happen here) — `kiwiService.isAvailable`
+    /// is the sole gate; `[]` otherwise.
+    func analyzeDocumentContext(_ text: String) -> [String] {
+        guard kiwiService.isAvailable else {
             return []
         }
 
-        return kiwiService.analyzeClause(clause, hanjaService: hanjaService)
+        return kiwiService.contentFeatures(for: text)
     }
 
     /// 사용자가 조정한 경계(`boundaries`)로 소스를 분할해 분절을 만든다(Kiwi 미사용, 사전만 사용).
@@ -197,14 +275,49 @@ func hideWarmUpPanelIfNeeded() {
             boundaries: boundaries,
             in: clause,
             candidateLookup: { [hanjaService] key in
-                let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
-                return numericCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : numericCandidates
+                let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: key)
+                    + DateHanjaCandidateGenerator.candidates(for: key)
+                return specialCandidates.isEmpty ? hanjaService.exactCandidates(for: key) : specialCandidates
             }
         )
     }
 
-    func manualLookup(for target: ManualHanjaTarget) -> ManualHanjaLookupResult {
-        hanjaService.manualLookup(for: target)
+    func rankManualClause(_ segments: [HanjaSegment], previous: [HanjaSegment], sessionInputs: HanjaSessionScoringInputs?) -> [HanjaSegment] {
+        let store = HanjaContextAssociationStore.shared
+        return rankManualSegments(segments, previousSegments: previous,
+            candidateLookup: { self.hanjaService.exactCandidates(for: $0) },
+            associationLookup: store.isAvailable ? { store.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: store.isAvailable ? { store.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs)
+    }
+
+    func manualLookup(for target: ManualHanjaTarget, surroundingContext: String = "", sessionInputs: HanjaSessionScoringInputs? = nil) -> ManualHanjaLookupResult {
+        let dateCandidates = DateHanjaCandidateGenerator.candidates(for: target.sourceText)
+        if !dateCandidates.isEmpty {
+            return ManualHanjaLookupResult(
+                state: HanjaCandidatePanelState(
+                    mode: .manual(sourceText: target.sourceText, replacementRange: target.replacementRange),
+                    anchorRange: target.anchorRange, candidates: dateCandidates
+                ),
+                lookupKey: target.sourceText
+            )
+        }
+        let lookup = hanjaService.manualLookup(for: target)
+        let analysis = analyzeRealtimeClause(surroundingContext)
+        let contextSegment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: target.sourceText.utf16.count),
+            surface: target.sourceText, normalizedLookupKey: target.sourceText,
+            tag: .nng, isConvertible: !lookup.state.candidates.isEmpty, previewCandidate: nil,
+            contextDominantHanja: analysis.segments.first?.contextDominantHanja ?? [],
+            contextFeatures: analysis.clauseContentFeatures)
+        let store = HanjaContextAssociationStore.shared
+        let candidates = rankSegmentCandidates(lookup.state.candidates, for: contextSegment,
+            associationLookup: store.isAvailable ? { store.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: store.isAvailable ? { store.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs).map(\.candidate)
+        return ManualHanjaLookupResult(state: HanjaCandidatePanelState(
+            mode: lookup.state.mode, anchorRange: lookup.state.anchorRange, candidates: candidates,
+            highlightedIsHangul: lookup.state.highlightedIsHangul), lookupKey: lookup.lookupKey)
     }
 
     func recordSelection(lookupKey: String, value: String) {
@@ -224,28 +337,30 @@ func hideWarmUpPanelIfNeeded() {
         client: any IMKTextInput,
         onSelect: ((HanjaCandidatePanelSelection) -> Void)? = nil
     ) {
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("panel_display", since: start) }
         switch content {
         case .candidates(let state):
             switch state.mode {
             case .manual(let sourceText, _):
                 manualHanjaPanelLogger.info(
-                    "show manual candidates sourceText=\(sourceText, privacy: .public) count=\(state.candidates.count, privacy: .public)"
+                    "show manual candidates sourceLength=\(sourceText.utf16.count, privacy: .public) count=\(state.candidates.count, privacy: .public)"
                 )
             case .realtime(_, let segmentSurface):
                 manualHanjaPanelLogger.info(
-                    "show realtime candidates segment=\(segmentSurface, privacy: .public) count=\(state.candidates.count, privacy: .public) page=\(state.page, privacy: .public)"
+                    "show realtime candidates segmentLength=\(segmentSurface.utf16.count, privacy: .public) count=\(state.candidates.count, privacy: .public) page=\(state.page, privacy: .public)"
                 )
             }
         case .notice(let state):
             manualHanjaPanelLogger.info(
-                "show notice message=\(state.message, privacy: .public) detail=\(state.detail ?? "", privacy: .public)"
+                "show notice messageLength=\(state.message.utf16.count, privacy: .public) detailLength=\(state.detail?.utf16.count ?? 0, privacy: .public)"
             )
         }
 
         let anchorResolution = ManualHanjaPanelAnchorResolver.resolve(content: content, client: client)
         for probe in anchorResolution.probes {
             manualHanjaPanelLogger.debug(
-                "anchor candidate range=\(inputDebugRangeString(probe.range), privacy: .public) actual=\(inputDebugRangeString(probe.actualRange), privacy: .public) rect=\(String(describing: probe.rect), privacy: .public) valid=\(probe.isValid, privacy: .public)"
+                "anchor candidate range=\(inputDebugRangeString(probe.range), privacy: .public) actual=\(inputDebugRangeString(probe.actualRange), privacy: .public) rect=\(String(describing: probe.rect), privacy: .public) lineRect=\(String(describing: probe.lineRect), privacy: .public) valid=\(probe.isValid, privacy: .public)"
             )
         }
 
@@ -259,13 +374,22 @@ func hideWarmUpPanelIfNeeded() {
         )
     }
 
-    func realtimeCandidates(for segment: HanjaSegment) -> [HanjaCandidate] {
-        let numericCandidates = NumericHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
-        if !numericCandidates.isEmpty {
-            return numericCandidates
+    func realtimeCandidates(for segment: HanjaSegment, sessionInputs: HanjaSessionScoringInputs? = nil) -> [HanjaCandidate] {
+        let specialCandidates = NumericHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
+            + DateHanjaCandidateGenerator.candidates(for: segment.normalizedLookupKey)
+        if !specialCandidates.isEmpty {
+            return specialCandidates
         }
 
-        return hanjaService.exactCandidates(for: segment.normalizedLookupKey)
+        let associationStore = HanjaContextAssociationStore.shared
+        return rankSegmentCandidates(
+            hanjaService.exactCandidates(for: segment.normalizedLookupKey), for: segment,
+            associationLookup: associationStore.isAvailable
+                ? { associationStore.features(reading: $0, hanja: $1) } : nil,
+            biasLookup: associationStore.isAvailable
+                ? { associationStore.bias(reading: $0, hanja: $1) } : nil,
+            sessionInputs: sessionInputs
+        ).map(\.candidate)
     }
 
     func flushRealtimeUsageEvents(_ events: [PendingHanjaUsageEvent]) {
@@ -293,6 +417,9 @@ func hideWarmUpPanelIfNeeded() {
 
         let manageItem = menu?.item(withTitle: MenuTitle.manageUserDictionary) ?? manageUserDictionaryMenuItem
         manageItem?.isEnabled = isManualHanjaAvailable
+
+        let resetUsageDataItem = menu?.item(withTitle: MenuTitle.resetUsageData) ?? resetUsageDataMenuItem
+        resetUsageDataItem?.isEnabled = isResetUsageDataAvailable
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {

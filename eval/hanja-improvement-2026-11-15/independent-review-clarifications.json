@@ -1,0 +1,14 @@
+{
+  "source_sha256": "1ca11d0923f18ce9a5e96db289819113aef098849a98c3bca28fcccb8df09027",
+  "source": "User reply in this chat on 2026-11-15; raw submitted TSV is preserved.",
+  "rows": {
+    "d2-000825": {
+      "category": "U",
+      "confirmation": "User explicitly confirmed U for 長木."
+    },
+    "d2-000840": {
+      "allow_hangul": true,
+      "confirmation": "User explicitly confirmed that both 재주 and 才操 are acceptable."
+    }
+  }
+}

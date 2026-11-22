@@ -1,0 +1,8 @@
+# Authored development diagnostics. Never treat these sentences as independent gold.
+id	sentence	reading	expected
+water	집의 수도 배관에서 물이 샌다.	수도	水道
+capital	프랑스의 수도는 파리이다.	수도	首都
+breakdown	자동차가 고장 났다.	고장	故障
+native	내가 자란 고장에 다시 왔다.	고장	고장
+shipbuilding	조선 산업과 중공업이 발전했다.	조선	造船
+history	조선 시대의 역사와 문화를 공부한다.	조선	朝鮮

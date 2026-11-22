@@ -81,6 +81,28 @@ final class HanjaUsageStoreTests: XCTestCase {
         XCTAssertNil(store.usageRecord(for: HanjaCandidateKey(reading: "한자", value: "漢字")))
     }
 
+    func testRemoveAllClearsCountsAndPersistsAfterReload() {
+        let storeURL = makeStoreURL()
+        let store = HanjaUsageStore(storageURL: storeURL, debounceInterval: 60)
+        store.loadFromDisk()
+
+        store.recordSelection(lookupKey: "한자", value: "漢字")
+        store.recordHangulSelection(lookupKey: "한글")
+
+        XCTAssertFalse(store.usageCountsByKey.isEmpty)
+        XCTAssertEqual(store.hangulUsageCount(for: "한글"), 1)
+
+        store.removeAll()
+
+        XCTAssertTrue(store.usageCountsByKey.isEmpty)
+        XCTAssertEqual(store.hangulUsageCount(for: "한글"), 0)
+
+        let reloadedStore = HanjaUsageStore(storageURL: storeURL, debounceInterval: 60)
+        reloadedStore.loadFromDisk()
+        XCTAssertTrue(reloadedStore.usageCountsByKey.isEmpty)
+        XCTAssertEqual(reloadedStore.hangulUsageCount(for: "한글"), 0)
+    }
+
     private func makeStoreURL() -> URL {
         temporaryDirectoryURL
             .appendingPathComponent("Application Support", isDirectory: true)

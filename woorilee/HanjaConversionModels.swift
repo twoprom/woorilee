@@ -38,6 +38,30 @@ struct HanjaSegment: Equatable, Identifiable {
     let tag: POSTag
     let isConvertible: Bool
     let previewCandidate: HanjaCandidate?
+    /// Step 7 — native-homograph gate (docs/plans/context-aware-hanja-conversion.md §10): `true`
+    /// means this segment's reading is flagged as having a real native-Korean-word homograph, its
+    /// `previewCandidate` was suppressed to `nil` for that reason (not tag-ineligibility /
+    /// preferHangul / step-6 gate failure), and `applyContextReranking` may promote a candidate
+    /// back into `previewCandidate` if it finds positive context evidence. Defaults to `false` so
+    /// every pre-existing initializer call site reproduces prior behavior exactly.
+    let awaitsContextEvidence: Bool
+    /// Dominant hanja resolved from the surrounding context (see HanjaContextRanker.swift).
+    /// Empty unless step 4b's post-processing reranking pass has run. Carrying this through
+    /// every copy helper keeps the panel path (HanjaServiceCoordinator.realtimeCandidates(for:))
+    /// able to re-derive the same context without recomputing it.
+    let contextDominantHanja: [String]
+    /// Segment-specific corpus association features (step 5c — see
+    /// docs/plans/context-aware-hanja-conversion.md §7 5c): clause content-morpheme features
+    /// (`form/TAG`) minus the ones from tokens overlapping this segment's own sourceRange
+    /// (self-exclusion). Empty unless `applyContextReranking` has run with an association lookup.
+    /// Carried through the same copy helpers as `contextDominantHanja` so the panel path can
+    /// re-derive the same association scoring without recomputing it.
+    let contextFeatures: [String]
+    /// R2 (docs/plans/hanja-context-scaling-plan.md §7): 결합 선택이 이 분절의 상위 후보들에게
+    /// 매긴 도메인 일관성 가점(후보 값 → 가점). 승리 배치에서 **다른 분절의 확정 후보를 고정**한
+    /// 채 계산하므로, 패널이 이 값을 그대로 더하면 인라인 프리뷰와 같은 순서가 나온다.
+    /// 결합 단계가 돌지 않았으면 빈 사전 — 그때는 R1 동작과 완전 동일.
+    let jointBoosts: [String: Double]
 
     init(
         id: UUID = UUID(),
@@ -46,7 +70,11 @@ struct HanjaSegment: Equatable, Identifiable {
         normalizedLookupKey: String,
         tag: POSTag,
         isConvertible: Bool,
-        previewCandidate: HanjaCandidate?
+        previewCandidate: HanjaCandidate?,
+        awaitsContextEvidence: Bool = false,
+        contextDominantHanja: [String] = [],
+        contextFeatures: [String] = [],
+        jointBoosts: [String: Double] = [:]
     ) {
         self.id = id
         self.sourceRange = sourceRange
@@ -55,6 +83,10 @@ struct HanjaSegment: Equatable, Identifiable {
         self.tag = tag
         self.isConvertible = isConvertible
         self.previewCandidate = previewCandidate
+        self.awaitsContextEvidence = awaitsContextEvidence
+        self.contextDominantHanja = contextDominantHanja
+        self.contextFeatures = contextFeatures
+        self.jointBoosts = jointBoosts
     }
 
     func replacingPreviewCandidate(_ candidate: HanjaCandidate?) -> HanjaSegment {
@@ -65,7 +97,32 @@ struct HanjaSegment: Equatable, Identifiable {
             normalizedLookupKey: normalizedLookupKey,
             tag: tag,
             isConvertible: isConvertible,
-            previewCandidate: candidate
+            previewCandidate: candidate,
+            awaitsContextEvidence: awaitsContextEvidence,
+            contextDominantHanja: contextDominantHanja,
+            contextFeatures: contextFeatures,
+            jointBoosts: jointBoosts
+        )
+    }
+
+    func replacingContext(
+        _ context: [String],
+        features: [String] = [],
+        previewCandidate: HanjaCandidate?,
+        jointBoosts: [String: Double] = [:]
+    ) -> HanjaSegment {
+        HanjaSegment(
+            id: id,
+            sourceRange: sourceRange,
+            surface: surface,
+            normalizedLookupKey: normalizedLookupKey,
+            tag: tag,
+            isConvertible: isConvertible,
+            previewCandidate: previewCandidate,
+            awaitsContextEvidence: awaitsContextEvidence,
+            contextDominantHanja: context,
+            contextFeatures: features,
+            jointBoosts: jointBoosts
         )
     }
 }
@@ -137,6 +194,7 @@ struct HanjaCandidatePanelState: Equatable {
     var page: Int
     let pageSize: Int
     var highlightedIsHangul: Bool
+    var hasUserNavigated: Bool
 
     init(
         mode: HanjaCandidatePanelMode,
@@ -145,13 +203,15 @@ struct HanjaCandidatePanelState: Equatable {
         highlightedIndex: Int = 0,
         page: Int = 0,
         pageSize: Int = Self.defaultPageSize,
-        highlightedIsHangul: Bool = false
+        highlightedIsHangul: Bool = false,
+        hasUserNavigated: Bool = false
     ) {
         self.mode = mode
         self.anchorRange = anchorRange
         self.candidates = candidates
         self.pageSize = max(1, pageSize)
         self.highlightedIsHangul = highlightedIsHangul
+        self.hasUserNavigated = hasUserNavigated
 
         if candidates.isEmpty {
             self.highlightedIndex = 0
@@ -196,20 +256,40 @@ struct HanjaCandidatePanelState: Equatable {
         return text?.isEmpty == false
     }
 
-    static func realtimeDefaultHighlightedIsHangul(
-        segment: HanjaSegment,
-        candidates: [HanjaCandidate],
-        hangulUsage: Int
-    ) -> Bool {
-        if NumericHanjaCandidateGenerator.isNumericCandidateSource(segment.normalizedLookupKey) {
-            return true
-        }
+    static func realtimeDefaultHighlightedIsHangul(segment: HanjaSegment) -> Bool {
+        // The inline preview is the source of truth. Recomputing a default from candidate usage
+        // can highlight 華麗 while the marked text still shows 화려 when the auto-convert gate
+        // deliberately left previewCandidate nil.
+        segment.previewCandidate == nil
+    }
 
-        let topHanjaUsage = candidates.first?.usageCount ?? 0
-        return hangulUsage > 0 && hangulUsage >= topHanjaUsage
+    /// Follow the preview until the user browses. Thereafter preserve candidate identity across
+    /// reordering, including its new page, rather than preserving a stale numeric index.
+    static func realtimeState(
+        segment: HanjaSegment, index: Int, anchorRange: NSRange,
+        candidates: [HanjaCandidate], previous: HanjaCandidatePanelState?
+    ) -> HanjaCandidatePanelState {
+        let sameSegment = previous?.mode.realtimeSegmentIndex == index
+            && previous?.mode.realtimeSegmentSurface == segment.surface
+        let preserve = sameSegment && previous?.hasUserNavigated == true
+        let previousKey = preserve ? previous?.highlightedCandidate?.candidateKey : nil
+        let preservedIndex = previousKey.flatMap { key in candidates.firstIndex { $0.candidateKey == key } }
+        let previewIndex = segment.previewCandidate.flatMap { preview in
+            candidates.firstIndex { $0.candidateKey == preview.candidateKey }
+        }
+        let highlighted = preservedIndex ?? previewIndex ?? 0
+        let keepHangul = preserve && previous?.highlightedIsHangul == true
+        return HanjaCandidatePanelState(
+            mode: .realtime(segmentIndex: index, segmentSurface: segment.surface),
+            anchorRange: anchorRange, candidates: candidates,
+            highlightedIndex: highlighted, page: highlighted / defaultPageSize,
+            highlightedIsHangul: keepHangul || (preservedIndex == nil && previewIndex == nil),
+            hasUserNavigated: preserve && (keepHangul || preservedIndex != nil)
+        )
     }
 
     mutating func moveHighlight(by delta: Int) {
+        if delta != 0 { hasUserNavigated = true }
         guard !candidates.isEmpty else {
             highlightedIsHangul = false
             return
@@ -252,6 +332,7 @@ struct HanjaCandidatePanelState: Equatable {
     }
 
     mutating func movePage(by delta: Int) {
+        if delta != 0 { hasUserNavigated = true }
         guard pageCount > 0 else {
             highlightedIsHangul = false
             return
@@ -291,6 +372,13 @@ struct RealtimeClauseState: Equatable {
     var lockedCandidates: [SegmentLockKey: HanjaCandidate] = [:]
     var hangulLockedSegments: Set<SegmentLockKey> = []
     var pendingUsageEvents: [PendingHanjaUsageEvent] = []
+    /// Stable content-morpheme features for the whole clause (R1a — docs/plans/
+    /// hanja-context-scaling-plan.md §6), carried alongside `segments` so the commit path can hand
+    /// it to the session buffer without re-running Kiwi. Set by `updateAnalysis(segments:
+    /// clauseContentFeatures:)`; untouched (keeps its last value) when that argument is nil.
+    var clauseContentFeatures: [String] = []
+    /// Last automatic analysis, retained through repeated manual boundary edits for self-exclusion.
+    var automaticContextSegments: [HanjaSegment] = []
 
     /// 수동 경계 조정(일본어 IME식 문절 신축)이 활성일 때 소스(rawClauseText + tailPreedit)에 대한
     /// 내부 분할 지점들. UTF-16 오프셋, 오름차순, 0 < bᵢ < N. nil이면 Kiwi 자동 분절.
@@ -315,10 +403,16 @@ struct RealtimeClauseState: Equatable {
             pendingUsageEvents = []
             manualBoundaries = nil
             focusedSpanStart = nil
+            clauseContentFeatures = []
+            automaticContextSegments = []
         }
     }
 
-    mutating func updateAnalysis(segments analyzedSegments: [HanjaSegment]) {
+    mutating func updateAnalysis(segments analyzedSegments: [HanjaSegment], clauseContentFeatures: [String]? = nil) {
+        if !isManualSegmentation { automaticContextSegments = analyzedSegments }
+        if let clauseContentFeatures {
+            self.clauseContentFeatures = clauseContentFeatures
+        }
         let sourceText = rawClauseText + tailPreedit
         let previousSelectedKey = selectedSegmentIndex.flatMap { index in
             segments.indices.contains(index) ? SegmentLockKey(segment: segments[index]) : nil
@@ -332,6 +426,20 @@ struct RealtimeClauseState: Equatable {
 
             if let lockedCandidate = lockedCandidates[lockKey] {
                 return segment.replacingPreviewCandidate(lockedCandidate)
+            }
+
+            if isManualSegmentation {
+                // Rebuilding manual spans bypasses automatic conversion gates. Keep the exact
+                // preview (including Hangul) of unchanged spans instead of accepting new defaults.
+                if let previous = segments.first(where: {
+                    $0.sourceRange == segment.sourceRange && SegmentLockKey(segment: $0) == lockKey
+                }) {
+                    return segment.replacingPreviewCandidate(previous.previewCandidate)
+                }
+                // New remainder/gap spans were not the target of the user's boundary edit.
+                if segment.sourceRange.location != focusedSpanStart {
+                    return segment.replacingPreviewCandidate(nil)
+                }
             }
 
             return segment
@@ -453,8 +561,12 @@ struct RealtimeClauseState: Equatable {
         return true
     }
 
+    /// - Parameter keepingCandidateState: `true` keeps the candidate panel state alive (used by
+    ///   the WYSIWYG highlight-preview path, where browsing onto the hangul row must update the
+    ///   inline display without closing the panel). `false` (the default) preserves the original
+    ///   select-and-dismiss behavior.
     @discardableResult
-    mutating func applyHangulFallbackForSelectedSegment() -> Bool {
+    mutating func applyHangulFallbackForSelectedSegment(keepingCandidateState: Bool = false) -> Bool {
         guard let selectedSegmentIndex,
               segments.indices.contains(selectedSegmentIndex)
         else {
@@ -473,7 +585,9 @@ struct RealtimeClauseState: Equatable {
                 value: segment.normalizedLookupKey
             )
         )
-        candidateState = nil
+        if !keepingCandidateState {
+            candidateState = nil
+        }
         segments[selectedSegmentIndex] = segment.replacingPreviewCandidate(nil)
         previewClauseText = Self.previewText(
             sourceText: rawClauseText + tailPreedit,

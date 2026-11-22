@@ -1,0 +1,68 @@
+id	reasons	old_seg	app_seg	old_panel	app_panel	old_auto	app_auto_value	hold_reason
+d2-000011	shared_tag_aware_panel_vs_legacy_ranking	1	1	家庭	家政	1	家政	converted
+d2-000016	shared_tag_aware_panel_vs_legacy_ranking	1	1	假定	家庭	1	家庭	converted
+d2-000042	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	segMiss	1		居家		居家	converted
+d2-000104	shared_tag_aware_panel_vs_legacy_ranking	1	1	高郵	古友	1	古友	converted
+d2-000230	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking	segMiss	1		內寺			word_evidence_gate
+d2-000257	shared_top3_and_word_gate_vs_legacy_reranking	1	1	斷指	斷指	1		native_homograph_without_positive_evidence
+d2-000276	shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	1	1	大洞	大同	1		native_homograph_without_positive_evidence
+d2-000277	shared_tag_aware_panel_vs_legacy_ranking	1	1	大同	大洞	0		native_homograph_without_positive_evidence
+d2-000278	shared_tag_aware_panel_vs_legacy_ranking	1	1	大同	大洞	0		native_homograph_without_positive_evidence
+d2-000296	shared_top3_and_word_gate_vs_legacy_reranking	1	1	大愚	大愚	1		native_homograph_without_positive_evidence
+d2-000339	shared_top3_and_word_gate_vs_legacy_reranking	1	1	命婦	命婦	1		word_evidence_gate
+d2-000391	shared_top3_and_word_gate_vs_legacy_reranking	1	1	覆沙	覆沙	1		native_homograph_without_positive_evidence
+d2-000410	shared_top3_and_word_gate_vs_legacy_reranking	1	1	附驥	附驥	1		native_homograph_without_positive_evidence
+d2-000435	shared_top3_and_word_gate_vs_legacy_reranking	1	1	司議	司議	1		word_evidence_gate
+d2-000442	shared_top3_and_word_gate_vs_legacy_reranking	1	1	事酒	事酒	1		word_evidence_gate
+d2-000443	shared_top3_and_word_gate_vs_legacy_reranking	1	1	四洲	四洲	1		word_evidence_gate
+d2-000445	shared_top3_and_word_gate_vs_legacy_reranking	1	1	寺主	寺主	1		word_evidence_gate
+d2-000472	shared_tag_aware_panel_vs_legacy_ranking	1	1	相同	上洞	0		native_homograph_without_positive_evidence
+d2-000475	shared_tag_aware_panel_vs_legacy_ranking	1	1	相同	上洞	0		native_homograph_without_positive_evidence
+d2-000476	shared_tag_aware_panel_vs_legacy_ranking	1	1	相同	上洞	0		native_homograph_without_positive_evidence
+d2-000478	shared_tag_aware_panel_vs_legacy_ranking	1	1	相同	上洞	0		native_homograph_without_positive_evidence
+d2-000494	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking	segMiss	1		上天			word_evidence_gate
+d2-000500	shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	segMiss	0		石田		石田	converted
+d2-000542	shared_top3_and_word_gate_vs_legacy_reranking	1	1	受權	受權	1		word_evidence_gate
+d2-000579	shared_top3_and_word_gate_vs_legacy_reranking	1	1	襲器	襲器	1		word_evidence_gate
+d2-000582	shared_tag_aware_panel_vs_legacy_ranking	1	1	襲器	濕氣	1	濕氣	converted
+d2-000606	shared_top3_and_word_gate_vs_legacy_reranking	1	1	信章	信章	1		word_evidence_gate
+d2-000607	shared_top3_and_word_gate_vs_legacy_reranking	1	1	神將	神將	1		word_evidence_gate
+d2-000608	shared_top3_and_word_gate_vs_legacy_reranking	1	1	申檣	申檣	1		word_evidence_gate
+d2-000609	shared_top3_and_word_gate_vs_legacy_reranking	1	1	身長	身長	1		word_evidence_gate
+d2-000612	shared_top3_and_word_gate_vs_legacy_reranking	1	1	訊杖	訊杖	1		word_evidence_gate
+d2-000614	shared_top3_and_word_gate_vs_legacy_reranking	1	1	失牌	失牌	1		native_homograph_without_positive_evidence
+d2-000708	shared_tag_aware_panel_vs_legacy_ranking	1	1	原住	原主	1	原主	converted
+d2-000719	shared_tag_aware_panel_vs_legacy_ranking	1	1	柔弱	有若	0		word_evidence_gate
+d2-000728	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	segMiss	1		誘進		誘進	converted
+d2-000734	shared_top3_and_word_gate_vs_legacy_reranking	1	1	有學	有學	1		word_evidence_gate
+d2-000739	shared_top3_and_word_gate_vs_legacy_reranking	1	1	幼學	幼學	1		word_evidence_gate
+d2-000747	shared_top3_and_word_gate_vs_legacy_reranking	1	1	流刑	流刑	1		word_evidence_gate
+d2-000792	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking	segMiss	1		荏子			native_homograph_without_positive_evidence
+d2-000803	shared_top3_and_word_gate_vs_legacy_reranking	1	1	長驅	長驅	1		native_homograph_without_positive_evidence
+d2-000804	shared_top3_and_word_gate_vs_legacy_reranking	1	1	長驅	長驅	1		native_homograph_without_positive_evidence
+d2-000839	shared_tag_aware_panel_vs_legacy_ranking	1	1	在住	再鑄	0		word_evidence_gate
+d2-000849	shared_top3_and_word_gate_vs_legacy_reranking	1	1	賊船	賊船	1		word_evidence_gate
+d2-000851	shared_top3_and_word_gate_vs_legacy_reranking	1	1	赤線	赤線	1		word_evidence_gate
+d2-000852	shared_top3_and_word_gate_vs_legacy_reranking	1	1	賊船	賊船	1		word_evidence_gate
+d2-000853	shared_top3_and_word_gate_vs_legacy_reranking	1	1	賊船	賊船	1		word_evidence_gate
+d2-000855	shared_top3_and_word_gate_vs_legacy_reranking	1	1	賊船	賊船	1		word_evidence_gate
+d2-000858	shared_top3_and_word_gate_vs_legacy_reranking	1	1	專管	專管	1		word_evidence_gate
+d2-000878	shared_top3_and_word_gate_vs_legacy_reranking	1	1	全制	全制	1		word_evidence_gate
+d2-000884	shared_top3_and_word_gate_vs_legacy_reranking	1	1	殿直	殿直	1		word_evidence_gate
+d2-000908	shared_top3_and_word_gate_vs_legacy_reranking	1	1	丁字	丁字	1		native_homograph_without_positive_evidence
+d2-000911	shared_top3_and_word_gate_vs_legacy_reranking	1	1	丁字	丁字	1		native_homograph_without_positive_evidence
+d2-000913	shared_top3_and_word_gate_vs_legacy_reranking	1	1	丁字	丁字	1		native_homograph_without_positive_evidence
+d2-000924	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	1	0	朝典		1		segment_missing
+d2-000953	shared_top3_and_word_gate_vs_legacy_reranking	1	1	中道	中道	0	中道	converted
+d2-000978	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞勺	眞勺	1		native_homograph_without_positive_evidence
+d2-000980	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞作	眞作	1		native_homograph_without_positive_evidence
+d2-000982	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞作	眞作	1		native_homograph_without_positive_evidence
+d2-000984	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞勺	眞勺	1		native_homograph_without_positive_evidence
+d2-000985	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞作	眞作	1		native_homograph_without_positive_evidence
+d2-000988	shared_top3_and_word_gate_vs_legacy_reranking	1	1	震電	震電	1		word_evidence_gate
+d2-000989	shared_top3_and_word_gate_vs_legacy_reranking	1	1	眞殿	眞殿	1		word_evidence_gate
+d2-000994	shared_top3_and_word_gate_vs_legacy_reranking	1	1	差官	差官	1		word_evidence_gate
+d2-001003	shared_top3_and_word_gate_vs_legacy_reranking	1	1	天桃	天桃	1		word_evidence_gate
+d2-001064	shared_tag_aware_panel_vs_legacy_ranking	1	1	學事	學士	1	學士	converted
+d2-001081	top3_segmentation_vs_top1,shared_tag_aware_panel_vs_legacy_ranking,shared_top3_and_word_gate_vs_legacy_reranking	segMiss	1		海東		海東	converted
+d2-001083	shared_top3_and_word_gate_vs_legacy_reranking	1	1	解像	解像	1		word_evidence_gate

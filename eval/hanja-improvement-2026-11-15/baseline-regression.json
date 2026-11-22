@@ -1,0 +1,12 @@
+{
+  "rows": 1105,
+  "reference_rows": 1105,
+  "changed_rows": [],
+  "fields": [
+    "id",
+    "seg_ok",
+    "sys_top1",
+    "auto_convert",
+    "candidates"
+  ]
+}

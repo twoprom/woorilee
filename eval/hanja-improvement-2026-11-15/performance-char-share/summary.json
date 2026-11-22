@@ -1,0 +1,98 @@
+{
+  "rows_per_run": 1105,
+  "runs_per_variant": 3,
+  "order": [
+    "before1",
+    "after1",
+    "after2",
+    "before2",
+    "before3",
+    "after3"
+  ],
+  "semantic_differences": [],
+  "scope": "Shared analysis only; exclude first-row lazy warm-up; no concurrent compiler or test jobs.",
+  "before": {
+    "short_le_50": {
+      "samples": 1128,
+      "reranking_us": {
+        "p50": 240.125,
+        "p95": 902.209,
+        "p99": 1386.541
+      },
+      "analysis_ms": {
+        "p50": 2.918167,
+        "p95": 5.99125,
+        "p99": 8.242459
+      }
+    },
+    "long_gt_50": {
+      "samples": 2184,
+      "reranking_us": {
+        "p50": 1102,
+        "p95": 4142.916,
+        "p99": 7086.333
+      },
+      "analysis_ms": {
+        "p50": 7.208667,
+        "p95": 16.729666,
+        "p99": 24.576875
+      }
+    },
+    "all": {
+      "samples": 3312,
+      "reranking_us": {
+        "p50": 665.958,
+        "p95": 3334.75,
+        "p99": 6343.583
+      },
+      "analysis_ms": {
+        "p50": 5.447042,
+        "p95": 14.846833,
+        "p99": 21.982625
+      }
+    }
+  },
+  "after": {
+    "short_le_50": {
+      "samples": 1128,
+      "reranking_us": {
+        "p50": 181.625,
+        "p95": 649.083,
+        "p99": 840.916
+      },
+      "analysis_ms": {
+        "p50": 2.908792,
+        "p95": 6.063833,
+        "p99": 7.823792
+      }
+    },
+    "long_gt_50": {
+      "samples": 2184,
+      "reranking_us": {
+        "p50": 757.583,
+        "p95": 2425.208,
+        "p99": 3539.333
+      },
+      "analysis_ms": {
+        "p50": 7.18325,
+        "p95": 14.231875,
+        "p99": 19.507709
+      }
+    },
+    "all": {
+      "samples": 3312,
+      "reranking_us": {
+        "p50": 486.209,
+        "p95": 2072.708,
+        "p99": 3338.084
+      },
+      "analysis_ms": {
+        "p50": 5.624625,
+        "p95": 12.9475,
+        "p99": 17.685
+      }
+    }
+  },
+  "before_executable_sha256": "2890e458e808d6c3da369dac499367385de13abddf89648dc9ae584e4b394ee8",
+  "after_executable_sha256": "3092a438cfdeae2bda98ac35b6ac4533cab264b70a7352b84efe7adeed9937b9"
+}

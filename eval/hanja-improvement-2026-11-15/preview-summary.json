@@ -1,0 +1,80 @@
+[
+  {
+    "expected": "水道",
+    "first_correct_key": 11,
+    "id": "water",
+    "keys": 35,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "수도",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "집의 수도 배관에서 물이 샌다.",
+    "stable_correct_key": 19,
+    "target_choice_changes": 5,
+    "final_value": "水道"
+  },
+  {
+    "expected": "首都",
+    "first_correct_key": 15,
+    "id": "capital",
+    "keys": 28,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "수도",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "프랑스의 수도는 파리이다.",
+    "stable_correct_key": 25,
+    "target_choice_changes": 5,
+    "final_value": "首都"
+  },
+  {
+    "expected": "故障",
+    "first_correct_key": 20,
+    "id": "breakdown",
+    "keys": 22,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "고장",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "자동차가 고장 났다.",
+    "stable_correct_key": 20,
+    "target_choice_changes": 2,
+    "final_value": "故障"
+  },
+  {
+    "expected": "고장",
+    "first_correct_key": 16,
+    "id": "native",
+    "keys": 31,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "고장",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "내가 자란 고장에 다시 왔다.",
+    "stable_correct_key": 16,
+    "target_choice_changes": 1,
+    "final_value": "고장"
+  },
+  {
+    "expected": "造船",
+    "first_correct_key": 5,
+    "id": "shipbuilding",
+    "keys": 40,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "조선",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "조선 산업과 중공업이 발전했다.",
+    "stable_correct_key": 12,
+    "target_choice_changes": 3,
+    "final_value": "造船"
+  },
+  {
+    "expected": "朝鮮",
+    "first_correct_key": 6,
+    "id": "history",
+    "keys": 44,
+    "provenance": "authored_development_fixture_not_independent_gold",
+    "reading": "조선",
+    "scope": "analysis_prefix_simulation_not_full_event_loop",
+    "sentence": "조선 시대의 역사와 문화를 공부한다.",
+    "stable_correct_key": 6,
+    "target_choice_changes": 2,
+    "final_value": "朝鮮"
+  }
+]

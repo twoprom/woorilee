@@ -324,6 +324,33 @@ final class InputSessionTests: XCTestCase {
         XCTAssertNil(session.pendingManualReplacementRange)
         XCTAssertNil(session.pendingManualLookupKey)
     }
+
+    /// WYSIWYG manual live preview (2026-07-18): each recorded replacement must retarget the
+    /// pending replacement range to the just-written text's UTF-16 length (chained replacements
+    /// and the mouse-selection path both depend on it), and clearing the panel state drops it.
+    func testRecordManualLivePreviewTracksReplacementRangeLength() {
+        let session = InputSession()
+        let sourceRange = NSRange(location: 10, length: 4)
+        session.setManualCandidateState(
+            HanjaCandidatePanelState(
+                mode: .manual(sourceText: "대한민국", replacementRange: sourceRange),
+                anchorRange: NSRange(location: 14, length: 0),
+                candidates: []
+            ),
+            lookupKey: "대한민국"
+        )
+
+        session.recordManualLivePreview(text: "韓國")
+
+        XCTAssertEqual(session.manualLiveAppliedText, "韓國")
+        XCTAssertEqual(session.pendingManualReplacementRange, NSRange(location: 10, length: 2))
+
+        session.recordManualLivePreview(text: "대한민국")
+        XCTAssertEqual(session.pendingManualReplacementRange, sourceRange)
+
+        session.clearManualPanelState()
+        XCTAssertNil(session.manualLiveAppliedText)
+    }
 }
 
 private func unicodeScalarValues(of text: String) -> [UInt32] {

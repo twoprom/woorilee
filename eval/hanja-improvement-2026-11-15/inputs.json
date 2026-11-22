@@ -1,0 +1,14 @@
+{
+  "mined-sentences.tsv": {
+    "source": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/mined-sentences.tsv",
+    "sha256": "d0cbfcbd2ac412cae32b74122d999079b099a9281fbd31c1a180fe4a00b739b4"
+  },
+  "ai-labels-baseline.tsv": {
+    "source": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/label-sheet-filled.tsv",
+    "sha256": "d76514581ae1dbccba30a34e6566674e8972ecc978e04eed5ac01f327c7e56b3"
+  },
+  "independent-review-original.tsv": {
+    "source": "/Volumes/Workbench/wooriHanjaModel/work/hanja-context/d2/relabel-sheet.tsv",
+    "sha256": "0ab6ec7d34bc64df46b1ee0b29aba4d35f3d40b55aa41f79e58e864051f5ab26"
+  }
+}

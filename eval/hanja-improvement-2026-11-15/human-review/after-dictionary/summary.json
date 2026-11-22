@@ -1,0 +1,95 @@
+{
+  "label_provenance": "User-submitted human review plus explicit chat clarifications",
+  "scope": "73 previously sampled D2 development rows; not an unseen generalization test. No user personalization or session history. Exact output matching; Unicode variants are audit flags only.",
+  "rows": 73,
+  "category_counts": {
+    "U": 65,
+    "M": 2,
+    "?": 3,
+    "K": 3
+  },
+  "judged_rows": 70,
+  "excluded_uncertain": 3,
+  "mixed_hangul_hanja_rows": 1,
+  "missing_reviewer_rows": 73,
+  "hanja_only_panel": {
+    "rows": 66,
+    "top1": 44,
+    "top3": 59,
+    "exact_segmentation": 66
+  },
+  "outcomes": {
+    "correct_auto": 32,
+    "held_hanja_required": 24,
+    "incorrect_auto": 12,
+    "excluded_uncertain": 3,
+    "acceptable_hold": 2
+  },
+  "category_agreement_with_AI": 60,
+  "exact_acceptable_set_agreement_with_AI": 61,
+  "dictionary_gap_rows": [
+    "d2-000840"
+  ],
+  "compatibility_variant_rows": [],
+  "policies": {
+    "current": {
+      "um_rows": 66,
+      "correct_auto": 32,
+      "incorrect_auto": 10,
+      "correct_auto_coverage": 0.48484848484848486,
+      "reading_macro_correct_auto_coverage": 0.5,
+      "k_rows": 3,
+      "k_auto": 2,
+      "k_auto_rate": 0.6666666666666666,
+      "mixed_rows": 1,
+      "mixed_correct_auto": 0,
+      "mixed_incorrect_auto": 0,
+      "mixed_held": 1,
+      "judged_auto_total": 44,
+      "provisional_precision": 0.7272727272727273,
+      "wilson_95": [
+        0.5815112690754881,
+        0.8365361837615662
+      ]
+    },
+    "positive_context_and_no_tie": {
+      "um_rows": 66,
+      "correct_auto": 20,
+      "incorrect_auto": 7,
+      "correct_auto_coverage": 0.30303030303030304,
+      "reading_macro_correct_auto_coverage": 0.3090909090909091,
+      "k_rows": 3,
+      "k_auto": 1,
+      "k_auto_rate": 0.3333333333333333,
+      "mixed_rows": 1,
+      "mixed_correct_auto": 0,
+      "mixed_incorrect_auto": 0,
+      "mixed_held": 1,
+      "judged_auto_total": 28,
+      "provisional_precision": 0.7142857142857143,
+      "wilson_95": [
+        0.5294071156670428,
+        0.8474600394333092
+      ]
+    }
+  },
+  "warnings": [
+    {
+      "id": "d2-000189",
+      "issue": "primary_answer_included_in_acceptable_set"
+    },
+    {
+      "id": "d2-000218",
+      "issue": "uncertainty_reason_not_supplied"
+    },
+    {
+      "id": "d2-000429",
+      "issue": "uncertainty_reason_not_supplied"
+    },
+    {
+      "id": "d2-000840",
+      "issue": "primary_answer_included_in_acceptable_set"
+    }
+  ],
+  "decision": "Retain current app policy. Reviewed development sample has only three K rows; do not tune thresholds on existing test rows or claim 99% precision."
+}

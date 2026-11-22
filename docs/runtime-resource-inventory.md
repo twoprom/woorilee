@@ -15,6 +15,8 @@ Current runtime resources:
 - `Contents/Resources/data/hanja/hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanja.txt`
 - `Contents/Resources/data/hanja/freq-hanjaeo.txt`
+- `Contents/Resources/data/hanja/hanja-context.bin`
+- `Contents/Resources/data/hanja/hanja-native-homograph.txt`
 - `Contents/Resources/KiwiModels/combiningRule.txt`
 - `Contents/Resources/KiwiModels/cong.mdl`
 - `Contents/Resources/KiwiModels/default.dict`
@@ -41,6 +43,19 @@ Live source paths used by the app target:
 - `woorilee/data/hanja/hanja.txt`
 - `woorilee/data/hanja/freq-hanja.txt`
 - `woorilee/data/hanja/freq-hanjaeo.txt`
+- `woorilee/data/hanja/hanja-context.bin` (bundled artifact; the sibling `hanja-context.txt` stays
+  in the repo for tests/diff but is not bundled — see docs/plans/hanja-context-scaling-plan.md §5).
+  The current bundle uses corpus weights plus 51 curated candidate profiles. A 2026-11-15
+  independent binary read found 3,260 readings, 18,126 profiles and 827,610 associations,
+  with no nonzero biases and no negative weights. D3 bias/signed-weight support remains in the
+  loader for experiments but is inactive in this bundle; do not run the D3 export as a routine
+  regeneration step. R2 joint selection is also disabled (`jointDomainConsistency = 0`).
+  Generate the corpus/curated table with `build_association_table.py`, then verify it with
+  `verify_binary_roundtrip.py` using the matching counts/statistics. Historical D3 exports
+  require their own `--model` and must not replace this bundle without independent validation.
+  Resource hashes and the Kiwi commit are recorded in
+  `eval/hanja-improvement-2026-11-15/resources.json`.
+- `woorilee/data/hanja/hanja-native-homograph.txt`
 - `woorilee/KiwiModels/*`
 - `woorilee/en.lproj/InfoPlist.strings`
 - `woorilee/ko.lproj/InfoPlist.strings`

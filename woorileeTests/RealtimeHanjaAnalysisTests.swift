@@ -25,15 +25,63 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
     func testNumericHanjaCandidatesForLargeNumber() {
         XCTAssertEqual(
             NumericHanjaCandidateGenerator.candidates(for: "123456789").map(\.value),
-            ["一二三四五六七八九", "一億二千三百四十五萬六千七百八十九", "1억2345만6789", "일억이천삼백사십오만육천칠백팔십구"]
+            ["一億二千三百四十五萬六千七百八十九", "一二三四五六七八九", "일억이천삼백사십오만육천칠백팔십구", "1억2345만6789", "1億2345萬6789"]
         )
     }
 
     func testNumericHanjaCandidatesIgnoreCommasForValue() {
         XCTAssertEqual(
             NumericHanjaCandidateGenerator.candidates(for: "123,456,789").map(\.value),
-            ["一二三四五六七八九", "一億二千三百四十五萬六千七百八十九", "1억2345만6789", "일억이천삼백사십오만육천칠백팔십구"]
+            ["一億二千三百四十五萬六千七百八十九", "一二三四五六七八九", "일억이천삼백사십오만육천칠백팔십구", "1억2345만6789", "1億2345萬6789"]
         )
+    }
+
+    func testNumericCandidateOrderStaysStableAcrossLargeUnits() {
+        for (digits, hanja, hangul, mixed, mixedHanja) in [
+            ("10000000", "千萬", "천만", "1000만", "1000萬"),
+            ("100000000", "一億", "일억", "1억", "1億"),
+            ("1000000000000", "一兆", "일조", "1조", "1兆"),
+            ("10000000000000000", "一京", "일경", "1경", "1京"),
+        ] {
+            let zeroCount = digits.count - 1
+            XCTAssertEqual(
+                NumericHanjaCandidateGenerator.candidates(for: digits).map(\.value),
+                [hanja, "一" + String(repeating: "零", count: zeroCount),
+                 "一" + String(repeating: "〇", count: zeroCount), hangul, mixed, mixedHanja],
+                digits
+            )
+        }
+    }
+
+    func testNumericCandidateCommentsDescribeEachNotation() {
+        for (digits, comments) in [
+            ("10000000", ["漢字", "漢字", "漢字", "한글", "혼용", "混用"]),
+            ("100000000", ["漢字", "漢字", "漢字", "한글", "혼용", "混用"]),
+            ("123", ["漢字", "漢字", "한글"]),
+            ("0012", ["漢字", "漢字", "한글"]),
+            ("100000000000000000000", ["漢字", "漢字", "한글"]),
+        ] {
+            XCTAssertEqual(
+                NumericHanjaCandidateGenerator.candidates(for: digits).map(\.comment),
+                comments,
+                digits
+            )
+        }
+    }
+
+    func testNumericMixedHanjaCandidateUsesLargeUnitsAndSkipsZeroGroups() {
+        for (digits, expected) in [
+            ("10000", "1萬"),
+            ("10000000", "1000萬"),
+            ("123456789", "1億2345萬6789"),
+            ("100010001", "1億1萬1"),
+            ("100000001", "1億1"),
+            ("99999999999999999999", "9999京9999兆9999億9999萬9999"),
+        ] {
+            let candidates = NumericHanjaCandidateGenerator.candidates(for: digits)
+            XCTAssertEqual(candidates.last?.value, expected, digits)
+            XCTAssertEqual(candidates.last?.comment, "混用", digits)
+        }
     }
 
     func testNumericHanjaCandidatesForLeadingZeroUseDigitReadingsOnly() {
@@ -90,15 +138,45 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
             mode: .realtime(segmentIndex: 0, segmentSurface: segment.surface),
             anchorRange: NSRange(location: 0, length: 3),
             candidates: candidates,
-            highlightedIsHangul: HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(
-                segment: segment,
-                candidates: candidates,
-                hangulUsage: 0
-            )
+            highlightedIsHangul: HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment)
         )
 
         XCTAssertTrue(panelState.hasHangulRow)
         XCTAssertTrue(panelState.highlightedIsHangul)
+    }
+
+    func testRealtimeCandidatePanelDefaultsToHangulWhenInlinePreviewIsHangul() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        let segment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2),
+            surface: "화려",
+            normalizedLookupKey: "화려",
+            tag: .nng,
+            isConvertible: true,
+            previewCandidate: nil
+        )
+
+        XCTAssertTrue(
+            HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment),
+            "the panel highlight must match the inline hangul preview even without usage history"
+        )
+    }
+
+    func testRealtimeCandidatePanelDefaultsToInlineHanjaPreview() {
+        let candidate = candidate(reading: "화려", value: "華麗")
+        let segment = HanjaSegment(
+            sourceRange: NSRange(location: 0, length: 2),
+            surface: "화려",
+            normalizedLookupKey: "화려",
+            tag: .xr,
+            isConvertible: true,
+            previewCandidate: candidate
+        )
+
+        XCTAssertFalse(
+            HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(segment: segment),
+            "the panel highlight must match the inline hanja preview"
+        )
     }
 
     func testRealtimeNumericSegmentMergesWithHangulSegments() {
@@ -191,6 +269,47 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
         XCTAssertEqual(state.selectedSegment?.surface, "동해")
         XCTAssertTrue(state.moveSelectedSegment(by: 1))
         XCTAssertEqual(state.selectedSegment?.surface, "백두산")
+    }
+
+    func testRealtimeAnalysisPrefersHigherScoreOnConvertibleLengthTie() {
+        let sourceText = "동해"
+        let results = [
+            // Lower score, listed first: one token "동해" (convertibleLength = 2).
+            TokenResult(
+                score: -50.0,
+                tokens: [
+                    Token(form: "동해", tag: .nnp, position: 0, length: 2),
+                ]
+            ),
+            // Higher score, listed second: "동" + "해" (convertibleLength = 1 + 1 = 2).
+            TokenResult(
+                score: -10.0,
+                tokens: [
+                    Token(form: "동", tag: .nnp, position: 0, length: 1),
+                    Token(form: "해", tag: .nng, position: 1, length: 1),
+                ]
+            ),
+        ]
+
+        let segments = KiwiAnalysisService.bestRealtimeSegments(
+            from: results,
+            in: sourceText,
+            candidateLookup: { key in
+                switch key {
+                case "동해": return [candidate(reading: key, value: "東海")]
+                case "동": return [candidate(reading: key, value: "東")]
+                case "해": return [candidate(reading: key, value: "海")]
+                default: return []
+                }
+            }
+        )
+
+        // Both tokenizations yield convertibleLength 2 (a genuine tie), so selection must fall
+        // to the score tie-break and pick the higher-score (second) result: ["동", "해"]. On the
+        // old code (which kept the first result on a convertibleLength tie) this would have
+        // returned ["동해"], so this assertion fails without the score tie-break.
+        XCTAssertEqual(segments.map(\.surface), ["동", "해"])
+        XCTAssertEqual(segments.count, 2)
     }
 
     func testRealtimeAnalysisKeepsTopTokenizationWhenItHasBetterExactCandidateCoverage() {
@@ -480,6 +599,43 @@ final class RealtimeHanjaAnalysisTests: XCTestCase {
         XCTAssertEqual(state.pendingUsageEvents.map(\.lookupKey), ["한국"])
         XCTAssertTrue(state.lockedCandidates.isEmpty)
         XCTAssertFalse(state.hangulLockedSegments.isEmpty)
+    }
+
+    /// WYSIWYG highlight browsing (2026-07-18): the hangul-row live preview must be able to keep
+    /// the candidate panel state alive — `keepingCandidateState: true` applies the fallback (preview
+    /// reverts, usage event queued) WITHOUT clearing `candidateState`, so arrow browsing can pass
+    /// through the hangul row and continue.
+    func testRealtimeHangulFallbackCanKeepCandidateStateForHighlightBrowsing() {
+        let tokens = [
+            Token(form: "한국", tag: .nnp, position: 0, length: 2),
+        ]
+        let defaultCandidate = candidate(reading: "한국", value: "韓國")
+        let segments = KiwiAnalysisService.makeRealtimeSegments(
+            from: tokens,
+            in: "한국",
+            candidateLookup: { key in
+                key == "한국" ? [defaultCandidate] : []
+            }
+        )
+        var state = RealtimeClauseState()
+        state.rawClauseText = "한국"
+        state.updateAnalysis(segments: segments)
+        state.setCandidateState(
+            HanjaCandidatePanelState(
+                mode: .realtime(segmentIndex: 0, segmentSurface: "한국"),
+                anchorRange: NSRange(location: 0, length: 2),
+                candidates: [defaultCandidate]
+            )
+        )
+
+        XCTAssertTrue(state.applyHangulFallbackForSelectedSegment(keepingCandidateState: true))
+
+        XCTAssertEqual(state.previewClauseText, "한국")
+        XCTAssertNotNil(state.candidateState, "keepingCandidateState must leave the panel state alive")
+
+        // The default (select-and-dismiss) path still clears it.
+        XCTAssertTrue(state.applyHangulFallbackForSelectedSegment())
+        XCTAssertNil(state.candidateState)
     }
 
     func testRealtimeHangulFallbackCanAdvanceToNextConvertibleSegment() {

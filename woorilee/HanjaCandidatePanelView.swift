@@ -179,11 +179,11 @@ struct HanjaCandidatePanelView: View {
 
             Spacer(minLength: 4)
 
-            Text("한글")
+            Text(NumericHanjaCandidateGenerator.isNumericCandidateSource(text) ? "숫자" : "한글")
                 .font(.system(size: 11, weight: .regular, design: .default))
                 .foregroundStyle(isHighlighted ? Palette.selectedCandidateForeground : Color.secondary)
                 .lineLimit(1)
-                .truncationMode(.tail)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -228,6 +228,11 @@ struct HanjaCandidatePanelView: View {
                 .foregroundStyle(isHighlighted ? Palette.selectedCandidateForeground : Color.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .fixedSize(
+                    horizontal: NumericHanjaCandidateGenerator.isNumericCandidateSource(candidate.reading)
+                        || DateHanjaCandidateGenerator.isDateCandidateSource(candidate.reading),
+                    vertical: false
+                )
         }
         .padding(.horizontal, 9)
         .frame(maxWidth: .infinity, alignment: .leading)

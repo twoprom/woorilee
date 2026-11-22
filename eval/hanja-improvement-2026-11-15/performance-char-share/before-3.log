@@ -1,0 +1,3 @@
+Quantization is not supported for ArchType::none. Fall back to non-quantized model.
+Quantization is not supported for ArchType::none. Fall back to non-quantized model.
+app-verify: rows=1105 exact=936 p50=4.97ms p95=12.885125ms p99=17.616375ms (analysis only, first row includes lazy warm-up)

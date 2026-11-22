@@ -110,6 +110,12 @@ final class HanjaUsageStore {
         recordsByKey[candidateKey]
     }
 
+    func removeAll() {
+        recordsByKey = [:]
+        hasPendingChanges = true
+        flushNow()
+    }
+
     func flushNow() {
         pendingWriteWorkItem?.cancel()
         pendingWriteWorkItem = nil

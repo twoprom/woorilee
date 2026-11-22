@@ -1,0 +1,21 @@
+{
+  "panel_candidate_changes": [
+    "d2-000716",
+    "d2-000717",
+    "d2-000718",
+    "d2-000719",
+    "d2-000720",
+    "d2-000721",
+    "d2-000722",
+    "d2-000723",
+    "d2-000748",
+    "d2-000749",
+    "d2-000750"
+  ],
+  "automatic_value_changes": [],
+  "added_pairs": [
+    "유약:釉藥",
+    "음사:音寫"
+  ],
+  "note": "Two new values are searchable; no automatic conversions changed over the existing D2 sentences."
+}

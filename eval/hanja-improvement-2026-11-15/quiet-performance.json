@@ -1,0 +1,30 @@
+{
+  "short_le_50": {
+    "rows": 376,
+    "analysis_ms": {
+      "p50": 2.42825,
+      "p95": 5.920834,
+      "p99": 10.573875
+    },
+    "reranking_us": {
+      "p50": 190.375,
+      "p95": 680.167,
+      "p99": 1176
+    }
+  },
+  "long_gt_50": {
+    "rows": 728,
+    "analysis_ms": {
+      "p50": 6.229625,
+      "p95": 14.666458,
+      "p99": 26.211083
+    },
+    "reranking_us": {
+      "p50": 897.5,
+      "p95": 3272.917,
+      "p99": 5340.583
+    }
+  },
+  "semantic_differences": [],
+  "scope": "Shared analysis only; no host IPC, event dispatch or panel display. First-row warm-up excluded from groups. A snapshot, not a before/after wall-time comparison."
+}

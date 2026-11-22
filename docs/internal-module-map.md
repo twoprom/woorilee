@@ -16,6 +16,7 @@ ones to preserve when extending the code.
 ## Core IME Runtime
 
 - `woorilee/InputController.swift`
+  - Also handles manual target extraction and candidate-panel navigation.
   - Public IMK entry point (`InputMethodServerControllerClass` in `Info.plist`).
   - Keeps only IMK-facing orchestration: `handle(_:client:)`, menu hookup,
     and dispatch into the helpers below. Does not own composition state.
@@ -59,6 +60,12 @@ ones to preserve when extending the code.
 - `woorilee/NumericHanjaCandidateGenerator.swift`
   - Stateless generator of 數字 candidates for all-digit input — digit-by-digit
     and quantity-unit readings in both Hanja and Hangul.
+- `woorilee/DateHanjaCandidateGenerator.swift`
+  - Relative-day expressions produce nine date notations using the current local
+    date and time zone, with slash dates and Korean/Hanja weekdays first, followed by
+    Gregorian and Republic of Korea era dates.
+    Manual and realtime panels share the same fixed candidate order;
+    realtime expressions retain their source until explicitly selected, like numeric input.
 - `woorilee/HanjaCandidatePanelController.swift`
   - Non-activating panel that hosts both manual and realtime candidates;
     positions itself via `CandidatePanelOriginCalculator`.
@@ -66,6 +73,28 @@ ones to preserve when extending the code.
   - SwiftUI view backing the candidate panel.
 - `woorilee/HanjaWarmUpPanelController.swift`
   - Non-activating loading panel shown while Kiwi / Hanja warm up.
+
+## Context Recommendation and Evaluation
+
+- `HanjaContextRanker.swift` owns containment, corpus associations, gazette priors and session
+  scoring. `rankSegmentCandidates` is shared by the panel and app-settings evaluation.
+- `HanjaContextAssociationStore.swift` loads the corpus/curated binary table. D3 bias support
+  exists but current bundled biases are all zero.
+- `SessionHanjaContext.swift` owns memory-only vocabulary and explicit-selection priors per client.
+  Automatic previews never create selection priors; a committed Hangul choice clears a stale prior.
+- `HanjaPerformance.swift` records scalar-only timing stages and supplies an offline observer.
+- Manual lookup uses at most 200 UTF-16 units on each side of the target. Manual boundary edits
+  reuse `RealtimeClauseState.automaticContextSegments` without rerunning Kiwi; overlapping spans'
+  self-excluded feature sets are intersected to avoid self-voting after merges or splits.
+- `HanjaClauseJointSelection.swift` implements the historical R2 experiment. The default weight
+  is zero, so joint search is skipped. K1 semantic registration and D3 training remain parked.
+- `KiwiAnalysisService.analyzeClause(_:kiwi:...)` is the shared app/offline entry point for
+  top-3 analysis, winning segmentation, stable features, reranking and auto-conversion gates.
+- `scripts/hanja-context/assoc` compiles the Foundation/Kiwi subset through symlinks. `app-verify`
+  calls the shared pipeline; legacy `d2-verify`, `eval-ctx` and `eval5d` preserve old settings.
+  `segmentation-compare` evaluates a score-first alternative offline without changing app policy.
+  Reranking prepares positional content-feature strings once per call, then excludes each target
+  span before deduplication. The zero-weight character-share axis skips grapheme-set construction.
 
 ## App UI Windows
 
@@ -101,6 +130,8 @@ Each service owns a warm-up `Status` enum
 
 ## Test Coverage
 
+- `woorileeTests/DateHanjaCandidateTests.swift` — relative-day aliases, date notations and labels,
+  calendar/time-zone boundaries, real Kiwi segmentation, and manual/realtime candidate paths.
 - `woorileeTests/InputEventPolicyTests.swift` — key normalization and
   navigation selector classification.
 - `woorileeTests/InputRangeStateTests.swift` — replacement-range and

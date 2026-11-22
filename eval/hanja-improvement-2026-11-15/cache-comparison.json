@@ -1,0 +1,8 @@
+{
+  "rows": 1105,
+  "semantic_differences": [],
+  "analysis_dictionary_lookups_before": 75853,
+  "analysis_dictionary_lookups_after": 20647,
+  "lookup_reduction": 0.7278024600213571,
+  "timing_limitation": "Other compiler and corpus replay processes were active; elapsed times cannot establish a latency improvement. Dictionary-call reduction and output equality are deterministic. Reranking p95 goal of 1ms is not established across these D2 sentences."
+}

@@ -167,6 +167,96 @@ final class RealtimeSegmentBoundaryTests: XCTestCase {
 
     // MARK: - Lifecycle
 
+    func testBoundarySelectionAndCommitPreserveUnrelatedHangul() {
+        let source = "한국은 집이 화려"
+        let values = ["한국": ["韓國"], "한": ["漢", "閑"], "국": ["國"],
+                      "은": ["銀"], "집": ["集"], "이": ["二"], "화려": ["華麗"]]
+        let lookup: (String) -> [HanjaCandidate] = { key in
+            (values[key] ?? []).map { self.candidate(reading: key, value: $0) }
+        }
+        let automatic = KiwiAnalysisService.makeRealtimeSegments(
+            from: [
+                Token(form: "한국", tag: .nnp, position: 0, length: 2),
+                Token(form: "은", tag: .jx, position: 2, length: 1),
+                Token(form: "집", tag: .nng, position: 4, length: 1),
+                Token(form: "이", tag: .jks, position: 5, length: 1),
+                Token(form: "화려", tag: .xr, position: 7, length: 2),
+            ],
+            in: source, candidateLookup: lookup,
+            autoConvertGate: { candidate, _ in candidate.reading != "화려" },
+            nativeHomographLookup: { $0 == "집" }
+        )
+        let session = InputSession()
+        session.appendRawTextToRealtimeClause(source)
+        session.updateRealtimeAnalysis(segments: automatic)
+        XCTAssertEqual(session.realtimeDisplayText, "韓國은 집이 화려")
+        let client = FakeIMKTextInput()
+        var usage: [PendingHanjaUsageEvent] = []
+        let engine = InputCompositionEngine(
+            client: client, session: session,
+            analyzeRealtimeClause: { _, _, _ in
+                XCTFail("Manual boundary edits must not rerun automatic analysis")
+                return RealtimeClauseAnalysis(segments: automatic, clauseContentFeatures: [])
+            },
+            analyzeManualClause: { text, boundaries in
+                KiwiAnalysisService.makeManualSegments(boundaries: boundaries, in: text, candidateLookup: lookup)
+            },
+            rankManualClause: { segments, previous, inputs in
+                rankManualSegments(segments, previousSegments: previous, candidateLookup: lookup, sessionInputs: inputs)
+            },
+            flushRealtimeUsageEvents: { usage += $0 }, updateComposition: {}, debugLog: { _ in }
+        )
+
+        XCTAssertTrue(session.adjustRealtimeSegmentBoundary(byCharacters: -1))
+        engine.updateDisplay()
+        XCTAssertEqual(session.realtimeDisplayText, "漢국은 집이 화려")
+        XCTAssertTrue(session.applyRealtimeCandidateSelection(lookup("한")[1]))
+        engine.updateDisplay()
+        XCTAssertEqual(session.realtimeDisplayText, "閑국은 집이 화려")
+        engine.updateDisplay()
+        XCTAssertEqual(session.realtimeDisplayText, "閑국은 집이 화려")
+
+        engine.commitCurrentComposition()
+
+        XCTAssertEqual(client.insertCalls.map(\.text), ["閑국은 집이 화려"])
+        XCTAssertEqual(usage.map(\.lookupKey), ["한"])
+        XCTAssertEqual(usage.map(\.value), ["閑"])
+    }
+
+    func testRepeatedBoundaryEditsPreserveUnrelatedPreviewAndExplicitHangulChoice() {
+        let source = "수도 한국 역사"
+        let values = ["수도": ["首都", "水道"], "한국": ["韓國"], "한": ["漢"],
+                      "국": ["國"], "역사": ["歷史"]]
+        let lookup: (String) -> [HanjaCandidate] = { key in
+            (values[key] ?? []).map { self.candidate(reading: key, value: $0) }
+        }
+        var state = makeAutoState(raw: source, tokens: [
+            Token(form: "수도", tag: .nng, position: 0, length: 2),
+            Token(form: "한국", tag: .nnp, position: 3, length: 2),
+            Token(form: "역사", tag: .nng, position: 6, length: 2),
+        ], lookup: lookup)
+        // Context can select a different preview from the manual dictionary's first candidate.
+        state.updateAnalysis(segments: state.segments.map { segment in
+            segment.surface == "수도" ? segment.replacingPreviewCandidate(lookup("수도")[1]) : segment
+        })
+        state.selectedSegmentIndex = 2
+        XCTAssertTrue(state.applyHangulFallbackForSelectedSegment())
+        state.selectedSegmentIndex = 1
+        state.seedManualBoundariesIfNeeded()
+
+        for delta in [-1, 1, -1] {
+            XCTAssertTrue(state.adjustFocusedBoundary(byCharacters: delta))
+            let manual = KiwiAnalysisService.makeManualSegments(
+                boundaries: state.manualBoundaries ?? [], in: source, candidateLookup: lookup)
+            state.updateAnalysis(segments: rankManualSegments(
+                manual, previousSegments: state.automaticContextSegments, candidateLookup: lookup))
+
+            XCTAssertEqual(state.segments.first { $0.surface == "수도" }?.previewCandidate?.value, "水道")
+            XCTAssertNil(state.segments.first { $0.surface == "역사" }?.previewCandidate)
+            XCTAssertEqual(state.previewClauseText, delta == -1 ? "水道 漢국 역사" : "水道 韓國 역사")
+        }
+    }
+
     func testClearManualSegmentationReturnsToAutoPath() {
         var state = makeManualState(raw: "한국역사", boundaries: [2], focus: 0)
 

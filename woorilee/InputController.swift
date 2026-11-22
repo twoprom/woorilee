@@ -23,11 +23,6 @@ final class InputController: IMKInputSessionController {
         case blockedNoTarget(anchorRange: NSRange)
     }
 
-    private enum CandidatePanelSelectionSource {
-        case highlighted
-        case numbered
-    }
-
     private weak var session: InputSession?
     private let debugLoggingEnabled = true
     private let hanjaServices = HanjaServiceCoordinator.shared
@@ -67,8 +62,10 @@ final class InputController: IMKInputSessionController {
         InputCompositionEngine(
             client: client,
             session: session,
-            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0) },
+            analyzeRealtimeClause: { self.hanjaServices.analyzeRealtimeClause($0, composingTailStart: $1, sessionInputs: $2) },
             analyzeManualClause: { self.hanjaServices.manualSegments(for: $0, boundaries: $1) },
+            rankManualClause: { self.hanjaServices.rankManualClause($0, previous: $1, sessionInputs: $2) },
+            analyzeDocumentContext: { self.hanjaServices.analyzeDocumentContext($0) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
             updateComposition: { self.updateComposition() },
             debugLog: { self.debugLog($0) }
@@ -80,9 +77,11 @@ final class InputController: IMKInputSessionController {
         let session = inputSession(for: sender)
 
         guard event.type == .keyDown else { return false }
+        let eventStart = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("key_handling", since: eventStart) }
 
         inputLogger.info(
-            "woorilee: handle keyCode=\(event.keyCode, privacy: .public) modifiers=\(event.modifierFlags.rawValue, privacy: .public) chars=\(event.charactersIgnoringModifiers ?? "", privacy: .public)"
+            "woorilee: handle modifiers=\(event.modifierFlags.rawValue, privacy: .public) characterCount=\((event.charactersIgnoringModifiers ?? "").utf16.count, privacy: .public)"
         )
 
         return handleKeyInput(
@@ -103,7 +102,7 @@ final class InputController: IMKInputSessionController {
         let session = inputSession(for: sender)
         let modifiers = NSEvent.ModifierFlags(rawValue: flags)
         inputLogger.info(
-            "woorilee: inputText:key keyCode=\(keyCode, privacy: .public) modifiers=\(flags, privacy: .public) text=\(string, privacy: .public)"
+            "woorilee: inputText:key modifiers=\(flags, privacy: .public) textLength=\(string.utf16.count, privacy: .public)"
         )
 
         return handleKeyInput(
@@ -117,7 +116,7 @@ final class InputController: IMKInputSessionController {
 
     override func inputText(_ string: String, client sender: any IMKTextInput) -> Bool {
         let session = inputSession(for: sender)
-        inputLogger.info("woorilee: inputText text=\(string, privacy: .private)")
+        inputLogger.info("woorilee: inputText textLength=\(string.utf16.count, privacy: .public)")
         let currentModifierFlags = InputEventPolicy.currentSessionModifierFlags()
 
         if isBareNewlineText(string) {
@@ -129,7 +128,7 @@ final class InputController: IMKInputSessionController {
             let consumedTrigger = session.consumeManualHanjaTriggerIfArmedForNewline()
             if consumedTrigger != nil || InputEventPolicy.isManualHanjaTrigger(modifiers: currentModifierFlags) {
                 debugLog(
-                    "manual-hanja trigger text=\(string) trigger=\(consumedTrigger != nil ? "armed" : "modifier") flags=\(currentModifierFlags.rawValue)"
+                    "manual-hanja trigger textLength=\(string.utf16.count) trigger=\(consumedTrigger != nil ? "armed" : "modifier") flags=\(currentModifierFlags.rawValue)"
                 )
                 return handleManualHanjaTrigger(sender, session: session)
             }
@@ -292,7 +291,7 @@ final class InputController: IMKInputSessionController {
         // 새 글자 입력은 소스를 바꿔 수동 경계 오프셋을 무효화하므로 오버레이를 버리고 Kiwi 분절로 복귀한다.
         session.clearManualSegmentation()
         debugLog(
-            "textInput selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(client.markedRange())) preedit=\(session.preeditText) raw=\(characters ?? "")"
+            "textInput selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(client.markedRange())) preeditLength=\(session.preeditText.utf16.count) characterCount=\((characters ?? "").utf16.count)"
         )
 
         guard let char = InputEventPolicy.normalizedASCIICharacter(
@@ -398,12 +397,17 @@ final class InputController: IMKInputSessionController {
             target: self,
             realtimeAction: #selector(toggleRealtimeHanjaConversion(_:)),
             manageUserDictionaryAction: #selector(openUserHanjaDictionary(_:)),
+            resetUsageDataAction: #selector(resetUserLearningData(_:)),
             aboutAction: #selector(showAbout(_:))
         )
     }
 
     @objc func openUserHanjaDictionary(_ sender: Any?) {
         hanjaServices.showUserDictionaryWindow()
+    }
+
+    @objc private func resetUserLearningData(_ sender: Any?) {
+        hanjaServices.confirmAndResetUsageData()
     }
 
     @objc func showAbout(_ sender: Any?) {
@@ -418,6 +422,9 @@ final class InputController: IMKInputSessionController {
 
         case #selector(openUserHanjaDictionary(_:)):
             return hanjaServices.isManualHanjaAvailable
+
+        case #selector(resetUserLearningData(_:)):
+            return hanjaServices.isResetUsageDataAvailable
 
         default:
             return menuItem.isEnabled
@@ -470,7 +477,7 @@ final class InputController: IMKInputSessionController {
 
         if session.hasPendingHangulText {
             debugLog(
-                "didCommand selector=\(NSStringFromSelector(aSelector)) selected=\(inputDebugRangeString(sender.selectedRange())) marked=\(inputDebugRangeString(sender.markedRange())) preedit=\(session.preeditText)"
+                "didCommand selector=\(NSStringFromSelector(aSelector)) selected=\(inputDebugRangeString(sender.selectedRange())) marked=\(inputDebugRangeString(sender.markedRange())) preeditLength=\(session.preeditText.utf16.count)"
             )
             commitCurrentComposition(sender, session: session)
         }
@@ -541,7 +548,9 @@ final class InputController: IMKInputSessionController {
 
         switch keyCode {
         case InputEventPolicy.KeyCode.escape:
-            dismissManualPanel(session: session)
+            // Escape cancels: restore the original source text if browsing live-applied a
+            // candidate, then close.
+            revertManualLivePreview(client: client, session: session)
             return true
         default:
             if session.isShowingManualNotice {
@@ -552,16 +561,11 @@ final class InputController: IMKInputSessionController {
             if let handled = handleCandidatePanelCommonKeyInput(
                 keyCode: keyCode,
                 modifiers: modifiers,
-                currentState: { session.manualCandidateState },
                 updateState: { session.updateManualCandidateState($0) },
                 refreshPanel: { showManualCandidatePanel(client: client, session: session) },
-                dismissPanel: { dismissManualPanel(session: session) },
-                selectCandidate: { candidate, _ in
-                    applyManualCandidateSelection(candidate, client: client, session: session)
-                },
-                selectHangul: {
-                    applyManualHangulSelection(client: client, session: session)
-                }
+                dismissPanel: { revertManualLivePreview(client: client, session: session) },
+                commitVisible: { finalizeManualLivePreview(session: session) },
+                applyHighlightPreview: { applyManualHighlightPreview(client: client, session: session) }
             ) {
                 return handled
             }
@@ -572,15 +576,18 @@ final class InputController: IMKInputSessionController {
                 session.updateManualCandidateState { state in
                     state.movePage(by: keyCode == InputEventPolicy.KeyCode.rightArrow ? 1 : -1)
                 }
+                applyManualHighlightPreview(client: client, session: session)
                 showManualCandidatePanel(client: client, session: session)
                 return true
 
             case InputEventPolicy.KeyCode.space:
-                dismissManualPanel(session: session)
+                finalizeManualLivePreview(session: session)
                 return true
 
             default:
-                dismissManualPanel(session: session)
+                // Any other key keeps what is visible (WYSIWYG), records it, and lets the key
+                // process normally.
+                finalizeManualLivePreview(session: session)
                 return nil
             }
         }
@@ -736,21 +743,16 @@ final class InputController: IMKInputSessionController {
         if let handled = handleCandidatePanelCommonKeyInput(
             keyCode: keyCode,
             modifiers: modifiers,
-            currentState: { session.realtimeCandidateState },
             updateState: { session.updateRealtimeCandidateState($0) },
             refreshPanel: { _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false) },
             dismissPanel: { dismissRealtimeCandidatePanel(session: session) },
-            selectCandidate: { candidate, source in
-                applyRealtimeCandidateSelection(
-                    candidate,
-                    client: client,
-                    session: session,
-                    advanceAfterSelection: source == .numbered,
-                    keepPanelWhenNotAdvancing: source == .numbered
-                )
+            commitVisible: {
+                // Return: commit the composition exactly as displayed (preview + browsed
+                // highlights already live-applied inline) and close the panel.
+                commitCurrentComposition(client, session: session)
             },
-            selectHangul: {
-                _ = applyRealtimeHangulFallbackSelection(client: client, session: session)
+            applyHighlightPreview: {
+                applyRealtimeHighlightPreview(client: client, session: session)
             }
         ) {
             return handled
@@ -783,15 +785,18 @@ final class InputController: IMKInputSessionController {
         }
     }
 
+    /// WYSIWYG candidate-panel key handling (2026-07-18 user directive): arrow keys browse AND
+    /// live-apply the highlighted row to the inline display (`applyHighlightPreview`), Return
+    /// commits exactly what is visible (`commitVisible`) — it never "selects" a candidate — and
+    /// numbered selection is removed (arrows are the only keyboard exploration path).
     private func handleCandidatePanelCommonKeyInput(
         keyCode: UInt16,
         modifiers: NSEvent.ModifierFlags,
-        currentState: () -> HanjaCandidatePanelState?,
         updateState: ((inout HanjaCandidatePanelState) -> Void) -> Void,
         refreshPanel: () -> Void,
         dismissPanel: () -> Void,
-        selectCandidate: (HanjaCandidate, CandidatePanelSelectionSource) -> Void,
-        selectHangul: () -> Void
+        commitVisible: () -> Void,
+        applyHighlightPreview: () -> Void
     ) -> Bool? {
         switch keyCode {
         case InputEventPolicy.KeyCode.escape:
@@ -800,22 +805,14 @@ final class InputController: IMKInputSessionController {
 
         case InputEventPolicy.KeyCode.returnKey,
              InputEventPolicy.KeyCode.enter:
-            if currentState()?.highlightedIsHangul == true {
-                selectHangul()
-                return true
-            }
-            guard let candidate = currentState()?.highlightedCandidate else {
-                dismissPanel()
-                return true
-            }
-
-            selectCandidate(candidate, .highlighted)
+            commitVisible()
             return true
 
         case InputEventPolicy.KeyCode.tab:
             updateState { state in
                 state.movePage(by: modifiers.contains(.shift) ? -1 : 1)
             }
+            applyHighlightPreview()
             refreshPanel()
             return true
 
@@ -824,61 +821,45 @@ final class InputController: IMKInputSessionController {
             updateState { state in
                 state.moveHighlight(by: keyCode == InputEventPolicy.KeyCode.downArrow ? 1 : -1)
             }
+            applyHighlightPreview()
             refreshPanel()
             return true
 
         default:
-            guard let state = currentState(),
-                  state.mode.allowsNumberedSelection,
-                  let numericIndex = InputEventPolicy.numericCandidateIndex(keyCode: keyCode),
-                  !modifiers.contains(.shift) else {
-                return nil
-            }
-
-            if numericIndex == 9 {
-                selectHangul()
-                return true
-            }
-
-            guard let candidate = state.candidateForPageNumberIndex(numericIndex) else {
-                return true
-            }
-
-            selectCandidate(candidate, .numbered)
-            return true
+            return nil
         }
     }
 
+    /// Mouse-click selection from the realtime panel: apply, refresh the inline display, close.
     private func applyRealtimeCandidateSelection(
         _ candidate: HanjaCandidate,
         client: any IMKTextInput,
-        session: InputSession,
-        advanceAfterSelection: Bool,
-        keepPanelWhenNotAdvancing: Bool
+        session: InputSession
     ) {
         guard session.applyRealtimeCandidateSelection(candidate) else {
             dismissRealtimeCandidatePanel(session: session)
             return
         }
 
-        let composition = compositionEngine(for: client, session: session)
-        composition.updateDisplay()
+        compositionEngine(for: client, session: session).updateDisplay()
+        dismissRealtimeCandidatePanel(session: session)
+    }
 
-        if advanceAfterSelection {
-            if session.moveRealtimeSegmentSelection(by: 1) {
-                composition.updateDisplay()
-                _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false)
-            } else {
-                commitCurrentComposition(client, session: session)
-            }
+    /// WYSIWYG live preview for the realtime panel (2026-07-18 user directive): reflects the
+    /// highlighted row (candidate or the hangul fallback row) into the segment's inline preview
+    /// immediately, keeping the panel open — so Return can commit exactly what is on screen.
+    private func applyRealtimeHighlightPreview(client: any IMKTextInput, session: InputSession) {
+        guard let state = session.realtimeCandidateState else {
             return
         }
 
-        if keepPanelWhenNotAdvancing {
-            _ = showRealtimeCandidatePanel(client: client, session: session, showEmptyNotice: false)
-        } else {
-            dismissRealtimeCandidatePanel(session: session)
+        if state.highlightedIsHangul {
+            session.applyRealtimeHangulFallbackForSelectedSegment(keepingCandidateState: true)
+        } else if let candidate = state.highlightedCandidate {
+            session.applyRealtimeCandidateSelection(candidate)
         }
+
+        compositionEngine(for: client, session: session).updateDisplay()
     }
 
     private func showRealtimeCandidatePanel(
@@ -910,13 +891,7 @@ final class InputController: IMKInputSessionController {
 
             switch selection {
             case .candidate(let candidate):
-                self.applyRealtimeCandidateSelection(
-                    candidate,
-                    client: client,
-                    session: session,
-                    advanceAfterSelection: false,
-                    keepPanelWhenNotAdvancing: false
-                )
+                self.applyRealtimeCandidateSelection(candidate, client: client, session: session)
             case .hangul:
                 _ = self.applyRealtimeHangulFallbackSelection(client: client, session: session)
             }
@@ -935,39 +910,10 @@ final class InputController: IMKInputSessionController {
             return nil
         }
 
-        let candidates = hanjaServices.realtimeCandidates(for: segment)
-        let previousState = session.realtimeCandidateState
-        let preservesPreviousState = previousState?.mode.realtimeSegmentIndex == selectedIndex
-        let highlightedIndex: Int
-        let page: Int
-        let highlightedIsHangul: Bool
-        if preservesPreviousState, let previousState {
-            highlightedIndex = previousState.highlightedIndex
-            page = previousState.page
-            highlightedIsHangul = previousState.highlightedIsHangul
-        } else if let previewValue = segment.previewCandidate?.value,
-                  let currentPreviewIndex = candidates.firstIndex(where: { $0.value == previewValue }) {
-            highlightedIndex = currentPreviewIndex
-            page = currentPreviewIndex / HanjaCandidatePanelState.defaultPageSize
-            highlightedIsHangul = false
-        } else {
-            let hangulUsage = hanjaServices.hangulUsageCount(for: segment.normalizedLookupKey)
-            highlightedIndex = 0
-            page = 0
-            highlightedIsHangul = HanjaCandidatePanelState.realtimeDefaultHighlightedIsHangul(
-                segment: segment,
-                candidates: candidates,
-                hangulUsage: hangulUsage
-            )
-        }
-
-        return HanjaCandidatePanelState(
-            mode: .realtime(segmentIndex: selectedIndex, segmentSurface: segment.surface),
-            anchorRange: anchorRange,
-            candidates: candidates,
-            highlightedIndex: highlightedIndex,
-            page: page,
-            highlightedIsHangul: highlightedIsHangul
+        let candidates = hanjaServices.realtimeCandidates(for: segment, sessionInputs: session.sessionScoringInputs)
+        return HanjaCandidatePanelState.realtimeState(
+            segment: segment, index: selectedIndex, anchorRange: anchorRange,
+            candidates: candidates, previous: session.realtimeCandidateState
         )
     }
 
@@ -1100,7 +1046,11 @@ final class InputController: IMKInputSessionController {
             return .blockedUnavailable(anchorRange: target.anchorRange, detail: reason)
         }
 
-        let lookup = hanjaServices.manualLookup(for: target)
+        let surroundingContext = manualHanjaSurroundingContext(targetRange: target.replacementRange) {
+            self.manualHanjaString(from: client, proposedRange: $0)
+        }
+        let lookup = hanjaServices.manualLookup(for: target, surroundingContext: surroundingContext,
+                                               sessionInputs: session.sessionScoringInputs)
         return .started(lookup)
     }
 
@@ -1115,7 +1065,7 @@ final class InputController: IMKInputSessionController {
         case .started(let lookup):
             session.setManualCandidateState(lookup.state, lookupKey: lookup.lookupKey)
             showManualCandidatePanel(client: client, session: session)
-            debugLog("manual-hanja started lookupKey=\(lookup.lookupKey)")
+            debugLog("manual-hanja started lookupLength=\(lookup.lookupKey.utf16.count)")
             return true
 
         case .blockedLoading(let anchorRange):
@@ -1137,7 +1087,7 @@ final class InputController: IMKInputSessionController {
             )
             session.setManualNoticeState(notice)
             hanjaServices.showCandidatePanel(content: .notice(notice), client: client)
-            debugLog("manual-hanja blocked unavailable detail=\(detail ?? "")")
+            debugLog("manual-hanja blocked unavailable detailLength=\(detail?.utf16.count ?? 0)")
             return true
 
         case .blockedNoTarget(let anchorRange):
@@ -1208,7 +1158,7 @@ final class InputController: IMKInputSessionController {
         let selectedRange = client.selectedRange()
         let markedRange = client.markedRange()
         debugLog(
-            "manual-hanja document selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") preedit=\(session.preeditText)"
+            "manual-hanja document selected=\(inputDebugRangeString(selectedRange)) marked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") preeditLength=\(session.preeditText.utf16.count)"
         )
         guard selectedRange.location != NSNotFound else {
             debugLog("manual-hanja document no-target invalid-selection selected=\(inputDebugRangeString(selectedRange))")
@@ -1223,7 +1173,7 @@ final class InputController: IMKInputSessionController {
             }
 
             debugLog(
-                "manual-hanja document selectedTextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target.sourceText) replacement=\(inputDebugRangeString(target.replacementRange))"
+                "manual-hanja document selectedTextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target.sourceText.utf16.count) replacement=\(inputDebugRangeString(target.replacementRange))"
             )
             return target
         }
@@ -1247,7 +1197,7 @@ final class InputController: IMKInputSessionController {
             caretLocation: selectedRange.location
         )
         debugLog(
-            "manual-hanja document contextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+            "manual-hanja document contextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
         )
         return target
     }
@@ -1264,7 +1214,7 @@ final class InputController: IMKInputSessionController {
             preeditText: preeditText
         )
         debugLog(
-            "manual-hanja composition selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) effectiveMarked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") replacement=\(inputDebugRangeString(session.currentReplacementRange)) preedit=\(preeditText)"
+            "manual-hanja composition selected=\(inputDebugRangeString(client.selectedRange())) clientMarked=\(inputDebugRangeString(clientMarkedRange)) effectiveMarked=\(inputDebugRangeString(markedRange)) sessionMarked=\(session.markedTextRange.map(inputDebugRangeString) ?? "nil") replacement=\(inputDebugRangeString(session.currentReplacementRange)) preeditLength=\(preeditText.utf16.count)"
         )
         guard !preeditText.isEmpty else {
             debugLog("manual-hanja composition no-target empty-preedit")
@@ -1283,7 +1233,7 @@ final class InputController: IMKInputSessionController {
                 markedRange: markedRange
             )
             debugLog(
-                "manual-hanja composition target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+                "manual-hanja composition targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
             )
             return target
         }
@@ -1303,7 +1253,7 @@ final class InputController: IMKInputSessionController {
             markedRange: markedRange
         )
         debugLog(
-            "manual-hanja composition contextRange=\(inputDebugRangeString(context.actualRange)) text=\(context.text) target=\(target?.sourceText ?? "nil") replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
+            "manual-hanja composition contextRange=\(inputDebugRangeString(context.actualRange)) textLength=\(context.text.utf16.count) targetLength=\(target?.sourceText.utf16.count ?? 0) replacement=\(target.map { inputDebugRangeString($0.replacementRange) } ?? "nil")"
         )
         return target
     }
@@ -1312,6 +1262,8 @@ final class InputController: IMKInputSessionController {
         from client: any IMKTextInput,
         proposedRange: NSRange
     ) -> (text: String, actualRange: NSRange)? {
+        let start = DispatchTime.now().uptimeNanoseconds
+        defer { HanjaPerformance.record("host_context_fetch", since: start) }
         var actualRange = NSRange(location: NSNotFound, length: 0)
         if let text = client.string(from: proposedRange, actualRange: &actualRange) {
             return (text, actualRange)
@@ -1371,6 +1323,7 @@ final class InputController: IMKInputSessionController {
 
         client.insertText(candidate.value, replacementRange: replacementRange)
         hanjaServices.recordSelection(lookupKey: lookupKey, value: candidate.value)
+        session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: candidate.value)
         session.reset()
     }
 
@@ -1394,7 +1347,76 @@ final class InputController: IMKInputSessionController {
 
         client.insertText(sourceText, replacementRange: replacementRange)
         hanjaServices.recordHangulSelection(lookupKey: lookupKey)
+        session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: lookupKey)
         session.reset()
+    }
+
+    /// WYSIWYG live preview for the manual panel (2026-07-18 user directive): writes the
+    /// highlighted row's text into the client over the length-tracked manual replacement range,
+    /// so the document always shows exactly what Return would finalize.
+    private func applyManualHighlightPreview(
+        client: any IMKTextInput,
+        session: InputSession
+    ) {
+        guard let state = session.manualCandidateState,
+              let sourceText = state.mode.manualSourceText,
+              let replacementRange = session.pendingManualReplacementRange
+        else {
+            return
+        }
+
+        let desired = state.highlightedIsHangul
+            ? sourceText
+            : (state.highlightedCandidate?.value ?? sourceText)
+        let current = session.manualLiveAppliedText ?? sourceText
+        guard desired != current else {
+            return
+        }
+
+        // 마크된 한글이 남아 있으면 먼저 커밋해 클라이언트가 replacementRange를 문서 절대
+        // 좌표로 해석하게 한다(applyManualCandidateSelection과 동일한 이유).
+        if session.hasPendingHangulText {
+            commitCurrentComposition(client, session: session)
+        }
+
+        client.insertText(desired, replacementRange: replacementRange)
+        session.recordManualLivePreview(text: desired)
+    }
+
+    /// Return (and any other finalizing key) under WYSIWYG: the document already shows the
+    /// browsed selection, so this only records usage for it and closes the panel. When nothing
+    /// was ever live-applied the source text is untouched — close without recording.
+    private func finalizeManualLivePreview(session: InputSession) {
+        guard let applied = session.manualLiveAppliedText,
+              let sourceText = session.manualCandidateState?.mode.manualSourceText
+        else {
+            dismissManualPanel(session: session)
+            return
+        }
+
+        let lookupKey = session.pendingManualLookupKey ?? sourceText
+        if applied == sourceText {
+            hanjaServices.recordHangulSelection(lookupKey: lookupKey)
+            session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: lookupKey)
+        } else {
+            hanjaServices.recordSelection(lookupKey: lookupKey, value: applied)
+            session.recordManualHanjaSelectionToSessionContext(reading: lookupKey, value: applied)
+        }
+        hanjaServices.hideManualCandidatePanel()
+        session.reset()
+    }
+
+    /// Escape under WYSIWYG: restore the original source text if browsing live-applied anything,
+    /// then close the panel without recording usage.
+    private func revertManualLivePreview(client: any IMKTextInput, session: InputSession) {
+        if let applied = session.manualLiveAppliedText,
+           let sourceText = session.manualCandidateState?.mode.manualSourceText,
+           let replacementRange = session.pendingManualReplacementRange,
+           applied != sourceText {
+            client.insertText(sourceText, replacementRange: replacementRange)
+        }
+
+        dismissManualPanel(session: session)
     }
 
     private func dismissManualPanel(session: InputSession) {

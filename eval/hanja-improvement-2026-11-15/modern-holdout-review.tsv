@@ -1,0 +1,4 @@
+id	reading	candidates	category	answer	acceptable	uncertainty_reason	reviewer	context_file	source_url
+modern-001	결정	決定,潔淨,結晶						modern-holdout-input.tsv	https://www.korea.kr/news/policyNewsView.do?newsId=148975104
+modern-002	연구	年久,捐軀,煙具,燕口,硏究,聯句,軟球,連丘,鉛球						modern-holdout-input.tsv	https://www.korea.kr/news/policyNewsView.do?newsId=148975484
+modern-003	환경	環境,環經,還京						modern-holdout-input.tsv	https://www.korea.kr/briefing/pressReleaseView.do?newsId=156789245
