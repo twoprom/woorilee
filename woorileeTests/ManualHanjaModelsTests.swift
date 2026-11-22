@@ -307,6 +307,41 @@ final class ManualHanjaModelsTests: XCTestCase {
         XCTAssertEqual(state.page, 1)
     }
 
+    func testNumberKeyHighlightTargetsCurrentPageCandidate() {
+        var state = HanjaCandidatePanelState(
+            mode: .manual(sourceText: Self.target.sourceText, replacementRange: Self.target.replacementRange),
+            anchorRange: Self.target.anchorRange,
+            candidates: Self.candidates(count: 12),
+            highlightedIsHangul: true
+        )
+
+        state.movePage(by: 1)
+        state.highlightCandidate(atPageNumberIndex: 1)
+
+        XCTAssertFalse(state.highlightedIsHangul)
+        XCTAssertEqual(state.highlightedCandidate?.value, "候補10")
+        XCTAssertEqual(state.page, 1)
+        XCTAssertTrue(state.hasUserNavigated)
+
+        // 빈 번호는 하이라이트를 바꾸지 않는다.
+        state.highlightCandidate(atPageNumberIndex: 5)
+        XCTAssertEqual(state.highlightedCandidate?.value, "候補10")
+    }
+
+    func testNumberKeyZeroHighlightsHangulRow() {
+        var state = HanjaCandidatePanelState(
+            mode: .manual(sourceText: Self.target.sourceText, replacementRange: Self.target.replacementRange),
+            anchorRange: Self.target.anchorRange,
+            candidates: Self.candidates(count: 3)
+        )
+
+        XCTAssertFalse(state.highlightedIsHangul)
+        state.highlightHangulRow()
+
+        XCTAssertTrue(state.highlightedIsHangul)
+        XCTAssertTrue(state.hasUserNavigated)
+    }
+
     private static let target = ManualHanjaTarget(
         sourceText: "후보",
         replacementRange: NSRange(location: 0, length: 2),
