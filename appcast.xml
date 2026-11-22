@@ -3,6 +3,22 @@
     <channel>
         <title>woorilee</title>
         <item>
+            <title>1.0.5</title>
+            <pubDate>Mon, 23 Nov 2026 01:38:08 +0900</pubDate>
+            <sparkle:version>107</sparkle:version>
+            <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h3>1.0.5</h3>
+                <ul>
+                  <li>실시간 한자 추천 시 동음이의어 판별 성능을 개선했습니다.</li>
+                  <li>'오늘', '모레' 등을 입력하면 알맞은 날짜를 추천합니다.</li>
+                  <li>기타 버그를 수정했습니다.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.5/woorilee.zip" length="111468107" type="application/octet-stream" sparkle:edSignature="vChajnrZAttl0kYuHASSodDR785ViKLUd313dUdVsBDV5zjkxc0bVrzXdjB1QjlOQ3SURFqL9B8/4JlSR2E0Dw=="/>
+        </item>
+        <item>
             <title>1.0.4</title>
             <pubDate>Sat, 27 Jun 2026 23:20:37 +0900</pubDate>
             <sparkle:version>106</sparkle:version>
