@@ -3,6 +3,21 @@
     <channel>
         <title>woorilee</title>
         <item>
+            <title>1.0.6</title>
+            <pubDate>Mon, 23 Nov 2026 02:44:07 +0900</pubDate>
+            <sparkle:version>108</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h3>1.0.6</h3>
+                <ul>
+                  <li>수동 한자 변환이 작동하지 않는 문제를 해소했습니다.</li>
+                  <li>실시간 변환 모드가 켜진 상태에서도 Option+Return을 눌러 수동 변환을 사용할 수 있습니다.</li>
+                </ul>
+            ]]></description>
+            <enclosure url="https://github.com/twoprom/woorilee/releases/download/v1.0.6/woorilee.zip" length="111471737" type="application/octet-stream" sparkle:edSignature="x5KNstIy0AktX3lNeeMnQYu5e4yZN5AofNF4MqJUTiiNtHbpTlIhjBJbilnbUINFwHadzwgiQyLBfpyWW0URDw=="/>
+        </item>
+        <item>
             <title>1.0.5</title>
             <pubDate>Mon, 23 Nov 2026 01:38:08 +0900</pubDate>
             <sparkle:version>107</sparkle:version>
