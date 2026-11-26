@@ -70,8 +70,20 @@ final class InputController: IMKInputSessionController {
             rankManualClause: { self.hanjaServices.rankManualClause($0, previous: $1, sessionInputs: $2) },
             analyzeDocumentContext: { self.hanjaServices.analyzeDocumentContext($0) },
             flushRealtimeUsageEvents: { self.hanjaServices.flushRealtimeUsageEvents($0) },
-            updateComposition: { self.updateComposition() },
+            updateComposition: { self.refreshMarkedText(client: client) },
             debugLog: { self.debugLog($0) }
+        )
+    }
+
+    /// IMK의 `updateComposition()` 대신 쓴다. IMK 구현은 init 때 받은 client 포인터를 retain 없이 보관했다가
+    /// `composedString(_:)`에 넘기는데, Spotlight처럼 그 클라이언트 객체가 먼저 해제되는 호스트에서는 포인터가
+    /// dangling이 되어 Swift `@objc` thunk의 retain에서 크래시(EXC_BREAKPOINT)한다. IMK와 같은 일
+    /// (composedString → setMarkedText(selectionRange:replacementRange:))을 현재 이벤트의 살아 있는 client로 직접 한다.
+    private func refreshMarkedText(client: any IMKTextInput) {
+        client.setMarkedText(
+            composedString(client) ?? "",
+            selectionRange: selectionRange(),
+            replacementRange: replacementRange()
         )
     }
 
